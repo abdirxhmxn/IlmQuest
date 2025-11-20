@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/normalize.css">
+    <title>IlmQuest</title>
+</head>
+
+<body>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 62.5%;
+        }
+
+        header,
+        footer {
+            width: 100%;
+            height: 100px;
+            border: 1px solid;
+        }
+
+        header {
+            display: flex;
+            height: 50px;
+            justify-content: space-between;
+        }
+
+        header nav {
+            border: 1px solid;
+            height: 100%;
+            width: 10em;
+        }
+
+        /* used claude to make the burger */
+        header {
+            nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+                margin-left: 0;
+                margin-right: 0;
+                position: relative;
+            }
+
+            /* Hamburger icon */
+            nav::before {
+                content: '';
+                display: block;
+                width: 30px;
+                height: 3px;
+                background-color: #333;
+                box-shadow:
+                    0 8px 0 #333,
+                    0 16px 0 #333;
+                cursor: pointer;
+                margin: 10px;
+                transition: all 0.1s ease;
+            }
+
+            /* Hide the menu by default on mobile */
+            nav ul {
+                display: none;
+                width: 100%;
+                flex-basis: 100%;
+            }
+
+            /* Show menu when nav is focused/active */
+            nav:focus-within ul,
+            nav:hover ul {
+                display: block;
+            }
+
+            nav ul li {
+                margin-bottom: 0;
+                width: 100%;
+                text-align: right;
+                padding: 0.5em;
+                list-style: none;
+            }
+
+            nav ul li a {
+                text-decoration: none;
+                color: #333;
+                display: block;
+            }
+
+            nav ul li a:hover {
+                background-color: #f0f0f0;
+            }
+        }
+    </style>
+    <header>
+        <div class="Profile"
+            style="display: flex; justify-content: space-between; width: 8%; align-items: center; padding: 2em;">
+            <!-- <img src="Al Bayan Institute - 12.PNG" height="50" style="padding: 5px;"> -->
+            <button type="button" style="height: 40px; font-size: 3rem;"
+                class="text-white bg-gradient-to-r from-green-400 via-green-500 to-green-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">ب</button>
+
+            <h3>Assalāmu ʿalaykum,</h3>
+            <h2 style="font-size: 2rem; margin-left: .5em;">
+                <%= user.userName %>
+            </h2>
+        </div>
+        </div>
+        <div>
+            <nav>
+                <ul>
+                    <li><a href="/main">Home</a></li>
+                    <li><a href="/missions">Missions</a></li>
+                    <li><a href="/grades">Grades</a></li>
+                    <li><a href="/library">Library</a></li>
+                    <li><a href="/profile">Profile</a></li>
+                    <li> <a href="/logout" class="col-3 btn btn-primary">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+</body>
+
+</html>

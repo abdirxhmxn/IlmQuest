@@ -1,0 +1,618 @@
+<%- include('../partials/adminHeader')-%>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 62.5%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        section {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .add-user {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            width: 70%;
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8ecef;
+        }
+
+        .assign-user {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            width: 30%;
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8ecef;
+        }
+
+        form {
+            display: flex;
+            flex-flow: column;
+            gap: 2rem;
+        }
+
+        form>div {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        form label {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.4rem;
+            letter-spacing: 0.3px;
+        }
+
+        form input,
+        form select {
+            padding: 1.2rem 1.4rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            font-family: inherit;
+            color: #2d3748;
+        }
+
+        form input:hover,
+        form select:hover {
+            border-color: #cbd5e0;
+        }
+
+        form input:focus,
+        form select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            background: #ffffff;
+        }
+
+        form input::placeholder {
+            color: #a0aec0;
+            font-weight: 400;
+        }
+
+        form select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234a5568' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1.4rem center;
+            background-size: 12px;
+            padding-right: 4rem;
+        }
+
+        form select[multiple] {
+            background-image: none;
+            padding-right: 1.4rem;
+            min-height: 120px;
+        }
+
+        form select option {
+            padding: 0.8rem;
+        }
+
+        form button[type="submit"] {
+            width: 100%;
+            padding: 1.4rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.6rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        form button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        form button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2.4rem;
+            color: #2c3e50;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 3px solid #667eea;
+            font-weight: 700;
+        }
+
+        .helper-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #718096;
+            margin-top: 0.4rem;
+            font-style: italic;
+        }
+
+        .required::after {
+            content: ' *';
+            color: #e53e3e;
+            font-weight: bold;
+        }
+
+        main {
+            padding: 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        main h2 {
+            font-size: 2.8rem;
+            color: #2c3e50;
+            margin-bottom: 2.5rem;
+            text-align: left;
+            border-bottom: none;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-collapse: collapse;
+            margin-top: 2rem;
+            border: 1px solid #e8ecef;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 1.2rem;
+            text-align: left;
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1.2rem;
+            font-size: 1.4rem;
+            border-bottom: 1px solid #f0f0f0;
+            color: #4a5568;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #f7fafc;
+        }
+
+        td button {
+            padding: 0.7rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            margin-right: 0.6rem;
+            background: #e2e8f0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        td button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .day-btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: 2px solid #cbd5e0;
+            background: #f7fafc;
+            font-size: 1.4rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s ease;
+            color: #2d3748;
+        }
+
+        .day-btn:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .day-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #5568d3;
+        }
+
+        .day-schedule {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .day-schedule-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .remove-day {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .remove-day:hover {
+            background: #f56565;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .time-inputs>div {
+            flex: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            section {
+                flex-direction: column;
+                padding: 2rem;
+            }
+
+            .add-user,
+            .assign-user {
+                width: 100%;
+            }
+
+            table {
+                font-size: 1.2rem;
+                overflow-x: auto;
+                display: block;
+            }
+
+            main {
+                padding: 2rem;
+            }
+        }
+    </style>
+
+
+
+    <section>
+        <!-- CREATE CLASS -->
+        <div class="add-user" id="classForm">
+            <h2>Create Class</h2>
+
+            <form action="/admin/classes/add" method="POST">
+
+                <!-- Class Name -->
+                <div style="display: flex; gap: 1.5rem;">
+                    <div style="flex: 1;">
+                        <label class="required">Class Name</label>
+                        <input type="text" name="className" placeholder="Grade 3 - Tahfiidh A" required
+                            style="width:100%" />
+                    </div>
+                </div>
+
+                <!-- Grade Level + Program + Teacher -->
+                <div style="display: flex; flex-direction:row; gap: 1.5rem;">
+                    <div style="flex: 1;">
+                        <label class="required">Grade Level</label>
+                        <select name="gradeLevel" required style="width:100%">
+                            <option value="">Select Grade</option>
+                            <option value="Prep 1">Prep 1</option>
+                            <option value="Prep 2">Prep 2</option>
+                            <option value="Grade 1">Grade 1</option>
+                            <option value="Grade 2">Grade 2</option>
+                            <option value="Grade 3">Grade 3</option>
+                            <option value="Grade 4">Grade 4</option>
+                            <option value="Grade 5">Grade 5</option>
+                        </select>
+                    </div>
+
+                    <div style="flex: 1;">
+                        <label class="required">Program Type</label>
+                        <select name="programType" required style="width:100%">
+                            <option value="">Select Program</option>
+                            <option value="Tahfiidth">Tahfiidth</option>
+                            <option value="Khatm">Khatm</option>
+                        </select>
+                    </div>
+
+                    <div style="flex: 1;">
+                        <label class="required">Assign Teacher</label>
+                        <select name="teachers" required style="width:100%">
+                            <option value="">Choose a teacher</option>
+                            <% teachers.forEach(t=> { %>
+                                <option value="<%= t._id %>">
+                                    <%= t.firstName %>
+                                        <%= t.lastName %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Schedule -->
+                <div>
+                    <label class="required">Select Days & Set Times</label>
+                    <div id="day-buttons" style="display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 0.5rem;">
+                        <% const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]; %>
+                            <% days.forEach(day=> { %>
+                                <button type="button" class="day-btn" data-value="<%= day %>">
+                                    <%= day %>
+                                </button>
+                                <% }) %>
+                    </div>
+                    <span class="helper-text">Click days to add schedule times</span>
+                </div>
+
+                <!-- Dynamic Day Schedules Container -->
+                <div id="day-schedules-container"></div>
+
+                <!-- Hidden input that stores schedule JSON -->
+                <input type="hidden" name="schedule" id="scheduleInput" />
+
+                <!-- Classroom Info -->
+                <div style="display: flex; flex-direction: row;">
+                    <div style="flex:1">
+                        <label>Room Number</label>
+                        <input type="text" name="roomNumber" placeholder="Room 4A" style="width: 100%;" />
+                    </div>
+
+                    <div style="flex: 1;">
+                        <label>Capacity</label>
+                        <input type="number" name="capacity" placeholder="20" style="width: 100%;" />
+                    </div>
+                </div>
+
+                <button type="submit">Create Class</button>
+            </form>
+        </div>
+
+        <div class="assign-user">
+            <h2>Assign Student to a Class</h2>
+            <form action="/admin/assign/student-to-class?_method=PUT" method="POST">
+                <div>
+                    <label class="required">Select Student</label>
+                    <select name="studentID" required>
+                        <option value="">Choose a student</option>
+                        <% students.forEach(student=> { %>
+                            <option value="<%= student._id %>">
+                                <%= student.firstName %>
+                                    <%= student.lastName %>
+                            </option>
+                            <% }) %>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="required">Select Class</label>
+                    <select name="classID" required>
+                        <option value="">Choose a class</option>
+                        <% classes.forEach(c=> { %>
+                            <option value="<%= c._id %>">
+                                <%= c.className %> | <%= c.classCode %>
+                            </option>
+                            <% }) %>
+                    </select>
+                </div>
+
+                <button type="submit">Assign to Class</button>
+            </form>
+        </div>
+
+    </section>
+
+    <main>
+        <h2>Class Management</h2>
+
+        <table id="classTable">
+            <thead>
+                <tr>
+                    <th>Class Code</th>
+                    <th>Class Name</th>
+                    <th>Grade Level</th>
+                    <th>Program Type</th>
+                    <th>Teachers</th>
+                    <th>Students</th>
+                    <th>Schedule</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <% classes.forEach(c=> { %>
+                    <tr>
+                        <td>
+                            <%= c.classCode %>
+                        </td>
+
+                        <td>
+                            <%= c.className %>
+                        </td>
+
+                        <td>
+                            <%= c.gradeLevel %>
+                        </td>
+
+                        <td>
+                            <%= c.programType %>
+                        </td>
+
+                        <td>
+                            <% if (c.teachers && c.teachers.length> 0) { %>
+                                <%= c.teachers.map(t=> t.firstName + " " + t.lastName).join(", ") %>
+                                    <% } else { %>
+                                        No teachers assigned
+                                        <% } %>
+                        </td>
+
+                        <td>
+                            <% if (c.students && c.students.length> 0) { %>
+                                <%= c.students.length %> student(s)
+                                    <% } else { %>
+                                        0
+                                        <% } %>
+                        </td>
+
+                        <td>
+                            <% if (c.schedule && Object.keys(c.schedule).length> 0) { %>
+                                <%= c.schedule.days.join(", ") %>
+                        <% } else { %>
+                            N/A
+                        <% } %>
+                    </td>
+
+                    <td>
+                        <%= c.active ? " Active" : "Inactive" %>
+                        </td>
+
+                        <td>
+                            <button>Edit</button>
+
+                            <% if(user.role==="admin" ) { %>
+                                <form action="/admin/classes/delete?_method=DELETE" method="POST"
+                                    style="display:inline;">
+                                    <input type="hidden" name="classID" value="<%= c._id %>">
+                                    <button type="submit">Delete</button>
+                                </form>
+                                <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+            </tbody>
+        </table>
+    </main>
+
+
+    <script>
+        const buttons = document.querySelectorAll(".day-btn"); const
+            scheduleInput = document.getElementById("scheduleInput"); const
+                schedulesContainer = document.getElementById("day-schedules-container"); const
+                    schedule = {}; function updateScheduleInput() {
+                        scheduleInput.value = JSON.stringify(schedule);
+                    } function createDayScheduleUI(day) {
+                        const scheduleDiv = document.createElement("div");
+                        scheduleDiv.className = "day-schedule"; scheduleDiv.id = `schedule-${day}`;
+                        scheduleDiv.innerHTML = ` <div class="day-schedule-header">
+                                    <span>${day}</span>
+                                    <button type="button" class="remove-day" data-day="${day}">Remove</button>
+                                    </div>
+                                    <div class="time-inputs">
+                                        <div>
+                                            <label>Start Time</label>
+                                            <input type="time" id="start-${day}" required />
+                                        </div>
+                                        <div>
+                                            <label>End Time</label>
+                                            <input type="time" id="end-${day}" required />
+                                        </div>
+                                    </div>
+                                    `;
+
+                        schedulesContainer.appendChild(scheduleDiv);
+
+                        // Add event listeners for time inputs
+                        const startInput = scheduleDiv.querySelector(`#start-${day}`);
+                        const endInput = scheduleDiv.querySelector(`#end-${day}`);
+
+                        startInput.addEventListener("change", (e) => {
+                            schedule[day].startTime = e.target.value;
+                            updateScheduleInput();
+                        });
+
+                        endInput.addEventListener("change", (e) => {
+                            schedule[day].endTime = e.target.value;
+                            updateScheduleInput();
+                        });
+
+                        // Add remove button listener
+                        const removeBtn = scheduleDiv.querySelector(".remove-day");
+                        removeBtn.addEventListener("click", () => {
+                            removeDay(day);
+                        });
+                    }
+
+        function removeDay(day) {
+            delete schedule[day];
+            const scheduleDiv = document.getElementById(`schedule-${day}`);
+            if (scheduleDiv) {
+                scheduleDiv.remove();
+            }
+
+            const btn = document.querySelector(`.day-btn[data-value="${day}"]`);
+            if (btn) {
+                btn.classList.remove("active");
+            }
+
+            updateScheduleInput();
+        }
+
+        buttons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const day = btn.dataset.value;
+
+                if (schedule[day]) {
+                    // Day already selected, remove it
+                    removeDay(day);
+                } else {
+                    // Add new day
+                    schedule[day] = { startTime: "", endTime: "" };
+                    btn.classList.add("active");
+                    createDayScheduleUI(day);
+                    updateScheduleInput();
+                }
+            });
+        });
+    </script>
+
+    <%- include('../partials/adminFooter')-%>

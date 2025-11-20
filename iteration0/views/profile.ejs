@@ -1,0 +1,30 @@
+<%- include('partials/inHeader') -%>
+
+<style>
+  .container{
+    border: 1px solid;
+    width: 60%;
+    margin: 0 auto;
+    height: 85em;
+  }
+</style>
+<div class="container">
+  <div class="row mt-5">
+      <div class="col-6">
+          <div class="userInfo">
+              <!-- user image -->
+              <!-- user full name -->
+              <!-- user class -->
+               <!-- user joined date -->
+              <!-- user rank if student-->
+              <!-- edit info button -->
+              <!-- on click it will show email password and prompt user to edit their email and password -->
+              <p><strong>User Name</strong>: <%= user.userName %></p>
+              <p><strong>Email</strong>: <%= user.email %></p>
+              <a href="/logout" class="col-3 btn btn-primary">Logout</a>
+          </div>
+      </div> 
+    </div>
+  </div>
+</div>
+      <%- include('partials/inFooter') -%>

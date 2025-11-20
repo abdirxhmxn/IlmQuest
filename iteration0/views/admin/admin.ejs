@@ -1,0 +1,34 @@
+<%- include('../partials/adminHeader') -%>
+    <!-- Add Student Section -->
+    <div class="section">
+      <h2 class="section-title">
+        <i class="fa fa-user-plus"></i>
+        Add New Mission
+      </h2>
+      <div class="form-container">
+        <form action="/student" method="POST">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="name">Student Name *</label>
+              <input type="text" id="name" name="name" placeholder="Enter student name" required />
+            </div>
+            <div class="form-group">
+              <label for="subject">Grade Level *</label>
+              <input type="text" id="subject" name="subject" placeholder="e.g., Islamic Studies" required />
+            </div>
+            <div class="form-group">
+              <label for="midterm">Midterm Grade *</label>
+              <input type="number" id="midterm" name="midterm" placeholder="0-100" min="0" max="100" required />
+            </div>
+            <div class="form-group">
+              <label for="final">Final Grade *</label>
+              <input type="number" id="final" name="final" placeholder="0-100" min="0" max="100" required />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa fa-plus"></i> Add Student
+          </button>
+        </form>
+      </div>
+    </div>
+<%- include('../partials/adminFooter') -%>

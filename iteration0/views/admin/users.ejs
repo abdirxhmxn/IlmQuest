@@ -1,0 +1,770 @@
+<%- include('../partials/adminHeader')-%>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 62.5%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        section {
+            display: flex;
+            justify-content: center;
+            gap: 1.5em;
+            padding: 3em;
+        }
+
+        .add-user {
+            background-color: white;
+            width: 25%;
+            height: 60em;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .assign-user {
+            background-color: white;
+            width: 25%;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        form {
+            display: flex;
+            flex-flow: column;
+            gap: 1.5rem;
+        }
+
+        form>div {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        form label {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+
+        form input,
+        form select {
+            padding: 0.9rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            outline: none;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        form input:focus,
+        form select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        form input::placeholder {
+            color: #a0aec0;
+        }
+
+        form button[type="submit"] {
+            width: 100%;
+            padding: 1.2rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        form button[type="submit"]:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        form button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .helper-text {
+            font-size: .9rem;
+            font-weight: 500;
+            color: #a0aec0;
+            margin-top: 0.25rem;
+        }
+
+        .required::after {
+            content: ' *';
+            color: #e53e3e;
+        }
+
+        main {
+            padding: 3em;
+        }
+
+        main h2 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            text-align: left;
+            border-bottom: none;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 1.2rem;
+            text-align: left;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            font-size: 1.4rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #studentButton,
+        #teacherButton,
+        #parentButton {
+            padding: 0.8rem 1.4rem;
+            border-radius: 6px;
+            border: none;
+            margin-right: 0.8rem;
+            background: #e2e8f0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #studentButton.active,
+        #teacherButton.active,
+        #parentButton.active {
+            background: #667eea;
+            color: #fff;
+        }
+
+        button:hover {
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            section {
+                flex-direction: column;
+            }
+
+            /* .add-user {
+                width: 100%;
+            } */
+
+            aside {
+                flex-direction: column;
+            }
+
+            .assign-user {
+                width: 100%;
+            }
+
+            table {
+                font-size: 1.2rem;
+                overflow-x: auto;
+                display: block;
+            }
+        }
+    </style>
+
+
+
+    <section>
+        <!-- Add Teacher -->
+        <div class="add-user" id="teacherForm">
+            <h2>Create Teacher Account</h2>
+            <form action="/admin/teachers/add" method="POST">
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label class="required">First Name</label>
+                        <input type="text" name="firstName" placeholder="John" required style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="required">Last Name</label>
+                        <input type="text" name="lastName" placeholder="Doe" required style="width: 100%;" />
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1">
+                        <label class="required">Email Address</label>
+                        <input type="email" name="email" placeholder="teacher@school.com" required
+                            style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="required">Gender</label>
+                        <select name="gradeLevel" required style="width: 17em;">
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div>
+                        <label class="required">Username</label>
+                        <input type="text" name="userName" placeholder="teacher_username" required
+                            style="width: 17em;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label class="required">Password</label>
+                        <input type="password" name="password" placeholder="••••••••" required required
+                            style="width: 17em;" />
+                        <span class="helper-text">Temporary password - teacher will change on first login</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: row; justify-content: space-between; ">
+                    <div style="display: flex; flex-direction: column; flex: 1;">
+                        <label class="required">Subjects</label>
+                        <input type="text" name="subjects" placeholder="Islamic Studies, Quran, Arabic" />
+                        <span class="helper-text">Separate multiple subjects with commas</span>
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="required">Date of Birth</label>
+                        <input type="date" name="DOB" required style="width: 100%;" />
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label class="required">Employee ID</label>
+                        <input type="text" name="employeeId" placeholder="EMP-001" required style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="required">Hire Date</label>
+                        <input type="date" name="hireDate" required style="width: 100%;" />
+                    </div>
+                </div>
+                <input type="hidden" name="role" value="teacher" />
+                <button type="submit">Create Teacher</button>
+            </form>
+
+        </div>
+
+        <!-- Add Parent -->
+        <div class="add-user" id="parentForm">
+            <h2>Create Parent Account</h2>
+            <form action="/admin/parents/add" method="POST">
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label class="required">First Name</label>
+                        <input type="text" name="firstName" placeholder="John" required style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="required">Last Name</label>
+                        <input type="text" name="lastName" placeholder="Doe" required style="width: 100%;" />
+                    </div>
+                </div>
+                <div>
+                    <label class="required">Username</label>
+                    <input type="text" name="userName" placeholder="parent_username" required />
+                </div>
+
+                <div>
+                    <label class="required">Email Address</label>
+                    <input type="email" name="email" placeholder="parent@email.com" required />
+                </div>
+
+                <div>
+                    <label class="required">Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required />
+                </div>
+
+                <div>
+                    <label class="required">Date of Birth</label>
+                    <input type="date" name="DOB" required />
+                </div>
+
+                <input type="hidden" name="role" value="parent" />
+                <button type="submit">Create Parent</button>
+            </form>
+        </div>
+
+        <!-- Add Student -->
+        <div class="add-user" id="studentForm">
+            <h2>Create Student Account</h2>
+            <form action="/admin/students/add" method="POST">
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label class="required">First Name</label>
+                        <input type="text" name="firstName" placeholder="John" required style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="required">Last Name</label>
+                        <input type="text" name="lastName" placeholder="Doe" required style="width: 100%;" />
+                    </div>
+                </div>
+
+
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1">
+                        <label class="required">Email Address</label>
+                        <input type="email" name="email" placeholder="student@school.com" required
+                            style="width: 100%;" />
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="required">Gender</label>
+                        <select name="gender" required style="width: 17em;">
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div>
+                        <label class="required">Username</label>
+                        <input type="text" name="userName" placeholder="teacher_username" required
+                            style="width: 17em;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label class="required">Password</label>
+                        <input type="password" name="password" placeholder="••••••••" required required
+                            style="width: 17em;" />
+                        <span class="helper-text">Temporary password - teacher will change on first login</span>
+                    </div>
+                </div>
+
+
+
+                <div>
+                    <label class="required">Date of Birth</label>
+                    <input type="date" name="DOB" required />
+                </div>
+
+                <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 1rem;">
+                    <div style="flex:1">
+                        <label class="required">Grade Level</label>
+                        <select name="gradeLevel" required style="width: 17em;">
+                            <option value="">Select grade level</option>
+                            <option value="Prep 1">Prep 1</option>
+                            <option value="Prep 2">Prep 2</option>
+                            <option value="Grade 1">Grade 1</option>
+                            <option value="Grade 2">Grade 2</option>
+                            <option value="Grade 3">Grade 3</option>
+                            <option value="Grade 4">Grade 4</option>
+                            <option value="Grade 5">Grade 5</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1">
+                        <label class="required">Program Type</label>
+                        <select name="programType" required style="width: 17em;">
+                            <option value="">Select program type</option>
+                            <option value="Tahfiidth">Tahfiidth</option>
+                            <option value="Khatm">Khatm</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
+
+                <input type="hidden" name="role" value="student" />
+                <button type="submit">Create Student</button>
+            </form>
+        </div>
+        <!-- Assign Student to parent -->
+        <div class="assign-user">
+            <h2>Assign Student to Parent</h2>
+            <form action="/admin/assign/student-to-parent?_method=PUT" method="POST">
+                <div>
+                    <label class="required">Select Student</label>
+                    <select name="studentID" required>
+                        <option value="">Choose a student</option>
+                        <% students.forEach(student=> { %>
+                            <% if (student.role==='student' ) { %>
+                                <option value="<%= student._id %>">
+                                    <%= student.firstName || student.userName %>
+                                        <%= student.lastName || '' %>
+                                </option>
+                                <% } %>
+                                    <% }) %>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="required">Select Parent</label>
+                    <% parents.sort((a, b)=> (a.firstName || '').localeCompare(b.firstName || '')); %>
+                        <select name="parentID" required>
+                            <option value="">Choose a parent</option>
+                            <% parents.forEach(parent=> { %>
+                                <option value="<%= parent._id %>">
+                                    <%= parent.firstName || parent.userName %>
+                                        <%= parent.lastName || '' %>
+                                </option>
+                                <% }) %>
+                        </select>
+                </div>
+
+                <div>
+                    <label class="required">Select Relationship</label>
+                    <select name="relationship" required>
+                        <option value="">Relationship</option>
+                        <option value="mother">Mother</option>
+                        <option value="father">Father</option>
+                        <option value="guardian">Guardian</option>
+                        <option value="sibling">Sibling</option>
+                        <option value="relative">Relative</option>
+                    </select>
+                </div>
+
+                <button type="submit">Assign Student</button>
+            </form>
+        </div>
+    </section>
+
+    <main>
+        <h2>User Management</h2>
+
+        <button id="studentButton" class="active">Students</button>
+        <button id="teacherButton">Teachers</button>
+        <button id="parentButton">Parents</button>
+
+        <!-- STUDENT TABLE -->
+        <table id="studentTable">
+            <thead>
+                <tr>
+                    <th>Student Number</th>
+                    <th>Student Name</th>
+                    <th>Age</th>
+                    <th>Program</th>
+                    <th>Grade Level</th>
+                    <th>Parents/Guardians</th>
+                    <th>Enrollment Date</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% students.forEach(student=> { %>
+                    <tr>
+                        <!-- Student Number -->
+                        <td>
+                            <%= student.studentInfo && student.studentInfo.studentNumber ?
+                                student.studentInfo.studentNumber : "N/A" %>
+                        </td>
+
+                        <!-- Student Name -->
+                        <td>
+                            <%= student.firstName || student.userName %>
+                                <%= student.lastName || "" %>
+                        </td>
+
+                        <!-- Age -->
+                        <td>
+                            <%= getAge(student.DOB) %>
+                        </td>
+
+                        <!-- Program -->
+                        <td>
+                            <%= student.studentInfo && student.studentInfo.programType ? student.studentInfo.programType
+                                : "N/A" %>
+                        </td>
+
+                        <!-- Grade Level -->
+                        <td>
+                            <%= student.studentInfo && student.studentInfo.gradeLevel ? student.studentInfo.gradeLevel
+                                : "N/A" %>
+                        </td>
+
+                        <!-- Parents / Guardians -->
+                        <td>
+                            <% if (student.studentInfo && student.studentInfo.parents &&
+                                student.studentInfo.parents.length> 0) { %>
+                                <%= student.studentInfo.parents.map(p=> {
+                                    const name = p.parentName || "";
+                                    const rel = p.relationship ? ` (${p.relationship})` : "";
+                                    return name + rel;
+                                    })
+                                    .join(", ") %>
+                                    <% } else { %>
+                                        N/A
+                                        <% } %>
+                        </td>
+
+                        <!-- Enrollment Date -->
+                        <td>
+                            <% if (student.studentInfo && student.studentInfo.enrollmentDate) { %>
+                                <%= student.studentInfo.enrollmentDate.toLocaleDateString('en-US') %>
+                                    <% } else { %>
+                                        N/A
+                                        <% } %>
+                        </td>
+
+                        <!-- Username -->
+                        <td>
+                            <%= student.userName %>
+                        </td>
+
+                        <!-- Email -->
+                        <td>
+                            <%= student.email %>
+                        </td>
+
+                        <!-- Actions -->
+
+                        <td>
+                            <button type="button">Edit</button>
+                            <% if(user.role==="admin" ) { %>
+                                <form action="/admin/users/<%= student._id %>?_method=DELETE" method="POST"
+                                    style="display: inline;">
+                                    <button type="submit">Delete</button>
+                                </form>
+                                <% } %>
+                        </td>
+
+
+
+                    </tr>
+                    <% }) %>
+            </tbody>
+        </table>
+
+        <!-- TEACHER TABLE -->
+        <table id="teacherTable" class="hidden">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Teacher Name</th>
+                    <th>Subjects</th>
+                    <th>Classes Assigned</th>
+                    <th>Hire Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% teachers.forEach(teacher=> { %>
+                    <tr>
+                        <td>
+                            <%= teacher.teacherInfo && teacher.teacherInfo.employeeId ? teacher.teacherInfo.employeeId
+                                : "N/A" %>
+                        </td>
+                        <td>
+                            <%= teacher.firstName || teacher.userName %>
+                                <%= teacher.lastName || "" %>
+                        </td>
+                        <td>
+                            <% if (teacher.teacherInfo && teacher.teacherInfo.subjects &&
+                                teacher.teacherInfo.subjects.length> 0) { %>
+                                <%= teacher.teacherInfo.subjects.join(", ") %>
+            <% } else { %>
+              N/A
+            <% } %>
+          </td>
+          <td>
+            <% if (teacher.teacherInfo && teacher.teacherInfo.classes && teacher.teacherInfo.classes.length > 0) { %>
+              <%= teacher.teacherInfo.classes.length %> class(es)
+            <% } else { %>
+              0
+            <% } %>
+          </td>
+          <td>
+            <% if (teacher.teacherInfo && teacher.teacherInfo.hireDate) { %>
+              <%= teacher.teacherInfo.hireDate.toLocaleDateString('en-US') %>
+            <% } else { %>
+              N/A
+            <% } %>
+          </td>
+          <td>Active</td>
+          <td>
+
+                         <button type=" button">Edit</button>
+                                    <% if(user.role==="admin" ) { %>
+                                        <form action="/admin/users/<%= teacher._id %>?_method=DELETE" method="POST"
+                                            style="display: inline;">
+                                            <button type="submit">Delete</button>
+                                        </form>
+                                        <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+            </tbody>
+        </table>
+
+        <!-- PARENT TABLE -->
+        <table id="parentTable" class="hidden">
+            <thead>
+                <tr>
+                    <th>Parent Name</th>
+                    <th>Email</th>
+                    <th>Children Count</th>
+                    <th>Children</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% parents.forEach(parent=> { %>
+                    <tr>
+                        <td>
+                            <%= parent.firstName %>
+                                <%= parent.lastName %>
+                        </td>
+                        <td>
+                            <%= parent.email %>
+                        </td>
+
+                        <td>
+                            <%= parent.parentInfo?.children?.length || 0 %>
+                        </td>
+
+                        <td>
+                            <% if (parent.parentInfo && parent.parentInfo.children.length> 0) { %>
+                                <%= parent.parentInfo.children .map(c=> c.childName)
+                                    .join(", ") %>
+                                    <% } else { %>
+                                        N/A
+                                        <% } %>
+                        </td>
+
+                        <td>
+                            <button type="button">Edit</button>
+                            <% if(user.role==="admin" ) { %>
+                                <form action="/admin/users/<%= parent._id %>?_method=DELETE" method="POST"
+                                    style="display: inline;">
+                                    <button type="submit">Delete</button>
+                                </form>
+                                <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+            </tbody>
+        </table>
+
+    </main>
+
+    <script>
+        const studentBtn = document.getElementById("studentButton");
+        const teacherBtn = document.getElementById("teacherButton");
+        const parentBtn = document.getElementById("parentButton");
+
+        const studentTable = document.getElementById("studentTable");
+        const teacherTable = document.getElementById("teacherTable");
+        const parentTable = document.getElementById("parentTable");
+
+
+        const addStudentBtn = document.getElementById("addStudent");
+        const addParentBtn = document.getElementById("addParent");
+        const addTeacherBtn = document.getElementById("addTeacher");
+
+        const studentForm = document.getElementById("studentForm");
+        const parentForm = document.getElementById("parentForm");
+        const teacherForm = document.getElementById("teacherForm");
+        function setActive(button) {
+            [studentBtn, teacherBtn, parentBtn].forEach(btn => btn.classList.remove("active"));
+            button.classList.add("active");
+        }
+
+        function showStudents() {
+            setActive(studentBtn);
+            studentTable.classList.remove("hidden");
+            teacherTable.classList.add("hidden");
+            parentTable.classList.add("hidden");
+        }
+
+        function showTeachers() {
+            setActive(teacherBtn);
+            teacherTable.classList.remove("hidden");
+            studentTable.classList.add("hidden");
+            parentTable.classList.add("hidden");
+        }
+
+        function showParents() {
+            setActive(parentBtn);
+            parentTable.classList.remove("hidden");
+            studentTable.classList.add("hidden");
+            teacherTable.classList.add("hidden");
+        }
+
+        function addStudent() {
+            setActive(addStudentBtn);
+            studentForm.classList.remove("hidden");
+            parentForm.classList.add("hidden");
+            teacherForm.classList.add("hidden");
+        }
+
+        function addParent() {
+            setActive(addParentBtn);
+            studentForm.classList.add("hidden");
+            parentForm.classList.remove("hidden");
+            teacherForm.classList.add("hidden");
+        }
+
+        function addTeacher() {
+            setActive(addTeacherBtn);
+            studentForm.classList.add("hidden");
+            parentForm.classList.add("hidden");
+            teacherForm.classList.remove("hidden");
+        }
+        studentBtn.addEventListener("click", showStudents);
+        teacherBtn.addEventListener("click", showTeachers);
+        parentBtn.addEventListener("click", showParents);
+
+        addStudentBtn.addEventListener("click", addStudent);
+        addParentBtn.addEventListener("click", addParent);
+        addTeacherBtn.addEventListener("click", addTeacher);
+    </script>
+
+    <%- include('../partials/adminFooter')-%>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <title>Bayaan Realms</title>
+
+
+</head>
+
+<body>
+    <%- include('../partials/inHeader') -%>
+
+
+
+        <main>
+            <h1>Welcome to Bayaan Realms</h1>
+            <section class="top">
+                <div>Progress Tracker</div>
+                <div>Mission Points and Rank</div>
+                <div>Grades & Attendance</div>
+                <div>Upcoming Events</div>
+            </section>
+            <section class="bottom">
+                <div style="background:white; padding:20px; border-radius:10px; display: flex; flex-direction: column;">
+                    <h3 style="color: #333;">verse of the Day</h3>
+
+                    <p style="font-size: 2rem; direction: rtl; text-align: right;">
+                        <%= verses.arabic %>
+                    </p>
+
+                    <p style="font-size: 1.3rem; margin-top:10px;">
+                        <%= verses.translation %>
+                    </p>
+
+                    <small style="color: #666;">
+                        <%= verses.surah %> — <%= verses.reference %>
+                    </small>
+                </div>
+                <div style="background:white; padding:20px; border-radius:10px; display: flex; flex-direction: column;">
+                    <h1>reminder of the day</h1>
+                    <p style="font-size: 2rem; direction: rtl; text-align: right;">
+                        <%= reflections.arabic %>
+                    </p>
+
+                    <p style="font-size: 1.3rem; margin-top:10px;">
+                        <%= reflections.translation %>
+                    </p>
+
+                    <small style="color: #666;">
+                        <%= reflections.reference %> — <%= reflections.hadithNumber %>
+                    </small>
+                </div>
+            </section>
+        </main>
+
+        <aside class="updates">
+            <h2>Community Updates</h2>
+            <div></div>
+        </aside>
+        <%- include('../partials/inFooter') -%>
+
+</body>
+
+</html>
