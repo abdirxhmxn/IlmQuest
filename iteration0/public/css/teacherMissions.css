@@ -1,0 +1,186 @@
+@import url("./teacherDashboard.css");
+
+:root {
+  --green-900: #0f3d2e;
+  --green-800: #145239;
+  --green-700: #1b6b46;
+  --green-100: #e5f3eb;
+  --green-050: #f4fbf5;
+  --card-bg: #f8fff6;
+}
+
+body {
+  background: var(--green-050);
+  color: var(--green-900);
+}
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 16px 32px;
+}
+
+.header-section {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--card-bg);
+  border: 1px solid #d6e9dd;
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 12px 28px rgba(15, 61, 46, 0.08);
+  margin-bottom: 18px;
+}
+
+.welcome h1 {
+  margin: 0;
+  color: var(--green-900);
+}
+
+.welcome p {
+  margin: 4px 0 0;
+  color: var(--green-700);
+}
+
+.user-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  color: var(--green-900);
+}
+
+.role {
+  border: 1px solid var(--green-800);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+  background: #fff;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  color: var(--green-900);
+}
+
+.form-container {
+  background: var(--card-bg);
+  border: 1px solid #d6e9dd;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 10px 26px rgba(15, 61, 46, 0.06);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.form-group label {
+  font-weight: 700;
+  color: var(--green-800);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d6e9dd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.btn {
+  background: var(--green-800);
+  color: #fff;
+  border: 1px solid var(--green-800);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn:hover {
+  background: var(--green-900);
+  transform: translateY(-1px);
+}
+
+.table-container {
+  background: var(--card-bg);
+  border: 1px solid #d6e9dd;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 10px 26px rgba(15, 61, 46, 0.06);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+thead {
+  background: var(--green-800);
+  color: #fff;
+}
+
+th,
+td {
+  padding: 10px;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+tbody tr:nth-child(odd) {
+  background: #f8fbf9;
+}
+
+tbody tr:nth-child(even) {
+  background: #f1f6f3;
+}
+
+tbody tr:hover {
+  background: #e5f1e9;
+}
+
+.empty-state {
+  color: var(--green-700);
+  padding: 12px 4px;
+}
+
+.logout-section {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.missions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.mission-card {
+  border: 1px solid #d6e9dd;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  box-shadow: 0 10px 20px rgba(15, 61, 46, 0.06);
+}
+
+.mission-title {
+  margin: 0 0 6px;
+  color: var(--green-900);
+}
+
+.mission-meta {
+  font-size: 0.9rem;
+  color: var(--green-700);
+}

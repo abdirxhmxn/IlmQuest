@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/main.css">
     <title>Bayaan Realms</title>
 
 
@@ -14,53 +14,52 @@
 <body>
     <%- include('../partials/inHeader') -%>
 
-
-
-        <main>
+        <main class="student-page">
             <h1>Welcome to Bayaan Realms</h1>
-            <section class="top">
-                <div>Progress Tracker</div>
-                <div>Mission Points and Rank</div>
-                <div>Grades & Attendance</div>
-                <div>Upcoming Events</div>
+            <section class="grid-top">
+                <div class="card">Progress Tracker</div>
+                <div class="card">Mission Points and Rank</div>
+                <div class="card">Grades & Attendance</div>
+                <div class="card">Upcoming Events</div>
             </section>
-            <section class="bottom">
-                <div style="background:white; padding:20px; border-radius:10px; display: flex; flex-direction: column;">
-                    <h3 style="color: #333;">verse of the Day</h3>
+            <section class="grid-bottom">
+                <div class="card">
+                    <h3>Verse of the Day</h3>
 
-                    <p style="font-size: 2rem; direction: rtl; text-align: right;">
+                    <p class="ayah">
                         <%= verses.arabic %>
                     </p>
 
-                    <p style="font-size: 1.3rem; margin-top:10px;">
+                    <p class="translation">
                         <%= verses.translation %>
                     </p>
 
-                    <small style="color: #666;">
+                    <small class="meta">
                         <%= verses.surah %> — <%= verses.reference %>
                     </small>
                 </div>
-                <div style="background:white; padding:20px; border-radius:10px; display: flex; flex-direction: column;">
-                    <h1>reminder of the day</h1>
-                    <p style="font-size: 2rem; direction: rtl; text-align: right;">
+                <div class="card">
+                    <h1>Reminder of the Day</h1>
+                    <p class="ayah">
                         <%= reflections.arabic %>
                     </p>
 
-                    <p style="font-size: 1.3rem; margin-top:10px;">
+                    <p class="translation">
                         <%= reflections.translation %>
                     </p>
 
-                    <small style="color: #666;">
+                    <small class="meta">
                         <%= reflections.reference %> — <%= reflections.hadithNumber %>
                     </small>
                 </div>
             </section>
+
+            <aside class="updates">
+                <h2>Community Updates</h2>
+                <div class="panel"></div>
+            </aside>
         </main>
 
-        <aside class="updates">
-            <h2>Community Updates</h2>
-            <div></div>
-        </aside>
         <%- include('../partials/inFooter') -%>
 
 </body>

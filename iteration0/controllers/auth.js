@@ -12,7 +12,7 @@ exports.getLogin = (req, res) => {
 };
 
 exports.postLogin = (req, res, next) => {
-  console.log("🔥 LOGIN POST HIT:", req.body);
+  console.log(" LOGIN POST HIT:", req.body);
 
   const validationErrors = [];
   if (!validator.isEmail(req.body.email))
@@ -43,17 +43,19 @@ exports.postLogin = (req, res, next) => {
         return next(err);
       }
 
-      console.log("✅ SESSION AFTER LOGIN:", req.session);
-      console.log("✅ USER OBJECT:", req.user);
-      console.log("✅ IS AUTHENTICATED:", req.isAuthenticated());
+
 
       req.session.save((err) => {
         if (err) {
-          console.error("SESSION SAVE ERROR:", err);
           return next(err);
         }
-        console.log("✅ SESSION SAVED, REDIRECTING...");
-        return res.redirect("/main");
+        if (req.user.role === 'admin') {
+          return res.redirect('/admin/home')
+        } else if (req.user.role === 'teacher') {
+          return res.redirect('/teacher/home')
+        } else {
+          return res.redirect("/student/home")
+        }
       });
     });
   })(req, res, next); // << ADD next HERE
@@ -67,7 +69,7 @@ exports.logout = (req, res) => {
       return res.redirect("/");
     }
     console.log('User has logged out.');
-    
+
     req.session.destroy((err) => {
       if (err) {
         console.log("Error: Failed to destroy the session during logout.", err);
@@ -81,12 +83,20 @@ exports.logout = (req, res) => {
 
 exports.getSignup = (req, res) => {
   if (req.user) {
-    return res.redirect("/main");
+    const role = req.user.role;
+
+    const routes = {
+      admin: "/admin/home",
+      teacher: "/teacher/home",
+      student: "/student/home"
+    };
+
+    return res.redirect(routes[role]);
   }
-  res.render("signup", {
-    title: "Create Account",
-  });
+
+  return res.render("signup.ejs", { title: "Create Account" });
 };
+
 
 exports.postSignup = async (req, res, next) => {
   try {

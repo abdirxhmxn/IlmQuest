@@ -1,23 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-//
-// Sub-Schemas
-//
-const ParentSchema = new mongoose.Schema({
-  parentID: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  parentName: { type: String },
-  relationship: {
-    type: String,
-    enum: ["mother", "father", "guardian", "sibling", "relative"],
-    default: "guardian"
-  }
-}, { _id: false });
 
-const ChildSchema = new mongoose.Schema({
-  childID: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  childName: { type: String }
-}, { _id: false });
 
 //
 // Main User Schema
@@ -48,7 +32,6 @@ const UserSchema = new mongoose.Schema({
 
   // STUDENT INFO
   studentInfo: {
-    parents: { type: [ParentSchema], default: [] },
     enrollmentDate: { type: Date, default: Date.now },
     gradeLevel: {
       type: String,
@@ -62,12 +45,6 @@ const UserSchema = new mongoose.Schema({
     classId: { type: mongoose.Schema.Types.ObjectId, ref: "Class" },
     studentNumber: { type: Number, unique: true, sparse: true }
   },
-
-  // PARENT INFO
-  parentInfo: {
-    children: { type: [ChildSchema], default: [] }
-  },
-
   // TEACHER INFO
   teacherInfo: {
     employeeId: { type: String, unique: true, sparse: true },

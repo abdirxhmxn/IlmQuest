@@ -1,0 +1,557 @@
+/* ---------------------------------------
+   Global Theme Colors
+----------------------------------------*/
+:root {
+    --green-900: #0f3d2e;
+    --green-800: #145239;
+    --green-700: #1b6b46;
+    --green-100: #e5f3eb;
+    --green-050: #f4fbf5;
+}
+
+/* ---------------------------------------
+   Base Styles
+----------------------------------------*/
+body {
+    background: var(--green-050);
+    color: var(--green-900);
+    font-family: "Segoe UI", sans-serif;
+  
+}
+
+main {
+    max-width: 1200px;
+    margin: 2em auto;
+    padding: 0 1em;
+}
+
+/* ---------------------------------------
+   Page Card
+----------------------------------------*/
+.page-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #d6e9dd;
+    margin-bottom: 2rem;
+}
+
+/* ---------------------------------------
+   Header
+----------------------------------------*/
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.8rem;
+}
+
+.badge {
+    background: var(--green-800);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* ---------------------------------------
+   Class Filters Tabs
+----------------------------------------*/
+.class-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.class-btn {
+    padding: 10px 20px;
+    background: #fff;
+    border: 2px solid #d1fae5;
+    border-radius: 10px;
+    color: var(--green-800);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.class-btn:hover {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.class-btn.active {
+    background: var(--green-800);
+    color: #fff;
+    border-color: var(--green-800);
+}
+
+.class-block {
+    display: none;
+}
+
+.class-block.active {
+    display: block;
+}
+
+/* ---------------------------------------
+   Info Grid
+----------------------------------------*/
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.info-tile {
+    background: #f0fff4;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #c8e0ca;
+    text-align: center;
+}
+
+.info-tile .label {
+    font-size: 0.8rem;
+    color: #059669;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-tile .value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--green-900);
+    margin-top: 0.5rem;
+}
+
+/* ---------------------------------------
+   Schedule Section
+----------------------------------------*/
+.schedule-section {
+    border-top: 1px solid #d6e9dd;
+    padding-top: 1.5rem;
+    margin: 2rem 0;
+}
+
+.schedule-heading {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--green-800);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.schedule-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.schedule-item {
+    background: #f0fff4;
+    border: 1px solid #c8e0ca;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.schedule-item .day {
+    font-weight: 600;
+    color: var(--green-900);
+}
+
+.schedule-item .time {
+    color: var(--green-700);
+    font-weight: 500;
+}
+
+/* ---------------------------------------
+   Subjects & Students
+----------------------------------------*/
+.subjects-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.subject-block {
+    flex: 1 1 calc(50% - 0.75rem);
+    min-width: 420px;
+    border: 1px solid #d6e9dd;
+    border-radius: 14px;
+    overflow: hidden;
+    background: white;
+}
+
+.subject-block header {
+    background: var(--green-800);
+    color: #fff;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.subject-block .students {
+    padding: 16px;
+    background: #f8fdf9;
+}
+
+.student-accordion {
+    margin-bottom: 1rem;
+}
+
+.student-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 16px 20px;
+    background: white;
+    border: 1px solid #d1fae5;
+    border-radius: 12px;
+    font-weight: 600;
+    color: var(--green-900);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+details[open] .student-summary .chevron {
+    transform: rotate(180deg);
+}
+
+.student-body {
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: rgba(236, 253, 245, 0.6);
+    border-radius: 12px;
+    border: 1px solid #d1fae5;
+}
+
+/* ---------------------------------------
+   Student Averages
+----------------------------------------*/
+.subject-average {
+    margin-bottom: 2rem;
+}
+
+.average-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 10px 16px;
+    background: white;
+    color: #059669;
+    border: 1px solid #d1fae5;
+    border-radius: 999px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* ---------------------------------------
+   Semester Headers
+----------------------------------------*/
+.semester-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--green-800);
+    border-bottom: 2px solid #a7f3d0;
+    padding-bottom: 0.75rem;
+    margin: 2.5rem 0 1.5rem;
+}
+
+/* ---------------------------------------
+   Category / Quarter Accordions
+----------------------------------------*/
+.quarter-summary,
+.category-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 12px 18px;
+    background: white;
+    border: 1px solid #d1fae5;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.quarter-summary:hover,
+.category-summary:hover {
+    background: #ecfdf5;
+}
+
+.category-summary {
+    background: #ecfdf5;
+}
+
+.category-summary .weight {
+    font-size: 0.75rem;
+    color: #059669;
+    margin-left: 0.5rem;
+}
+
+.chevron {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s;
+}
+
+details[open] .chevron {
+    transform: rotate(180deg);
+}
+
+/* ---------------------------------------
+   Grade Item Display
+----------------------------------------*/
+.grade-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.grade-item .name {
+    font-weight: 600;
+    color: var(--green-900);
+}
+
+.grade-item .feedback {
+    font-size: 0.75rem;
+    color: #059669;
+    margin-top: 0.25rem;
+}
+
+.grade-item .points {
+    font-weight: 700;
+    color: #065f46;
+    font-size: 1.1rem;
+}
+
+.grade-item .max {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.grade-item .meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.125rem;
+}
+
+/* ---------------------------------------
+   No Grades
+----------------------------------------*/
+.no-grades {
+    color: #059669;
+    font-style: italic;
+    font-size: 0.875rem;
+    padding: 0.5rem 0;
+}
+
+/* ---------------------------------------
+   Buttons
+----------------------------------------*/
+.btn-primary {
+    background: white;
+    color: var(--green-800);
+    border: 2px solid #a7f3d0;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #ecfdf5;
+    border-color: #34d399;
+}
+
+/* ---------------------------------------
+   MODAL
+----------------------------------------*/
+#gradeModal::backdrop {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+}
+#gradeModal {
+    width: 1000px;
+}
+#gradeModal .modal-box {
+    width: 100%;
+    /* max-width: 720px; */
+    border-radius: 20px;
+    border: 1px solid #a7f3d0;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    animation: modalPop 0.32s ease-out forwards;
+    overflow: hidden;
+    background: white;
+}
+
+@keyframes modalPop {
+    from {
+        transform: scale(0.92) translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Modal Header */
+#gradeModal .modal-header {
+    background: linear-gradient(135deg, #145239, #1e6b52);
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#gradeModal .modal-header h3 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#gradeModal .modal-header button {
+    background: none;
+    border: none;
+    color: white;
+    opacity: 0.8;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+#gradeModal .modal-header button:hover {
+    opacity: 1;
+}
+
+/* Modal Body */
+#gradeModal .modal-body {
+    padding: 2rem;
+    background: #f8fff6;
+}
+
+#gradeModal label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #145239;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.text-input,
+.select-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #a7f3d0;
+    border-radius: 12px;
+    background: white;
+    font-size: 1rem;
+    transition: all 0.25s;
+}
+
+.text-input:focus,
+.select-input:focus {
+    outline: none;
+    border-color: #34d399;
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2);
+}
+
+.score-input {
+    font-size: 2rem;
+    font-weight: 800 !important;
+    color: #145239;
+    text-align: center;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Modal Buttons */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #d6e9dd;
+}
+
+.btn-cancel {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    color: #145239;
+    border: 2px solid #a7f3d0;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #ecfdf5;
+}
+
+.btn-save {
+    padding: 0.75rem 2rem;
+    background: #145239;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(20, 82, 57, 0.3);
+    transition: all 0.25s;
+}
+
+.btn-save:hover {
+    background: #1e6b52;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(20, 82, 57, 0.4);
+}

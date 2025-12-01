@@ -2,8 +2,51 @@ const User = require("../models/User");
 const Mission = require("../models/Missions");
 const Class = require("../models/Class");
 const Grade = require("../models/Grades");
+const Attendance = require("../models/Attendance");
 const Verses = require("../models/Verses");
 const Reflection = require("../models/Reflections");
+
+// Helper to calculate a student's weighted average for a subject (defaults missing categories to 100%)
+const getSubjectAverage = (grades, studentID, subject) => {
+  const weightMap = {
+    Homework: 20,
+    Quiz: 15,
+    Test: 25,
+    Exam: 25,
+    Behavior: 7.5,
+    Participation: 7.5
+  };
+  const totalWeight = Object.values(weightMap).reduce((a, b) => a + b, 0);
+
+  const filtered = grades.filter(
+    g =>
+      g.subject === subject &&
+      g.students.some(s => s._id.toString() === studentID.toString())
+  );
+
+  // Group grades by category
+  const categoryScores = {};
+  filtered.forEach(g => {
+    const category = g.Assignment.type;
+    if (!weightMap[category]) return;
+    const percent = ((g.Assignment.grade || 0) / (g.Assignment.maxScore || 100)) * 100;
+    if (!categoryScores[category]) categoryScores[category] = [];
+    categoryScores[category].push(percent);
+  });
+
+  // Calculate weighted average, defaulting missing categories to 100%
+  let weightedSum = 0;
+  Object.entries(weightMap).forEach(([category, weight]) => {
+    const scores = categoryScores[category];
+    const avg = scores && scores.length
+      ? scores.reduce((a, b) => a + b, 0) / scores.length
+      : 100; // default full credit if no grade yet
+    weightedSum += (avg / 100) * weight;
+  });
+
+  if (!totalWeight) return "100.00";
+  return (weightedSum).toFixed(2);
+};
 module.exports = {
   getIndex: (req, res) => {
     res.render("index.ejs");
@@ -28,13 +71,20 @@ module.exports = {
   getAdmin: async (req, res) => {
     try {
       // const Users = await User.find().lean();
+      const students = await User.find({ role: "student" }).lean()
+      const teachers = await User.find({ role: 'teacher' }).lean()
       const parents = await User.find({ role: "parent" }).lean()
       const missions = await Mission.find().lean();
       const classes = await Class.find().lean();
+
+
       res.render("admin/admin.ejs", {
         user: req.user,
         classes: classes,
-        missions: missions
+        missions: missions,
+        teachers: teachers,
+        students: students,
+        parents: parents
       });
     } catch (err) {
       console.error(err);
@@ -43,17 +93,19 @@ module.exports = {
   },
   getTeacher: async (req, res) => {
     try {
-      const students = await User.find({ role: "student" }).lean()
       const missions = await Mission.find().lean();
-      const classes = await Class.find().lean();
-      const grades = await Grade.find().lean();
+      const classes = await Class.find({ 'teachers._id': req.user._id }).lean();
+      const students = classes.flatMap(cls => cls.students);
+      const classIds = classes.map(cls => cls._id);
+      const grades = await Grade.find({ 'classInfo._id': { $in: classIds } }).lean();
 
-      res.render("teacher/teacherGrades.ejs", {
+      res.render("teacher/teacher.ejs", {
         user: req.user,
-        classes: classes,
-        missions: missions,
-        students: students,
-        grades: grades
+        classes,
+        missions,
+        students,
+        grades,
+        getSubjectAverage
       });
     } catch (err) {
       console.error(err);
@@ -62,20 +114,52 @@ module.exports = {
   },
   getTeacherGrades: async (req, res) => {
     try {
-      const students = await User.find({ role: "student" }).lean()
       const missions = await Mission.find().lean();
-      const classes = await Class.find().lean();
-      const grades = await Grade.find().lean();
+      const classes = await Class.find({ 'teachers._id': req.user._id }).lean();
+      const students = classes.flatMap(cls => cls.students);
+      const classIds = classes.map(cls => cls._id);
+      const grades = await Grade.find({ 'classInfo._id': { $in: classIds } }).lean();
       res.render("teacher/teacherGrades.ejs", {
         user: req.user,
-        classes: classes,
-        missions: missions,
-        students: students,
-        grades: grades
+        classes,
+        missions,
+        students,
+        grades,
+        getSubjectAverage
       });
     } catch (err) {
       console.error(err);
       res.send("Error loading users");
+    }
+  },
+  getTeacherAttendance: async (req, res) => {
+    try {
+      const classes = await Class.find({ 'teachers._id': req.user._id }).lean();
+      const students = classes.flatMap(cls => cls.students);
+      const selectedYear = parseInt(req.query.year, 10) || new Date().getFullYear();
+      const attendance = await Attendance.find().lean();
+
+      const months = Array.from({ length: 12 }, (_, i) => {
+        const days = new Date(selectedYear, i + 1, 0).getDate();
+        return {
+          name: new Date(selectedYear, i).toLocaleString("en-US", { month: "long" }),
+          index: i,
+          days
+        };
+      });
+      console.log(months)
+      res.render('teacher/teacherAttendance.ejs', {
+        user: req.user,
+        classes,
+        students,
+        attendance,
+        months,
+        selectedYear
+      });
+    }
+    catch (err) {
+      console.error(err);
+      res.send("Error loading attendance");
     }
   },
   getParent: async (req, res) => {
@@ -86,7 +170,7 @@ module.exports = {
       res.send("Error loading users")
     }
   },
-    getTeacherMissions: async (req, res) => {
+  getTeacherMissions: async (req, res) => {
     try {
       const students = await User.find({ role: "student" }).lean()
       const missions = await Mission.find().lean();
@@ -155,9 +239,44 @@ module.exports = {
     }
   },
   getGrades: async (req, res) => {
+    //percentage to gpa calculation: (percentage/100)*4
+    //get averge for all gpas and that is the final grade
+    //get average for all subjects and that is the final grade
+    const classes = await Class.find({ 'students._id': { $in: req.user._id } }).lean();
+    // Get class IDs
+    const classIds = classes.map(cls => cls._id);
+    const grades = await Grade.find({
+      'classInfo._id': { $in: classIds },
+      'students._id': req.user._id
+    }).lean();
+    console.log(grades)
+
+    const attendance = await Attendance.find({
+      'records.studentId': req.user._id
+    }).lean();
+
+    const selectedYear = parseInt(req.query.year, 10) || new Date().getFullYear();
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const days = new Date(selectedYear, i + 1, 0).getDate();
+      return {
+        name: new Date(selectedYear, i).toLocaleString("en-US", { month: "long" }),
+        index: i,
+        days
+      };
+    });
+    console.log(grades)
+    console.log(classes)
+    console.log(attendance)
+
     try {
-      res.render('grades.ejs', {
+      res.render('student/grades.ejs', {
         user: req.user,
+        grades: grades,
+        getSubjectAverage,
+        classes: classes,
+        attendance: attendance,
+        selectedYear: selectedYear,
+        months: months
       })
     } catch (err) {
       console.log(err)
@@ -185,9 +304,21 @@ module.exports = {
     }
   },
   getProfile: async (req, res) => {
+    console.log(req.user.role)
+    let classes;
+    if (req.user.role === 'teacher') {
+      classes = await Class.find({ 'teachers._id': req.user._id }).lean();
+    } else if (req.user.role === 'student') {
+      classes = await Class.find({ 'students._id': req.user._id }).lean();
+    } else {
+      classes = await Class.find().lean();
+
+    }
+    console.log(classes)
     try {
       res.render('profile.ejs', {
         user: req.user,
+        classes: classes
       })
     } catch (err) {
       console.log(err)
@@ -244,13 +375,70 @@ module.exports = {
         teachers,
         classes
       })
-
     } catch (err) {
       console.log(err)
       res.redirect('/admin/classes')
     }
+  },
+  getStudentMissions: async (req, res) => {
+    try {
+      const classes = await Class.find({ 'students._id': req.user._id }).lean();
 
+      const allStudentIds = classes
+        .flatMap(c => c.students.map(s => s._id.toString()));
+
+      const uniqueStudentIds = [...new Set(allStudentIds)];
+
+      const studentUsers = await User.find({
+        _id: { $in: uniqueStudentIds }
+      }).sort({ points: -1 });
+
+      console.log('Students:', studentUsers.length)
+      const fullName = `${req.user.firstName} ${req.user.lastName}`;
+
+      let teacherNames = [];
+      classes.forEach(cls => {
+        if (cls.teachers && cls.teachers.length > 0) {
+          cls.teachers.forEach(t => {
+            teacherNames.push(t.name);
+          });
+        }
+      });
+
+      const missions = await Mission.find({
+        'createdBy.name': { $in: teacherNames }
+      }).lean();
+
+      console.log("classes:", classes.length);
+      console.log("missions found:", missions.length);
+
+      const activeMissions = missions.filter(m =>
+        m.active?.studentInfo?.some(s =>
+          s.name === fullName && s.status === "started"
+        )
+      );
+
+      console.log("activeMissions count:", activeMissions.length);
+
+      // FIXED: Only log if there are active missions
+      if (activeMissions.length > 0) {
+        console.log("First active mission:", activeMissions[0].title);
+      } else {
+        console.log("No active missions found for this student");
+      }
+
+      res.render("student/missions.ejs", {
+        user: req.user,
+        missions: missions,
+        classes: classes,
+        activeMissions: activeMissions,
+        students: studentUsers
+      });
+
+    } catch (err) {
+      console.log(`Error: ${err}`);
+      res.status(500).send("Error loading missions page");
+    }
   }
-
 
 };

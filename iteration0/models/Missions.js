@@ -31,18 +31,32 @@ const MissionSchema = new mongoose.Schema({
 
   // Assignment to who?
   assignedTo: {
-    classIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Class" }],
-    studentIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    classInfo: [
+      { type: mongoose.Schema.Types.ObjectId, 
+        ref: "Class",
+        name: String
+      }
+    ],
+    studentInfo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" , name: String}],
   },
 
   // Creator
   createdBy: {
     name: { type: String, required: true },
-    employeeId: { type: String }
+    employeeId: { type: String },
+    _id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
 
   // Active Status
-  active: { type: Boolean, default: true },
+  active: {
+    status: { type: Boolean, default: true },
+    studentInfo: [{
+      name: {type: String},
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      status: { type: String, default: false }
+    }]
+  }
+
 
 }, { timestamps: true });
 

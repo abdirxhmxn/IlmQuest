@@ -1,0 +1,134 @@
+<%- include('../partials/teacherHeader') %>
+<link rel="stylesheet" href="/css/teacherAttendance.css">
+
+<main class="attendance-page">
+  <div class="page-heading">
+    <h1>Attendance</h1>
+    <p>Track daily presence across classes.</p>
+  </div>
+
+  <form class="filter-bar" action="/teacher/manage-attendance/save" method="POST">
+    <div class="field">
+      <label>Select Class</label>
+      <select name="classId" required>
+        <option value="">-- Select Class --</option>
+        <% classes.forEach(cls=> { %>
+          <option value="<%= cls._id %>"><%= cls.className %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Select Student</label>
+      <select name="studentId" required>
+        <option value="">-- Select Student --</option>
+        <% classes.forEach(cls=> { %>
+          <% cls.students.forEach(student=> { %>
+            <option value="<%= student._id %>"><%= student.name %> — <%= cls.className %></option>
+          <% }) %>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Date</label>
+      <input type="date" name="date" required>
+    </div>
+
+    <div class="field">
+      <label>Status</label>
+      <select name="status" required>
+        <option value="Present">Present</option>
+        <option value="Absent">Absent</option>
+        <option value="Late">Late</option>
+        <option value="Excused">Excused</option>
+        <option value="Holiday">Holiday</option>
+        <option value="Weather">Weather</option>
+      </select>
+    </div>
+
+    <button type="submit" class="save-btn">Save Record</button>
+  </form>
+
+  <div class="month-buttons">
+    <% (months || []).forEach((month)=> { %>
+      <button class="months" data-index="<%= month.index %>"><%= month.name %> <%= selectedYear %></button>
+    <% }) %>
+  </div>
+
+  <% (months || []).forEach(month=> { %>
+    <div class="class-card month-card hidden" id="card-<%= month.index %>">
+      <header>
+        <div>
+          <h2><%= month.name %> <%= selectedYear %></h2>
+          <p class="meta">Tap a month button above to toggle visibility.</p>
+        </div>
+      </header>
+      <div class="sheet-wrap">
+        <table class="sheet-table attendance-table hidden" id="table-<%= month.index %>">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <% for (let day=1; day <=month.days; day++) { %>
+                <th><%= day %></th>
+              <% } %>
+            </tr>
+          </thead>
+          <tbody>
+            <% classes.forEach(cls=> { %>
+              <% cls.students.forEach(student=> { %>
+                <tr>
+                  <td class="student-cell"><%= student.name %></td>
+                  <% for (let day=1; day <=month.days; day++) { %>
+                    <% const doc=(attendance || []).find(a=> {
+                      if (!a || !a.date) return false;
+                      const recordDate = new Date(a.date);
+                      const recordMonth = recordDate.getMonth();
+                      const recordDay = recordDate.getDate();
+                      const recordYear = recordDate.getFullYear();
+                      return recordMonth === month.index && recordYear === selectedYear && recordDay === day &&
+                        String(a.classId) === String(cls._id);
+                    });
+                    const record = doc?.records?.find(r => String(r.studentId) === String(student._id));
+                    %>
+                    <td><%= record ? record.status : "" %></td>
+                  <% } %>
+                </tr>
+              <% }) %>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% }) %>
+</main>
+
+<script>
+  const monthButtons = document.querySelectorAll('.months');
+  const monthTables = document.querySelectorAll('.attendance-table');
+  const monthCards = document.querySelectorAll('.month-card');
+
+  monthButtons.forEach((btn, index) => {
+    btn.addEventListener('click', () => showMonthTable(index));
+  });
+
+  function showMonthTable(index) {
+    monthTables.forEach(t => t.classList.add('hidden'));
+    monthCards.forEach(c => c.classList.add('hidden'));
+    const activeTable = document.getElementById(`table-${index}`);
+    const activeCard = document.getElementById(`card-${index}`);
+    if (activeTable) {
+      activeTable.classList.remove('hidden');
+    }
+    if (activeCard) {
+      activeCard.classList.remove('hidden');
+      activeTable.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    monthButtons.forEach(b => b.classList.remove('active-month'));
+    monthButtons[index].classList.add('active-month');
+  }
+
+  // Months stay hidden until a button is clicked
+</script>
+
+<%- include('../partials/teacherFooter') %>

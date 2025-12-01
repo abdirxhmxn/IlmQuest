@@ -1,4 +1,4 @@
-/* * {
+* {
     box-sizing: border-box;
 }
 
@@ -8,18 +8,252 @@ html {
 
 body {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
     height: 800px;
-    border: 1px solid;
-    color: white;
-
+    color: black;
+    /* background-color: rgb(29, 154, 37); */
+    background-image: url('../imgs/space.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    image-rendering: crisp-edges;
+    background-size: cover;
 }
 
-header h1{
-    border: 1px solid;
+header h1 {
     font-size: 9rem;
     color: wheat;
-} */
+}
 
+header {
+    background-color: rgba(19, 17, 17, 0.8);
+    height: 80%;
+    margin: 0%;
+    border-radius: 10px;
+    padding: 4%;
+    background-image: url('../imgs/newLogo.png');
+    background-repeat: no-repeat;
+    background-position: bottom center;
+    image-rendering: crisp-edges;
+    background-size: cover;
+}
+header span {
+    text-decoration: none;
+    color: wheat;
+    font-size: 1.65rem;
+    padding-top: 3%;
+}
+
+main {
+    width: 50%;
+    border-radius: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    text-align: center;
+    color: white;
+}
+
+main a {
+    padding: 10px;
+    font-size: 2rem;
+    text-decoration: none;
+    border: 1px solid;
+    margin-right: 10px;
+    background-color: white;
+    color: rgb(29, 154, 37);
+    border-radius: 10px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  /* background: #1a1d29; */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border: 1px solid;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 3em;
+  border-radius: 10px;
+}
+
+.logo-section {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo svg {
+  width: 100%;
+  height: 100%;
+}
+
+.logo-title {
+  /* color: #ffffff; */
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  letter-spacing: -0.5px;
+}
+
+.flash-messages {
+  margin-bottom: 25px;
+}
+
+.flash-message {
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.flash-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.flash-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.form-card {
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  /* color: #ffffff; */
+  margin-bottom: 10px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 1px solid #2d3142;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.2s;
+  /* background: #252837; */
+  /* color: #ffffff; */
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #7c7cf8;
+  /* background: #2a2d3e; */
+}
+
+.password-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.forgot-link {
+  font-size: 0.95rem;
+  color: #8b8bf8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover {
+  color: #a5a5fa;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: #7c7cf8;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 10px;
+}
+
+.submit-btn:hover {
+  background: #8b8bf8;
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+}
+
+.signup-link {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.95rem;
+  color: #8e8e9e;
+}
+
+.signup-link a {
+  color: #8b8bf8;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.signup-link a:hover {
+  color: #a5a5fa;
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    max-width: 100%;
+  }
+
+  .logo-title {
+    font-size: 1.75rem;
+  }
+}

@@ -1,270 +1,64 @@
 <%- include('partials/header') -%>
 
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    /* background: #1a1d29; */
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  .login-container {
-    width: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-
-  .logo-section {
-    text-align: center;
-    margin-bottom: 50px;
-  }
-
-  .logo {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .logo svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .logo-title {
-    /* color: #ffffff; */
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 0;
-    letter-spacing: -0.5px;
-  }
-
-  /* Flash Messages */
-  .flash-messages {
-    margin-bottom: 25px;
-  }
-
-  .flash-message {
-    padding: 15px 20px;
-    border-radius: 12px;
-    margin-bottom: 10px;
-    font-size: 0.95rem;
-    text-align: center;
-    animation: slideIn 0.3s ease-out;
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .flash-error {
-    background: rgba(239, 68, 68, 0.15);
-    color: #fca5a5;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-  }
-
-  .flash-info {
-    background: rgba(59, 130, 246, 0.15);
-    color: #93c5fd;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-  }
-
-  /* Form */
-  .form-card {
-    width: 100%;
-  }
-
-  .form-group {
-    margin-bottom: 24px;
-  }
-
-  .form-label {
-    display: block;
-    font-size: 0.95rem;
-    font-weight: 500;
-    /* color: #ffffff; */
-    margin-bottom: 10px;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 16px 20px;
-    border: 1px solid #2d3142;
-    border-radius: 12px;
-    font-size: 1rem;
-    transition: all 0.2s;
-    /* background: #252837; */
-    /* color: #ffffff; */
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: #7c7cf8;
-    /* background: #2a2d3e; */
-  }
-
-
-  .password-group {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-
-  .forgot-link {
-    font-size: 0.95rem;
-    color: #8b8bf8;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-
-  .forgot-link:hover {
-    color: #a5a5fa;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 16px;
-    background: #7c7cf8;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 10px;
-  }
-
-  .submit-btn:hover {
-    background: #8b8bf8;
-  }
-
-  .submit-btn:active {
-    transform: scale(0.98);
-  }
-
-  .signup-link {
-    text-align: center;
-    margin-top: 30px;
-    font-size: 0.95rem;
-    color: #8e8e9e;
-  }
-
-  .signup-link a {
-    color: #8b8bf8;
-    font-weight: 500;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .signup-link a:hover {
-    color: #a5a5fa;
-  }
-
-  @media (max-width: 768px) {
-    .login-container {
-      max-width: 100%;
-    }
-
-    .logo-title {
-      font-size: 1.75rem;
-    }
-  }
-</style>
-
-<div class="login-container">
-  <!-- Logo Section -->
-  <div class="logo-section">
-    <!-- <div class="logo">
+  <div class="login-container">
+    <!-- Logo Section -->
+    <div class="logo-section">
+      <!-- <div class="logo">
       <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M30 45C30 45 40 30 50 30C60 30 70 45 70 45" stroke="#7c7cf8" stroke-width="8" stroke-linecap="round"/>
         <path d="M30 60C30 60 40 45 50 45C60 45 70 60 70 60" stroke="#7c7cf8" stroke-width="8" stroke-linecap="round"/>
       </svg>
     </div> -->
-    
-  </div>
-<h1 class="logo-title" style="text-align: center;margin-bottom: 1em;">Sign in to your account</h1>
-  <!-- Flash Messages -->
-  <% if (messages && (messages.errors || messages.info)) { %>
-    <div class="flash-messages">
-      <% if (messages.errors) { %>
-        <% messages.errors.forEach(msg => { %>
-          <div class="flash-message flash-error">
-            <%= msg.msg %>
-          </div>
-        <% }) %>
-      <% } %>
 
-      <% if (messages.info) { %>
-        <% messages.info.forEach(msg => { %>
-          <div class="flash-message flash-info">
-            <%= msg.msg %>
-          </div>
-        <% }) %>
-      <% } %>
     </div>
-  <% } %>
+    <h1 class="logo-title" style="text-align: center;margin-bottom: 1em;">Sign in to your account</h1>
+    <!-- Flash Messages -->
+    <% if (messages && (messages.errors || messages.info)) { %>
+      <div class="flash-messages">
+        <% if (messages.errors) { %>
+          <% messages.errors.forEach(msg=> { %>
+            <div class="flash-message flash-error">
+              <%= msg.msg %>
+            </div>
+            <% }) %>
+              <% } %>
 
-  <!-- Login Form -->
-  <div class="form-card">
-    <form action="/login" method="POST">
-      <div class="form-group">
-        <label for="email" class="form-label">Email address</label>
-        <input 
-          id="email" 
-          name="email" 
-          type="email" 
-          autocomplete="email" 
-          class="form-input"
-          required 
-        />
+                <% if (messages.info) { %>
+                  <% messages.info.forEach(msg=> { %>
+                    <div class="flash-message flash-info">
+                      <%= msg.msg %>
+                    </div>
+                    <% }) %>
+                      <% } %>
       </div>
+      <% } %>
 
-      <div class="form-group">
-        <div class="password-group">
-          <label for="password" class="form-label">Password</label>
-          <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+        <!-- Login Form -->
+        <div class="form-card">
+          <form action="/login" method="POST">
+            <div class="form-group">
+              <label for="email" class="form-label">Email address</label>
+              <input id="email" name="email" type="email" autocomplete="email" class="form-input" required />
+            </div>
+
+            <div class="form-group">
+              <div class="password-group">
+                <label for="password" class="form-label">Password</label>
+                <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+              </div>
+              <input id="password" name="password" type="password" autocomplete="current-password" class="form-input"
+                required />
+            </div>
+
+            <button type="submit" class="submit-btn">
+              Sign in
+            </button>
+          </form>
+
+          <div class="signup-link">
+            Don't Have an account? <a href="/signup">Signup</a>
+          </div>
         </div>
-        <input 
-          id="password" 
-          name="password" 
-          type="password" 
-          autocomplete="current-password"
-          class="form-input"
-          required 
-        />
-      </div>
-
-      <button type="submit" class="submit-btn">
-        Sign in
-      </button>
-    </form>
-
-    <div class="signup-link">
-      Don't Have an account? <a href="/signup">Signup</a>
-    </div>
   </div>
-</div>
 
-<%- include('partials/footer') -%>
+  <%- include('partials/footer') -%>

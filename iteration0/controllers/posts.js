@@ -4,6 +4,7 @@ const User = require("../models/User")
 const Class = require("../models/Class")
 const Mission = require("../models/Missions")
 const Grade = require("../models/Grades")
+const Attendance = require("../models/Attendance");
 
 module.exports = {
   getProfile: async (req, res) => {
@@ -50,6 +51,7 @@ module.exports = {
     }
   },
   createStudent: async (req, res) => {
+    console.log(req.body)
     try {
       await User.create({
         // Login credentials
@@ -69,14 +71,14 @@ module.exports = {
         studentInfo: {
           gradeLevel: req.body.gradeLevel,
           programType: req.body.programType,
-          enrollmentDate: Date.now(),
+          enrollmentDate: req.body.enrollmentDate || Date.now(),
           studentNumber: Math.floor(Math.random() * 1000000),
           parents: []
         }
       });
 
       console.log('Student created successfully');
-      res.redirect('/admin');
+      res.redirect('/admin/users');
 
     } catch (err) {
       console.error('Error creating student:', err);
@@ -99,7 +101,7 @@ module.exports = {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         DOB: req.body.DOB || null,
-
+        gender: req.body.gender || null,
         teacherInfo: {
           employeeId: req.body.employeeId,
           hireDate: req.body.hireDate || Date.now(),
@@ -108,7 +110,7 @@ module.exports = {
       });
 
       console.log('Teacher created successfully');
-      res.redirect('/admin');
+      res.redirect('/admin/users');
 
     } catch (err) {
       console.error('Error creating teacher:', err);
@@ -209,39 +211,66 @@ module.exports = {
       res.status(500).send("Error assigning parent.");
     }
   },
-createClass: async (req, res) => {
-  try {
-    const scheduleData = req.body.schedule ? JSON.parse(req.body.schedule) : {};
+  createClass: async (req, res) => {
+    try {
+      // Normalize arrays
+      const teacherIDs = Array.isArray(req.body.teachers)
+        ? req.body.teachers
+        : req.body.teachers ? [req.body.teachers] : [];
 
-    const formattedSchedule = Object.keys(scheduleData).map(day => ({
-      day: day,
-      startTime: scheduleData[day].startTime,
-      endTime: scheduleData[day].endTime
-    }));
+      const studentIDs = Array.isArray(req.body.students)
+        ? req.body.students
+        : req.body.students ? [req.body.students] : [];
+      console.log(teacherIDs, req.body.teachers)
+      // Fetch users to attach names
+      const teachers = await User.find({ _id: { $in: teacherIDs }, role: 'teacher' });
+      const students = await User.find({ _id: { $in: studentIDs }, role: 'student' });
+      console.log(teachers)
 
-    await Class.create({
-      className: req.body.className,
-      classCode: `CL-${Math.floor(Math.random() * 900000)}`,
-      gradeLevel: req.body.gradeLevel,
-      programType: req.body.programType,
-      teachers: [req.body.teachers],
-      students: [],
-      schedule: formattedSchedule,
-      academicYear: req.body.academicYear || "2025-2026",
-      active: true,
-      location: req.body.location,
-      roomNumber: req.body.roomNumber,
-      capacity: req.body.capacity,
-    });
+      // Format schedule
+      const scheduleData = req.body.schedule ? JSON.parse(req.body.schedule) : {};
+      const subjectData = req.body.subjects ? JSON.parse(req.body.subjects) : {};
+      const formattedSchedule = Object.entries(scheduleData).map(([day, t]) => ({
+        day,
+        startTime: t.startTime,
+        endTime: t.endTime
+      }));
 
-    console.log("Class created successfully");
-    res.redirect("/admin/classes");
+      // Create class document
+      const newClass = await Class.create({
+        className: req.body.className,
+        classCode: `CL-${Math.floor(Math.random() * 1000000)}`,
 
-  } catch (err) {
-    console.error("Error creating class:", err);
-    res.status(500).send("Error: Could not create class");
-  }
-},
+        teachers: teachers.map(teacher => ({
+          _id: teacher._id,
+          name: `${teacher.firstName} ${teacher.lastName}`
+        })),
+
+        students: students.map(student => ({
+          _id: student._id,
+          name: `${student.firstName} ${student.lastName}`
+        })),
+
+        schedule: formattedSchedule,
+        academicYear: {
+          semester: req.body.semester,
+          quarter: req.body.quarter
+        },
+        subjects: subjectData,
+        location: req.body.location,
+        roomNumber: req.body.roomNumber,
+        capacity: req.body.capacity,
+        active: true
+      });
+
+      console.log("Class created:", newClass);
+      res.redirect("/admin/classes");
+
+    } catch (err) {
+      console.error("Error creating class:", err);
+      res.status(500).send("Error: Could not create class");
+    }
+  },
   assignStudentToClass: async (req, res) => {
     try {
       const { classID, studentID } = req.body;
@@ -301,17 +330,17 @@ createClass: async (req, res) => {
       console.log(err);
     }
   },
-    createMission: async (req, res) => {
+  createMission: async (req, res) => {
     try {
       await Mission.create({
         // Mission name
         title: req.body.missionTitle,
         description: req.body.missionDescription,
-        
+
         //classification
         type: req.body.type,
         category: req.body.category,
-        
+
         // difficulty
         rank: req.body.rank,
         pointsXP: req.body.missionPoints,
@@ -325,12 +354,16 @@ createClass: async (req, res) => {
 
         //creator
         createdBy: {
-        name: `MC ${req.user.firstName}`,
-        employeeId: req.user.teacherInfo.employeeId
+          name: `${req.user.firstName} ${req.user.lastName}`,
+          employeeId: req.user.teacherInfo.employeeId,
+          _id: req.user._id
         },
 
         //activity
-        acitve: false
+        acitve: {
+          status: true,
+          studentInfo: []
+        }
       });
 
       console.log('Mission created successfully');
@@ -341,46 +374,231 @@ createClass: async (req, res) => {
       res.status(500).send('Error: Could not create mission.');
     }
   },
-      createGrades: async (req, res) => {
+  createAttendance: async (req, res) => {
     try {
-      await Grade.create({
-        // Mission name
-        title: req.body.missionTitle,
-        description: req.body.missionDescription,
-        
-        //classification
-        type: req.body.type,
-        category: req.body.category,
-        
-        // difficulty
-        rank: req.body.rank,
-        pointsXP: req.body.missionPoints,
+      const { classId, studentId, date, status } = req.body;
 
-        // Time Limit
-        timeLimit: req.body.timeLimit,
-        dueDate: req.body.dueDate,
+      // Fetch class and student documents
+      const classDoc = await Class.findById(classId);
+      const studentDoc = await User.findById(studentId);
 
-        //Assigned to ?
-        assignedTo: {},
+      const targetDate = new Date(date);
+      targetDate.setHours(0, 0, 0, 0);
 
-        //creator
-        createdBy: {
-        name: `MC ${req.user.firstName}`,
-        employeeId: req.user.teacherInfo.employeeId
-        },
+      const studentName = `${studentDoc.firstName} ${studentDoc.lastName}`;
+      const teacherName = `${req.user.firstName || ""} ${req.user.lastName || ""}`.trim() || req.user.userName;
 
-        //activity
-        acitve: false
+      // Check if this exact attendance record already exists (same student, class, and date)
+      let attendanceDoc = await Attendance.findOne({
+        classId: classDoc._id,
+        date: targetDate,
+        'records.studentId': studentDoc._id
       });
 
-      console.log('Mission created successfully');
-      res.redirect('/teacher/manage-missions');
+      if (!attendanceDoc) {
+        // Create new attendance record for this student
+        await Attendance.create({
+          classId: classDoc._id,
+          className: classDoc.className,
+          date: targetDate,
+          records: [
+            {
+              studentId: studentDoc._id,
+              studentName,
+              status: status
+            }
+          ],
+          recordedBy: {
+            _id: req.user._id,
+            name: teacherName
+          }
+        });
+
+        console.log(`Attendance created for ${studentName} in ${classDoc.className}`);
+      } else {
+        // Update the existing student's attendance record
+        const studentRecord = attendanceDoc.records.find(
+          r => r.studentId.toString() === studentId.toString()
+        );
+
+        studentRecord.status = status;
+        attendanceDoc.recordedBy = {
+          _id: req.user._id,
+          name: teacherName
+        };
+
+        await attendanceDoc.save();
+
+        console.log(`Attendance updated for ${studentName} in ${classDoc.className}`);
+      }
+
+      res.redirect("/teacher/manage-attendance");
 
     } catch (err) {
-      console.error('Error creating mission:', err)
-      res.status(500).send('Error: Could not create mission.');
+      console.error("Error creating/updating attendance:", err);
+      res.redirect("back");
     }
   },
+  createGrade: async (req, res) => {
+    try {
+      const {
+        student,
+        classId,
+        subject,
+        quarter,
+        Assignment,
+        feedback,
+        assignedDate,
+        dueDate
+      } = req.body;
+
+      // Validate required fields
+      if (!student || !classId || !subject || !quarter || !Assignment?.name || !Assignment?.grade) {
+        req.flash("error", "Missing required fields.");
+        return res.redirect("back");
+      }
+
+      // Validate quarter
+      if (!['Q1', 'Q2', 'Q3', 'Q4'].includes(quarter)) {
+        req.flash("error", "Invalid quarter selected.");
+        return res.redirect("back");
+      }
+
+      // Fetch student + class docs to store names
+      const studentDoc = await User.findById(student);
+      const classDoc = await Class.findById(classId);
+
+      if (!studentDoc || !classDoc) {
+        req.flash("error", "Student or class not found.");
+        return res.redirect("back");
+      }
+
+      // Create grade following schema
+      const newGrade = new Grade({
+        students: [
+          {
+            _id: studentDoc._id,
+            name: `${studentDoc.firstName} ${studentDoc.lastName}`
+          }
+        ],
+        classInfo: [
+          {
+            _id: classDoc._id,
+            name: classDoc.className
+          }
+        ],
+        subject,
+        quarter,
+        Assignment: {
+          name: Assignment.name.trim(),
+          description: Assignment.description?.trim() || "No description provided",
+          grade: Number(Assignment.grade),
+          maxScore: Assignment.maxScore ? Number(Assignment.maxScore) : 100,
+          type: Assignment.type
+        },
+        feedback: {
+          content: feedback?.trim() || "",
+          teacher: {
+            _id: req.user._id,
+            name: `${req.user.firstName || ""} ${req.user.lastName || ""}`.trim() || req.user.userName
+          }
+        },
+        assignedDate: assignedDate ? new Date(assignedDate) : undefined,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        active: true
+      });
+
+      await newGrade.save();
+
+      req.flash("success", "Grade saved successfully.");
+      res.redirect("/teacher/manage-grades");
+
+    } catch (err) {
+      console.error("Error saving grade:", err);
+      req.flash("error", "Could not save grade.");
+      res.redirect("back");
+    }
+  },
+  updateStudentMission: async (req, res) => {
+    try {
+      const { missionId } = req.body;
+
+      await Mission.findByIdAndUpdate(
+        missionId,
+        {
+          $Set: {
+            "active.studentInfo": {
+              _id: req.user._id,
+              name: `${req.user.firstName} ${req.user.lastName}`,
+              status: "started"
+            }
+          }
+        }
+      );
+      return res.redirect('/student/missions');
+    } catch (err) {
+      console.log(err);
+      res.redirect('/student/missions');
+    }
+  },
+  completeStudentMission: async (req, res) => {
+    try {
+      const { missionId } = req.body;
+
+      console.log("missionId from form:", missionId);
+
+      // Make sure missionId exists
+      if (!missionId || missionId.trim() === "") {
+        console.log("missionId is missing or empty");
+        return res.redirect("/student/missions");
+      }
+
+      // Grab mission info
+      const mission = await Mission.findById(missionId).lean();
+      console.log("mission from DB:", mission);
+
+      if (!mission) {
+        console.log("mission not found in database");
+        return res.redirect("/student/missions");
+      }
+
+      const points = mission.pointsXP || 0;
+
+      // Update mission status
+      const updatedMission = await Mission.findOneAndUpdate(
+        {
+          _id: missionId,
+          "active.studentInfo._id": req.user._id
+        },
+        {
+          $set: { "active.studentInfo.$.status": "complete" }
+        },
+        { new: true }
+      );
+
+      if (!updatedMission) {
+        console.log("failed to update mission status");
+        return res.redirect("/student/missions");
+      }
+
+      // Add XP
+      await User.findByIdAndUpdate(req.user._id, {
+        $inc: { points: points }
+      });
+
+      console.log(`Mission completed: ${mission.title}`);
+      console.log(`XP awarded: ${points}`);
+
+      return res.redirect("/student/missions");
+
+    } catch (err) {
+      console.log("Error in completeStudentMission:", err);
+      return res.redirect("/student/missions");
+    }
+  },
+
+
+
   deletePost: async (req, res) => {
     try {
       // Find post by id
@@ -422,5 +640,4 @@ createClass: async (req, res) => {
       return res.status(500).send(err.message || "Error deleting user");
     }
   }
-
 };
