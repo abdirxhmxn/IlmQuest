@@ -32,9 +32,9 @@ API_SECRET=your-cloudinary-api-secret
 - `routes/` — Express routes.
 
 ## Snapshots
-- [Landing](public/imgs/landining1.png)
-- [Login](public/imgs/login.png)
-- [User Profile](public/imgs/profile.png)
+ ![Landing](public/imgs/landining1.png)
+ ![Login](public/imgs/login.png)
+ ![User Profile](public/imgs/profile.png)
 
 ## Scripts
 - `npm start` — run server with nodemon.
