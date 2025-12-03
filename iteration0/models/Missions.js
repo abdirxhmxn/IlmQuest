@@ -32,12 +32,13 @@ const MissionSchema = new mongoose.Schema({
   // Assignment to who?
   assignedTo: {
     classInfo: [
-      { type: mongoose.Schema.Types.ObjectId, 
+      {
+        type: mongoose.Schema.Types.ObjectId,
         ref: "Class",
         name: String
       }
     ],
-    studentInfo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" , name: String}],
+    studentInfo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", name: String }],
   },
 
   // Creator
@@ -51,12 +52,14 @@ const MissionSchema = new mongoose.Schema({
   active: {
     status: { type: Boolean, default: true },
     studentInfo: [{
-      name: {type: String},
+      name: { type: String },
       _id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      status: { type: String, default: false }
+      attempt: Number,
+      status: { type: String, default: false },
+      startedAt: Date,
+      completedAt: Date
     }]
   }
-
 
 }, { timestamps: true });
 

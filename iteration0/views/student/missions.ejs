@@ -343,7 +343,7 @@
   </table>
 
   <!-- Leaderboard -->
-  <h2 class="section-title"><i class="fas fa-trophy"></i> Leaderboard</h2>
+  <h2 class="section-title"><i class="fas fa-trophy"></i> Top Students</h2>
   <table class="missions-table">
     <thead>
       <tr>
@@ -356,7 +356,7 @@
     <tbody>
       <% if (students && students.length > 0) { %>
         <% students.forEach((student, i) => { %>
-          <tr <%= student._id.toString() === user._id.toString() ? 'style="background:#d1fae5 !important; font-weight:600;"' : '' %>>
+          <tr <%= student._id.toString() === user._id.toString() ? 'style="background: #FCF8F5 !important; font-weight:600;"' : '' %>>
             <td><%= i + 1 %></td>
             <td><%= student.firstName %> <%= student.lastName %> <%= student._id.toString() === user._id.toString() ? '(You)' : '' %></td>
             <td><%= student.rank %></td>

@@ -521,11 +521,17 @@ module.exports = {
   updateStudentMission: async (req, res) => {
     try {
       const { missionId } = req.body;
+      console.log("Received missionId:", missionId);
+
+      if (!missionId) {
+        console.log("No missionId provided");
+        return res.redirect('/student/missions');
+      }
 
       await Mission.findByIdAndUpdate(
         missionId,
         {
-          $Set: {
+          $addToSet: {
             "active.studentInfo": {
               _id: req.user._id,
               name: `${req.user.firstName} ${req.user.lastName}`,
@@ -534,12 +540,16 @@ module.exports = {
           }
         }
       );
+
+      console.log("Student mission status updated to 'started'");
       return res.redirect('/student/missions');
+
     } catch (err) {
       console.log(err);
       res.redirect('/student/missions');
     }
   },
+
   completeStudentMission: async (req, res) => {
     try {
       const { missionId } = req.body;
@@ -567,7 +577,8 @@ module.exports = {
       const updatedMission = await Mission.findOneAndUpdate(
         {
           _id: missionId,
-          "active.studentInfo._id": req.user._id
+          "active.studentInfo._id": req.user._id,
+          "active.studentInfo.status": "started"
         },
         {
           $set: { "active.studentInfo.$.status": "complete" }
