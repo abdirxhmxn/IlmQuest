@@ -80,8 +80,8 @@
                 <% cls.subjects.forEach(subject=> { %>
                 <div class="subject-block">
                     <header>
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="book-open"></i> <%= subject.name %>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; font-weight: 600;">
+                            <i data-lucide="book-open"></i><span> <%= subject.name %></span>
                         </div>
                         <button onclick="openGradeModal('<%= cls._id %>', '<%= subject.name %>')" class="btn-primary">
                             <i data-lucide="plus"></i> Add Grade
@@ -92,7 +92,7 @@
                         <% cls.students.forEach(student => { %>
                         <details class="student-accordion">
                             <summary class="student-summary">
-                                <span class="flex items-center gap-3">
+                                <span style="display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600;">
                                     <i data-lucide="user"></i> <%= student.name %>
                                 </span>
                                 <i data-lucide="chevron-down" class="chevron"></i>
@@ -263,12 +263,6 @@
         </div>
     </div>
     <% }) %>
-
-    <div class="text-center mt-12">
-        <a href="/logout" class="inline-flex items-center gap-2 bg-white hover:bg-red-50 text-red-600 border border-red-300 px-6 py-3 rounded-xl font-medium transition">
-            <i data-lucide="log-out"></i> Logout
-        </a>
-    </div>
 </main>
 
 <!-- Modal -->
