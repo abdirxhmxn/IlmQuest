@@ -2,9 +2,9 @@
   "name": "IlmQuest",
   "version": "1.0.0",
   "description": "100Devs Social Network",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "nodemon backend/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

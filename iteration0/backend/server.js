@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
@@ -12,8 +13,8 @@ const mainRoutes = require("./routes/main");
 const postRoutes = require("./routes/posts");
 const cookieParser = require("cookie-parser");
 
-//Use .env file in config folder
-require("dotenv").config({ path: "./config/.env" });
+//Use .env file in backend/config folder
+require("dotenv").config({ path: path.join(__dirname, "config/.env") });
 
 // Passport config
 require("./config/passport")(passport);
@@ -23,9 +24,11 @@ connectDB();
 
 //Using EJS for views
 app.set("view engine", "ejs");
+// Point Express at the new frontend folder
+app.set("views", path.join(__dirname, "../frontend/views"));
 
 //Static Folder
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "../frontend/public")));
 
 //Body Parsing
 app.use(express.urlencoded({ extended: true }));

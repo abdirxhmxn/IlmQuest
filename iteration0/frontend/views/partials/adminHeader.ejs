@@ -5,8 +5,9 @@
             <img src="/imgs/finalLogo.jpg" alt="IlmQuest" class="logo-img">
         </button>
         <div class="greeting">
-            <h3>Assalāmu ʿalaykum,</h3>
-            <h2><%= user?.userName || "Admin" %></h2>
+            <!-- <h3>Assalāmu ʿalaykum,</h3> -->
+             <h3>Welcome back,</h3>
+            <h2><%= user?.firstName || "Admin" %> <%= user?.lastName%></h2>
         </div>
     </div>
     <nav>

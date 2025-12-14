@@ -61,6 +61,7 @@ const MissionSchema = new mongoose.Schema({
     }]
   }
 
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("Mission", MissionSchema);

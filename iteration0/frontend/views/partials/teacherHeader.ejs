@@ -5,8 +5,11 @@
             <img src="/imgs/finalLogo.jpg" alt="IlmQuest" class="logo-img">
         </button>
         <div class="greeting">
-            <h3>Assalāmu ʿalaykum,</h3>
-            <h2><%= `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Teacher" %></h2>
+            <!-- <h3>Assalāmu ʿalaykum,</h3> -->
+            <h3>Welcome back,</h3>
+            <h2>
+                <%= `${user.firstName || "" } ${user.lastName || "" }`.trim() || "Teacher" %>
+            </h2>
         </div>
     </div>
 
