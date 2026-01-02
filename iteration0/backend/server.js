@@ -13,8 +13,8 @@ const mainRoutes = require("./routes/main");
 const postRoutes = require("./routes/posts");
 const cookieParser = require("cookie-parser");
 
-//Use .env file in backend/config folder
-require("dotenv").config({ path: path.join(__dirname, "config/.env") });
+// Use .env file in project config folder
+require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
 
 // Passport config
 require("./config/passport")(passport);
