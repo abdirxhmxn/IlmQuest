@@ -1,0 +1,425 @@
+<%- include('../partials/teacherHeader') %>
+
+<link rel="stylesheet" href="/css/teacherGrades.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<main>
+    <!-- Header Card -->
+    <div class="page-card">
+        <div class="page-header">
+            <div>
+                <h1><i data-lucide="graduation-cap"></i> Teacher Dashboard</h1>
+                <p>Welcome back, <span class="font-semibold"><%= user.firstName %></span>!</p>
+            </div>
+            <div class="text-right">
+                <div class="badge"><%= user.role %></div>
+                <p class="font-semibold">
+                    <%= classes.length===1 ? classes[0].className : classes.length + " Classes" %>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Tabs -->
+    <div class="class-filters">
+        <% classes.forEach((cls, i)=> { %>
+            <button class="class-btn <%= i === 0 ? 'active' : '' %>" data-class-index="<%= i %>">
+                <%= cls.className %> (<%= cls.students.length %>)
+            </button>
+        <% }) %>
+    </div>
+
+    <!-- Classes Loop -->
+    <% classes.forEach((cls, classIndex)=> { %>
+    <div class="class-block <%= classIndex === 0 ? 'active' : '' %>" data-class-index="<%= classIndex %>">
+        <div class="page-card">
+
+            <header class="mb-6">
+                <h2 class="text-2xl font-bold flex items-center gap-3 text-emerald-900">
+                    <i data-lucide="school"></i> <%= cls.className %>
+                </h2>
+                <p class="text-sm text-emerald-700">Code: <%= cls.classCode %></p>
+            </header>
+
+            <!-- Class Info Grid -->
+            <div class="info-grid">
+                <div class="info-tile"><div class="label">Students</div><div class="value"><%= cls.students.length %></div></div>
+                <div class="info-tile"><div class="label">Year</div><div class="value"><%= cls.academicYear.year %></div></div>
+                <div class="info-tile"><div class="label">Semester</div><div class="value"><%= cls.academicYear.semester %></div></div>
+                <div class="info-tile"><div class="label">Quarter</div><div class="value"><%= cls.academicYear.quarter %></div></div>
+                <div class="info-tile"><div class="label">Room</div><div class="value"><%= cls.roomNumber %></div></div>
+                <div class="info-tile"><div class="label">Location</div><div class="value"><%= cls.location %></div></div>
+                <div class="info-tile"><div class="label">Capacity</div><div class="value"><%= cls.capacity %></div></div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="schedule-section">
+                <h3 class="schedule-heading">
+                    <i data-lucide="clock"></i> Class Schedule
+                </h3>
+
+                <% if (cls.schedule && cls.schedule.length > 0) { %>
+                <div class="schedule-list">
+                    <% cls.schedule.forEach(t => { %>
+                        <div class="schedule-item">
+                            <span class="day"><%= t.day %>:</span>
+                            <span class="time"><%= t.startTime %> – <%= t.endTime %></span>
+                        </div>
+                    <% }) %>
+                </div>
+                <% } else { %>
+                    <p class="schedule-empty">No schedule assigned yet</p>
+                <% } %>
+            </div>
+
+            <% const gradeWeights = { Homework:20, Quiz:15, Test:25, Exam:25, Behavior:7.5, Participation:7.5 }; %>
+            <% const quarterKey = { 'Quarter 1':'Q1','Quarter 2':'Q2','Quarter 3':'Q3','Quarter 4':'Q4' }; %>
+
+            <!-- Subjects -->
+            <div class="subjects-wrapper">
+                <% cls.subjects.forEach(subject=> { %>
+                <div class="subject-block">
+                    <header>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; font-weight: 600;">
+                            <i data-lucide="book-open"></i><span> <%= subject.name %></span>
+                        </div>
+                        <button onclick="openGradeModal('<%= cls._id %>', '<%= subject.name %>')" class="btn-primary">
+                            <i data-lucide="plus"></i> Add Grade
+                        </button>
+                    </header>
+
+                    <div class="students">
+                        <% cls.students.forEach(student => { %>
+                        <details class="student-accordion">
+                            <summary class="student-summary">
+                                <span style="display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600;">
+                                    <i data-lucide="user"></i> <%= student.name %>
+                                </span>
+                                <i data-lucide="chevron-down" class="chevron"></i>
+                            </summary>
+
+                            <div class="student-body">
+                                <% const subjectAvg = (typeof getSubjectAverage !== "undefined") 
+                                    ? getSubjectAverage(grades, student._id, subject.name)
+                                    : "100.00"; %>
+
+                                <div class="subject-average">
+                                    <div class="average-badge">
+                                        <i data-lucide="activity"></i>
+                                        Subject Average: <span class="value"><%= subjectAvg %>%</span>
+                                    </div>
+                                </div>
+
+                                <!-- Semester 1 -->
+                                <div>
+                                    <div class="semester-header">
+                                        <i data-lucide="calendar-days"></i> Semester 1
+                                    </div>
+
+                                    <% ['Quarter 1','Quarter 2'].forEach(q => { %>
+                                    <details class="quarter-accordion">
+                                        <summary class="quarter-summary">
+                                            <span class="label"><i data-lucide="calendar-check"></i> <%= q %></span>
+                                            <i data-lucide="chevron-down" class="chevron"></i>
+                                        </summary>
+
+                                        <div class="quarter-content">
+                                            <% ['Homework','Quiz','Test','Exam','Behavior','Participation'].forEach(cat => { %>
+
+                                            <% const matching = grades.filter(g =>
+                                                g.quarter === quarterKey[q] &&
+                                                g.subject === subject.name &&
+                                                g.Assignment.type === cat &&
+                                                g.students.some(s => s._id.toString() === student._id.toString())
+                                            ); %>
+
+                                            <details class="category-accordion">
+                                                <summary class="category-summary">
+                                                    <span class="label">
+                                                        <i data-lucide="folder-open"></i>
+                                                        <%= cat %>
+                                                        <span class="weight">(Weight: <%= gradeWeights[cat] %>%)</span>
+                                                    </span>
+                                                    <i data-lucide="chevron-down" class="chevron"></i>
+                                                </summary>
+
+                                                <div class="category-content">
+                                                    <% if (matching.length === 0) { %>
+                                                        <div class="no-grades">No grades yet.</div>
+                                                    <% } else { %>
+                                                        <% matching.forEach(g => { %>
+                                                            <div class="grade-item">
+                                                                <div class="info">
+                                                                    <div class="name"><%= g.Assignment.name %></div>
+                                                                    <div class="feedback">
+                                                                        Feedback:
+                                                                        <%= typeof g.feedback === 'object'
+                                                                            ? (g.feedback.content || '—')
+                                                                            : (g.feedback || '—')
+                                                                        %>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="score">
+                                                                    <div class="points">
+                                                                        <%= g.Assignment.grade %>
+                                                                        <span class="max">/<%= g.Assignment.maxScore || 100 %></span>
+                                                                    </div>
+                                                                    <div class="meta">
+                                                                        <%= g.Assignment.type %> • <%= g.quarter %>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        <% }) %>
+                                                    <% } %>
+                                                </div>
+                                            </details>
+
+                                            <% }) %>
+                                        </div>
+                                    </details>
+                                    <% }) %>
+
+                                </div>
+
+                                <!-- Semester 2 -->
+                                <div>
+                                    <div class="semester-header">
+                                        <i data-lucide="calendar-days"></i> Semester 2
+                                    </div>
+
+                                    <% ['Quarter 3','Quarter 4'].forEach(q => { %>
+                                    <details class="quarter-accordion">
+                                        <summary class="quarter-summary">
+                                            <span class="label"><i data-lucide="calendar-check"></i> <%= q %></span>
+                                            <i data-lucide="chevron-down" class="chevron"></i>
+                                        </summary>
+
+                                        <div class="quarter-content">
+                                            <% ['Homework','Quiz','Test','Exam','Behavior','Participation'].forEach(cat => { %>
+
+                                            <% const matching = grades.filter(g =>
+                                                g.quarter === quarterKey[q] &&
+                                                g.subject === subject.name &&
+                                                g.Assignment.type === cat &&
+                                                g.students.some(s => s._id.toString() === student._id.toString())
+                                            ); %>
+
+                                            <details class="category-accordion">
+                                                <summary class="category-summary">
+                                                    <span class="label">
+                                                        <i data-lucide="folder-open"></i>
+                                                        <%= cat %>
+                                                        <span class="weight">(Weight: <%= gradeWeights[cat] %>%)</span>
+                                                    </span>
+                                                    <i data-lucide="chevron-down" class="chevron"></i>
+                                                </summary>
+
+                                                <div class="category-content">
+                                                    <% if (matching.length === 0) { %>
+                                                        <div class="no-grades">No grades yet.</div>
+                                                    <% } else { %>
+                                                        <% matching.forEach(g => { %>
+                                                            <div class="grade-item">
+                                                                <div class="info">
+                                                                    <div class="name"><%= g.Assignment.name %></div>
+                                                                    <div class="feedback">
+                                                                        Feedback:
+                                                                        <%= typeof g.feedback === 'object'
+                                                                            ? (g.feedback.content || '—')
+                                                                            : (g.feedback || '—')
+                                                                        %>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="score">
+                                                                    <div class="points">
+                                                                        <%= g.Assignment.grade %>
+                                                                        <span class="max">/<%= g.Assignment.maxScore || 100 %></span>
+                                                                    </div>
+                                                                    <div class="meta">
+                                                                        <%= g.Assignment.type %> • <%= g.quarter %>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        <% }) %>
+                                                    <% } %>
+                                                </div>
+                                            </details>
+
+                                            <% }) %>
+                                        </div>
+                                    </details>
+                                    <% }) %>
+
+                                </div>
+
+                            </div>
+                        </details>
+                        <% }) %>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+
+        </div>
+    </div>
+    <% }) %>
+</main>
+
+<!-- Modal -->
+<dialog id="gradeModal" class="modal">
+    <div class="modal-box">
+
+        <!-- Header -->
+        <div class="modal-header">
+            <h3>
+                <i data-lucide="edit-3" class="w-8 h-8"></i>
+                <span id="modalTitle">Add Grade</span>
+            </h3>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+            <form action="/teacher/manage-grades/add" method="POST" class="space-y-6">
+
+                <input type="hidden" name="classId" id="classId">
+                <input type="hidden" name="subject" id="subject">
+
+                <!-- Student -->
+                <div>
+                    <label><i data-lucide="user" class="w-5 h-5"></i> Student</label>
+                    <select name="student" required class="select-input">
+                        <option value="" disabled selected>Choose a student</option>
+
+                        <% classes.forEach(cls => { %>
+                            <% cls.students.forEach(student => { %>
+                                <option value="<%= student._id %>">
+                                    <%= student.name %> — <%= cls.className %>
+                                </option>
+                            <% }) %>
+                        <% }) %>
+
+                    </select>
+                </div>
+
+                <!-- Assignment Name -->
+                <div>
+                    <label><i data-lucide="file-text" class="w-5 h-5"></i> Assignment Name</label>
+                    <input type="text" name="Assignment[name]" required class="text-input" placeholder="e.g., Surah Al-Fatihah Quiz">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label><i data-lucide="align-left" class="w-5 h-5"></i> Description (optional)</label>
+                    <textarea name="Assignment[description]" rows="3" class="text-input" placeholder="Topics covered, instructions..."></textarea>
+                </div>
+
+                <!-- Dates -->
+                <div class="grid-2">
+                    <div>
+                        <label><i data-lucide="calendar-plus" class="w-5 h-5"></i> Assigned Date</label>
+                        <input type="date" name="assignedDate" required class="text-input">
+                    </div>
+                    <div>
+                        <label><i data-lucide="calendar-check" class="w-5 h-5"></i> Due Date</label>
+                        <input type="date" name="dueDate" class="text-input">
+                    </div>
+                </div>
+
+                <!-- Scores -->
+                <div class="grid-2">
+                    <div>
+                        <label><i data-lucide="trending-up" class="w-5 h-5"></i> Score Earned</label>
+                        <input type="number" name="Assignment[grade]" required min="0" step="0.1" 
+                            class="text-input text-center" placeholder="95" >
+                    </div>
+                    <div>
+                        <label><i data-lucide="target" class="w-5 h-5"></i> Out Of</label>
+                        <input type="number" name="Assignment[maxScore]" value="100" class="text-input text-center">
+                    </div>
+                </div>
+
+                <!-- Quarter & Category -->
+                <div class="grid-2">
+                    <div>
+                        <label><i data-lucide="calendar" class="w-5 h-5"></i> Quarter</label>
+                        <select name="quarter" required class="select-input">
+                            <option value="" disabled selected>Select quarter</option>
+                            <option>Q1</option>
+                            <option>Q2</option>
+                            <option>Q3</option>
+                            <option>Q4</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label><i data-lucide="tag" class="w-5 h-5"></i> Category</label>
+                        <select name="Assignment[type]" required class="select-input">
+                            <option value="" disabled selected>Select type</option>
+                            <option>Homework</option>
+                            <option>Quiz</option>
+                            <option>Test</option>
+                            <option>Exam</option>
+                            <option>Behavior</option>
+                            <option>Participation</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Feedback -->
+                <div>
+                    <label><i data-lucide="message-square" class="w-5 h-5"></i> Feedback (optional)</label>
+                    <textarea name="feedback" rows="3" class="text-input" placeholder="Great job! Keep it up."></textarea>
+                </div>
+
+                <!-- Buttons -->
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" formmethod="dialog">Cancel</button>
+                    <button type="submit" class="btn-save">
+                        <i data-lucide="save" class="w-5 h-5"></i> Save Grade
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</dialog>
+
+<script>
+    const cancelBtn = document.querySelector('#gradeModal .btn-cancel');
+    const classBtn = document.querySelectorAll('.class-btn');
+
+    classBtn.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const index = btn.getAttribute('data-class-index');
+
+            // Activate selected button
+            document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Show corresponding class block
+            document.querySelectorAll('.class-block').forEach(block => {
+                if (block.getAttribute('data-class-index') === index) {
+                    block.classList.add('active');
+                } else {
+                    block.classList.remove('active');
+                }
+            });
+        });
+    });
+    cancelBtn.addEventListener('click', () => {
+        const modal = document.getElementById('gradeModal');
+        modal.close();
+    });
+
+    function openGradeModal(classId, subjectName) {
+        const modal = document.getElementById('gradeModal');
+        modal.showModal();
+        document.getElementById('modalTitle').textContent = `Add Grade • ${subjectName}`;
+        document.getElementById('classId').value = classId;
+        document.getElementById('subject').value = subjectName;
+    }
+
+    lucide.createIcons();
+</script>
+
+<%- include('../partials/teacherFooter') %>

@@ -1,0 +1,121 @@
+<%- include('partials/header') -%>
+  <link rel="stylesheet" href="/css/authLogin.css" />
+  <style>
+    .auth-panel {
+      max-width: 850px;
+    }
+
+    .form-group-column {
+      display: flex;
+      gap: 1rem;
+      flex: 1;
+      width: 100%;
+      justify-content: space-between;
+    }
+  </style>
+  <div class="auth-shell">
+    <div class="auth-panel">
+      <div class="logo-section">
+        <div class="logo">
+          <img src="/imgs/finalLogo.jpg" alt="IlmQuest Logo" class="logo-img" style=" width: 82px;
+    height: 82px;
+    border-radius: 16px;
+    object-fit: cover;
+    box-shadow: 0 8px 20px rgba(14, 159, 110, 0.15);
+    margin-bottom: 1rem;">
+        </div>
+      </div>
+      <h1 class="logo-title" style="text-align: center;margin-bottom: 1em;">Create your account</h1>
+
+      <% if (messages && (messages.errors || messages.info)) { %>
+        <div class="flash-messages">
+          <% if (messages.errors) { %>
+            <% messages.errors.forEach(msg=> { %>
+              <div class="flash-message flash-error">
+                <%= msg.msg %>
+              </div>
+              <% }) %>
+                <% } %>
+
+                  <% if (messages.info) { %>
+                    <% messages.info.forEach(msg=> { %>
+                      <div class="flash-message flash-info">
+                        <%= msg.msg %>
+                      </div>
+                      <% }) %>
+                        <% } %>
+        </div>
+        <% } %>
+
+          <div class="form-card">
+            <form action="/signup" method="POST">
+
+              <!-- School Name -->
+              <div class="form-group">
+                <label for="schoolName" class="form-label">School / Organization Name</label>
+                <input type="text" id="schoolName" name="schoolName" class="form-input" placeholder="Al Noor Academy"
+                  required>
+              </div>
+
+              <!-- Admin Full Name -->
+              <div class="form-group">
+                <label for="adminName" class="form-label">Administrator Full Name</label>
+                <input type="text" id="adminName" name="adminName" class="form-input" placeholder="Your Full Name" required>
+              </div>
+
+              <div class="form-group-column">
+                <!-- Work Email -->
+                <div class="form-group" style="width: 47%;">
+                  <label for="email" class="form-label">Work Email Address</label>
+                  <input type="email" id="email" name="email" class="form-input" placeholder="admin@school.edu"
+                    required>
+                </div>
+
+                <!-- Phone  -->
+                <div class="form-group" style="width: 47%;">
+                  <label for="phone" class="form-label">Phone Number</label>
+                  <input type="text" id="phone" name="phone" class="form-input" placeholder="(555) 123-4567" required>
+                </div>
+              </div>
+
+              <div class="form-group-column" >
+                <!-- Username -->
+                <div class="form-group" style="width: 47%;">
+                  <label for="adminUser" class="form-label">Username</label>
+                  <input type="text" id="adminUser" name="adminUser" class="form-input" required placeholder="Create a username">
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="form-group" style="width: 47%;">
+                  <label for="confirmUsername" class="form-label">Confirm Username</label>
+                  <input type="text" id="confirmUsername" name="confirmUsername" class="form-input" required placeholder="Re-enter your username">
+                </div>
+              </div>
+              <div class="form-group-column" >
+                <!-- Password -->
+                <div class="form-group" style="width: 47%;">
+                  <label for="password" class="form-label">Password</label>
+                  <input type="password" id="password" name="password" class="form-input" required placeholder="Create a password">
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="form-group" style="width: 47%;">
+                  <label for="confirmPassword" class="form-label">Confirm Password</label>
+                  <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" required placeholder="Re-enter your password">
+                </div>
+              </div>
+
+              <!-- Submit -->
+              <button type="submit" class="submit-btn">Create School Account</button>
+
+            </form>
+
+            <div class="signup-link">
+              Already registered? <a href="/login">Log in</a>
+            </div>
+          </div>
+
+    </div>
+  </div>
+
+  <%- include('partials/footer') -%>

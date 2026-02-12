@@ -1,0 +1,25 @@
+<link rel="stylesheet" href="/css/layout.css">
+<header class="header-bar">
+    <div class="header-left">
+        <button class="logo-btn">
+            <img src="/imgs/finalLogo.jpg" alt="IlmQuest" class="logo-img">
+        </button>
+        <div class="greeting">
+            <!-- <h3>Assalāmu ʿalaykum,</h3> -->
+            <h3>Welcome back,</h3>
+            <h2>
+                <%= `${user.firstName || "" } ${user.lastName || "" }`.trim() || "Teacher" %>
+            </h2>
+        </div>
+    </div>
+
+    <nav>
+        <ul class="nav-links" id="menu">
+            <li><a href="/teacher/home">Home</a></li>
+            <li><a href="/teacher/manage-missions">Missions</a></li>
+            <li><a href="/teacher/manage-grades">Grades</a></li>
+            <li><a href="/teacher/manage-attendance">Attendance</a></li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+</header>

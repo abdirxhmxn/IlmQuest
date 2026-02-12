@@ -1,0 +1,22 @@
+<link rel="stylesheet" href="/css/layout.css">
+<header class="header-bar">
+    <div class="header-left">
+        <button class="logo-btn">
+            <img src="/imgs/finalLogo.jpg" alt="IlmQuest" class="logo-img">
+        </button>
+        <div class="greeting">
+            <!-- <h3>Assalāmu ʿalaykum,</h3> -->
+             <h3>Welcome back,</h3>
+            <h2><%= user?.firstName || "Admin" %> <%= user?.lastName%></h2>
+        </div>
+    </div>
+    <nav>
+        <ul class="nav-links">
+            <li><a href="/admin/home">Home</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/admin/classes">Classes</a></li>
+            <li><a href="/admin/communication">Communication</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+</header>

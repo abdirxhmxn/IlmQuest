@@ -1,0 +1,583 @@
+<%- include('../partials/adminHeader')-%>
+
+  <style>
+    :root {
+      --green-900: #0f3d2e;
+      --green-800: #145239;
+      --green-700: #1b6b46;
+      --green-600: #20764e;
+      --green-100: #e5f3eb;
+      --green-050: #f4fbf5;
+      --card-bg: #f8fff6;
+    }
+
+    body {
+      background: var(--green-050);
+      color: var(--green-900);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+      line-height: 1.6;
+    }
+
+    .classes-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 3rem;
+    }
+
+    .page-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 2rem;
+    }
+
+    .page-heading h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      color: var(--green-900);
+    }
+
+    .page-heading p {
+      margin: 0;
+      color: var(--green-700);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid #d6e9dd;
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(15, 61, 46, 0.08);
+      padding: 1.5rem;
+    }
+
+    .card-header {
+      margin-bottom: 1rem;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: var(--green-900);
+    }
+
+    .card-header p {
+      margin: 0.25rem 0 0;
+      color: var(--green-700);
+      font-size: 0.95rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    label {
+      font-weight: 700;
+      color: var(--green-800);
+      font-size: 0.95rem;
+    }
+
+    .required::after {
+      content: ' *';
+      color: #c0352b;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 0.9rem 0.95rem;
+      border-radius: 10px;
+      border: 1px solid #d6e9dd;
+      background: #fff;
+      font-size: 0.98rem;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--green-700);
+      box-shadow: 0 0 0 3px rgba(27, 107, 70, 0.15);
+      outline: none;
+    }
+
+    select[multiple] {
+      min-height: 140px;
+    }
+
+    .helper-text {
+      color: #6b7c72;
+      font-size: 0.85rem;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 0.95rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--green-800);
+      background: var(--green-800);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .submit-btn:hover {
+      background: var(--green-900);
+      transform: translateY(-1px);
+    }
+
+    .badge-btn {
+      padding: 0.6rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--green-700);
+      background: #fff;
+      color: var(--green-800);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .badge-btn:hover {
+      background: var(--green-100);
+    }
+
+    .day-btn {
+      padding: 0.55rem 1rem;
+      border-radius: 10px;
+      border: 1px solid #c9e2d1;
+      background: #fff;
+      color: var(--green-800);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease, border 0.2s ease;
+    }
+
+    .day-btn:hover {
+      background: var(--green-100);
+      border-color: var(--green-700);
+    }
+
+    .day-btn.active {
+      background: var(--green-800);
+      color: #fff;
+      border-color: var(--green-800);
+    }
+
+    .day-schedule {
+      background: #f8fbf9;
+      border: 1px solid #d6e9dd;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .day-schedule-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--green-900);
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .remove-day {
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid #e0b2b2;
+      background: #fbeaea;
+      color: #b53030;
+      cursor: pointer;
+    }
+
+    .time-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid #d6e9dd;
+      border-radius: 14px;
+      box-shadow: 0 14px 34px rgba(15, 61, 46, 0.08);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.1rem 1.25rem;
+      background: var(--green-100);
+      border-bottom: 1px solid #d6e9dd;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      color: var(--green-900);
+    }
+
+    .table-wrap {
+      padding: 1.25rem;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: var(--green-800);
+      color: #fff;
+    }
+
+    th,
+    td {
+      padding: 0.9rem 0.85rem;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: #f8fbf9;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f1f6f3;
+    }
+
+    tbody tr:hover {
+      background: #e5f1e9;
+    }
+
+    .action-btn {
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--green-700);
+      background: #fff;
+      color: var(--green-800);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: var(--green-100);
+    }
+
+    @media (max-width: 720px) {
+      .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+    }
+  </style>
+
+  <main class="classes-page">
+    <div class="page-heading">
+      <h1>Class Management</h1>
+      <p>Create classes, set schedules, and review all cohorts.</p>
+    </div>
+
+    <section class="form-grid">
+      <article class="card" id="classForm">
+        <div class="card-header">
+          <h2>Create Class</h2>
+          <p>Name the class, assign teachers/students, then add schedule details.</p>
+        </div>
+
+        <form action="/admin/classes/add" method="POST">
+          <div class="field-row">
+            <div>
+              <label class="required">Class Name</label>
+              <input type="text" name="className" placeholder="Grade 3 - Tahfiidh A" required />
+            </div>
+            <div>
+              <label>Room Number</label>
+              <input type="text" name="roomNumber" placeholder="Room 4A" />
+            </div>
+            <div>
+              <label>Capacity</label>
+              <input type="number" name="capacity" placeholder="20" />
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1em; flex-wrap: wrap; justify-content: space-between;">
+            <div style="width: 47%;">
+              <label class="required">Assign Teacher(s)</label>
+              <select name="teachers" multiple required>
+                <% teachers.forEach(t=> { %>
+                  <option value="<%= t._id %>">
+                    <%= t.firstName %>
+                      <%= t.lastName %>
+                  </option>
+                  <% }) %>
+              </select>
+              <span class="helper-text">Hold Ctrl / Cmd while clicking to select multiple</span>
+            </div>
+
+            <div style="width: 47%;">
+              <label class="required">Assign student(s)</label>
+              <select name="students" multiple required>
+                <% students.forEach(student=> { %>
+                  <option value="<%= student._id %>">
+                    <%= student.firstName %>
+                      <%= student.lastName %>
+                  </option>
+                  <% }) %>
+              </select>
+              <span class="helper-text">Hold Ctrl / Cmd while clicking to select multiple</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="required">Subjects</label>
+            <div id="subjects-container"></div>
+            <button type="button" class="badge-btn" id="addSubjectBtn" style="margin-top:10px;">+ Add Subject</button>
+            <input type="hidden" name="subjects" id="subjectsInput" />
+          </div>
+
+          <div>
+            <label class="required">Select Days & Set Times</label>
+            <div id="day-buttons" style="display:flex; flex-wrap:wrap; gap:.8rem; margin-top:.8rem; justify-content: space-evenly;">
+              <% const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]; %>
+                <% days.forEach(day=> { %>
+                  <button type="button" class="day-btn" data-value="<%= day %>" style="min-width:90px;">
+                    <%= day %>
+                  </button>
+                  <% }) %>
+            </div>
+            <div id="day-schedules-container"></div>
+            <input type="hidden" name="schedule" id="scheduleInput" />
+          </div>
+
+          <div class="field-row">
+            <div>
+              <label>Semester</label>
+              <select name="semester">
+                <option value="Semester 1">Semester 1</option>
+                <option value="Semester 2">Semester 2</option>
+              </select>
+            </div>
+            <div>
+              <label>Quarter</label>
+              <select name="quarter">
+                <option value="Q1">Q1</option>
+                <option value="Q2">Q2</option>
+                <option value="Q3">Q3</option>
+                <option value="Q4">Q4</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="submit-btn" type="submit">Create Class</button>
+        </form>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>All Classes</h2>
+      </div>
+      <div class="table-wrap">
+        <table id="classTable">
+          <thead>
+            <tr>
+              <th>Class Code</th>
+              <th>Class Name</th>
+              <th>Grade Level</th>
+              <th>Program Type</th>
+              <th>Teachers</th>
+              <th>Students</th>
+              <th>Schedule</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% classes.forEach(c=> { %>
+              <tr>
+                <td>
+                  <%= c.classCode %>
+                </td>
+                <td>
+                  <%= c.className %>
+                </td>
+                <td>
+                  <%= c.gradeLevel || "—" %>
+                </td>
+                <td>
+                  <%= c.programType || "—" %>
+                </td>
+                <td>
+                  <% if (c.teachers && c.teachers.length> 0) { %>
+                    <%= c.teachers.map(t=> t.name).join(", ") %>
+                      <% } else { %>
+                        No teachers assigned
+                        <% } %>
+                </td>
+                <td>
+                  <% if (c.students && c.students.length> 0) { %>
+                    <%= c.students.length %> student(s)
+                      <% } else { %>
+                        0
+                        <% } %>
+                </td>
+                <td>
+                  <% if (c.schedule && c.schedule.length>0) { %>
+                    <%= c.schedule.map(s=> `${s.day}: ${s.startTime || ''} - ${s.endTime || ''}`).join(" | ") %>
+                      <% } else { %>
+                        No schedule
+                        <% } %>
+                </td>
+                <td>
+                  <%= c.active ? "Active" : "Inactive" %>
+                </td>
+                <td>
+                  <button class="action-btn" type="button">Edit</button>
+                  <% if(user.role==="admin" ) { %>
+                    <form action="/admin/classes/delete/<%= c._id %>?_method=DELETE" method="POST"
+                      style="display:inline;">
+                      <input type="hidden" name="classID" value="<%= c._id %>">
+                      <button class="action-btn" type="submit">Delete</button>
+                    </form>
+                    <% } %>
+                </td>
+              </tr>
+              <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* =========================
+       SUBJECT BUILDER
+    ========================== */
+    const subjects = [];
+    const subjectsContainer = document.getElementById("subjects-container");
+    const subjectsInput = document.getElementById("subjectsInput");
+
+    document.getElementById("addSubjectBtn").addEventListener("click", () => {
+      const index = subjects.length;
+      subjects.push({ name: "", gradeLevel: "" });
+
+      const div = document.createElement("div");
+      div.style.marginBottom = "1rem";
+      div.innerHTML = `
+      <label>Subject Name</label>
+      <input type="text" class="subject-name" data-index="${index}" placeholder="e.g., Islamic Studies"/>
+
+      <label>Grade Level</label>
+      <select class="subject-grade" data-index="${index}">
+        <option value="">Select Grade</option>
+        <option value="Prep 1">Prep 1</option>
+        <option value="Prep 2">Prep 2</option>
+        <option value="Grade 1">Grade 1</option>
+        <option value="Grade 2">Grade 2</option>
+        <option value="Grade 3">Grade 3</option>
+        <option value="Grade 4">Grade 4</option>
+        <option value="Grade 5">Grade 5</option>
+      </select>
+    `;
+
+      subjectsContainer.appendChild(div);
+    });
+
+    document.addEventListener("input", e => {
+      const i = e.target.dataset.index;
+      if (e.target.classList.contains("subject-name")) {
+        subjects[i].name = e.target.value;
+      }
+      if (e.target.classList.contains("subject-grade")) {
+        subjects[i].gradeLevel = e.target.value;
+      }
+      subjectsInput.value = JSON.stringify(subjects);
+    });
+
+    /* =========================
+       SCHEDULE BUILDER
+    ========================== */
+
+    const schedule = {};
+    const scheduleInput = document.getElementById("scheduleInput");
+    const schedulesContainer = document.getElementById("day-schedules-container");
+
+    function updateScheduleInput() {
+      scheduleInput.value = JSON.stringify(schedule);
+    }
+
+    function removeDay(day) {
+      delete schedule[day];
+      document.getElementById(`schedule-${day}`)?.remove();
+      document.querySelector(`.day-btn[data-value="${day}"]`).classList.remove("active");
+      updateScheduleInput();
+    }
+
+    document.querySelectorAll(".day-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const day = btn.dataset.value;
+
+        if (schedule[day]) return removeDay(day);
+
+        schedule[day] = { startTime: "", endTime: "" };
+        btn.classList.add("active");
+
+        const div = document.createElement("div");
+        div.className = "day-schedule";
+        div.id = `schedule-${day}`;
+        div.innerHTML = `
+        <div class="day-schedule-header">
+          <span>${day}</span>
+          <button type="button" class="remove-day" data-day="${day}">Remove</button>
+        </div>
+        <div class="time-inputs">
+          <div>
+            <label>Start Time</label>
+            <input type="time" id="start-${day}" />
+          </div>
+          <div>
+            <label>End Time</label>
+            <input type="time" id="end-${day}" />
+          </div>
+        </div>
+      `;
+        schedulesContainer.appendChild(div);
+
+        div.querySelector(`#start-${day}`).addEventListener("change", e => {
+          schedule[day].startTime = e.target.value;
+          updateScheduleInput();
+        });
+
+        div.querySelector(`#end-${day}`).addEventListener("change", e => {
+          schedule[day].endTime = e.target.value;
+          updateScheduleInput();
+        });
+
+        div.querySelector(".remove-day").addEventListener("click", () => removeDay(day));
+        updateScheduleInput();
+      });
+    });
+  </script>
+
+  <%- include('../partials/adminFooter')-%>

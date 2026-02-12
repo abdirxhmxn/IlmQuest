@@ -1,0 +1,76 @@
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5fbf6;
+    color: #1f2a1f;
+}
+
+.student-page {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 16px 24px;
+}
+
+.student-page h1 {
+    text-align: center;
+    color: #1b4332;
+}
+
+.grid-top, .grid-bottom {
+    display: grid;
+    gap: 12px;
+}
+
+.grid-top {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.grid-bottom {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #dbe7dc;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.05);
+}
+
+.card h3, .card h1 {
+    margin: 0 0 8px;
+    color: #1b4332;
+}
+
+.ayah {
+    font-size: 1.8rem;
+    direction: rtl;
+    text-align: right;
+    margin: 8px 0;
+}
+
+.translation {
+    font-size: 1.1rem;
+    margin: 6px 0 4px;
+}
+
+.meta {
+    color: #4a6654;
+}
+
+.updates {
+    margin-top: 16px;
+}
+
+.updates h2 {
+    color: #1b4332;
+}
+
+.updates .panel {
+    margin-top: 8px;
+    border: 1px solid #dbe7dc;
+    border-radius: 12px;
+    height: 220px;
+    background: #fff;
+}

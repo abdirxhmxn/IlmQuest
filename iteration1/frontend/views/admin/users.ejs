@@ -1,0 +1,571 @@
+<%- include('../partials/adminHeader')-%>
+
+<style>
+  :root {
+    --green-900: #0f3d2e;
+    --green-800: #145239;
+    --green-700: #1b6b46;
+    --green-600: #20764e;
+    --green-100: #e5f3eb;
+    --green-050: #f4fbf5;
+    --card-bg: #f8fff6;
+  }
+
+  body {
+    background: var(--green-050);
+    color: var(--green-900);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  }
+
+  .users-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 3rem;
+  }
+
+  .page-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 2rem;
+  }
+
+  .page-heading h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    color: var(--green-900);
+  }
+
+  .page-heading p {
+    margin: 0;
+    color: var(--green-700);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid #d6e9dd;
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(15, 61, 46, 0.08);
+    padding: 1.5rem;
+  }
+
+  .card-header {
+    margin-bottom: 1rem;
+  }
+
+  .card-header h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    color: var(--green-900);
+  }
+
+  .card-header p {
+    margin: 0.25rem 0 0;
+    color: var(--green-700);
+    font-size: 0.95rem;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.9rem;
+  }
+
+  label {
+    font-weight: 700;
+    color: var(--green-800);
+    font-size: 0.95rem;
+  }
+
+  .required::after {
+    content: ' *';
+    color: #c0352b;
+  }
+
+  input,
+  select {
+    width: 100%;
+    padding: 0.75rem 0.85rem;
+    border-radius: 10px;
+    border: 1px solid #d6e9dd;
+    background: #fff;
+    font-size: 0.98rem;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  input:focus,
+  select:focus {
+    border-color: var(--green-700);
+    box-shadow: 0 0 0 3px rgba(27, 107, 70, 0.15);
+    outline: none;
+  }
+
+  .helper-text {
+    color: #6b7c72;
+    font-size: 0.85rem;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--green-800);
+    background: var(--green-800);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+
+  .submit-btn:hover {
+    background: var(--green-900);
+    transform: translateY(-1px);
+  }
+
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid #d6e9dd;
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(15, 61, 46, 0.08);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--green-100);
+    border-bottom: 1px solid #d6e9dd;
+  }
+
+  .panel-header h2 {
+    margin: 0;
+    color: var(--green-900);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .tab-btn {
+    padding: 0.55rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--green-800);
+    background: #fff;
+    color: var(--green-800);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .tab-btn:hover {
+    background: var(--green-100);
+  }
+
+  .tab-btn.active {
+    background: var(--green-800);
+    color: #fff;
+  }
+
+  .table-wrap {
+    padding: 1.25rem;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  thead {
+    background: var(--green-800);
+    color: #fff;
+  }
+
+  th,
+  td {
+    padding: 0.9rem 0.85rem;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  tbody tr:nth-child(odd) {
+    background: #f8fbf9;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f1f6f3;
+  }
+
+  tbody tr:hover {
+    background: #e5f1e9;
+  }
+
+  .action-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--green-700);
+    background: #fff;
+    color: var(--green-800);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .action-btn:hover {
+    background: var(--green-100);
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  @media (max-width: 720px) {
+    .panel-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .tabs {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+  }
+</style>
+
+<main class="users-page">
+  <div class="page-heading">
+    <h1>User Administration</h1>
+    <p>Create new teacher and student accounts, then review them below.</p>
+  </div>
+
+  <section class="form-grid">
+    <article class="card" id="teacherForm">
+      <div class="card-header">
+        <h2>Create Teacher Account</h2>
+        <p>Set up teacher credentials and profile details.</p>
+      </div>
+      <form action="/admin/teachers/add" method="POST">
+        <div class="field-row">
+          <div>
+            <label class="required">First Name</label>
+            <input type="text" name="firstName" placeholder="John" required />
+          </div>
+          <div>
+            <label class="required">Last Name</label>
+            <input type="text" name="lastName" placeholder="Doe" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Email Address</label>
+            <input type="email" name="email" placeholder="teacher@school.com" required />
+          </div>
+          <div>
+            <label class="required">Gender</label>
+            <select name="gender" required>
+              <option value="">Select gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Username</label>
+            <input type="text" name="userName" placeholder="teacher_username" required />
+          </div>
+          <div>
+            <label class="required">Password</label>
+            <input type="password" name="password" placeholder="••••••••" required />
+            <span class="helper-text">Temporary password - teacher will change on first login</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Subjects</label>
+            <input type="text" name="subjects" placeholder="Islamic Studies, Quran, Arabic" />
+            <span class="helper-text">Separate multiple subjects with commas</span>
+          </div>
+          <div>
+            <label class="required">Date of Birth</label>
+            <input type="date" name="DOB" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Employee ID</label>
+            <input type="text" name="employeeId" placeholder="EMP-001" required />
+          </div>
+          <div>
+            <label class="required">Hire Date</label>
+            <input type="date" name="hireDate" required />
+          </div>
+        </div>
+        <input type="hidden" name="role" value="teacher" />
+        <button class="submit-btn" type="submit">Create Teacher</button>
+      </form>
+    </article>
+
+    <article class="card" id="studentForm">
+      <div class="card-header">
+        <h2>Create Student Account</h2>
+        <p>Capture student details and enrollment information.</p>
+      </div>
+      <form action="/admin/students/add" method="POST">
+        <div class="field-row">
+          <div>
+            <label class="required">First Name</label>
+            <input type="text" name="firstName" placeholder="John" required />
+          </div>
+          <div>
+            <label class="required">Last Name</label>
+            <input type="text" name="lastName" placeholder="Doe" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Email Address</label>
+            <input type="email" name="email" placeholder="student@school.com" required />
+          </div>
+          <div>
+            <label class="required">Gender</label>
+            <select name="gender" required>
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Username</label>
+            <input type="text" name="userName" placeholder="student_username" required />
+          </div>
+          <div>
+            <label class="required">Password</label>
+            <input type="password" name="password" placeholder="••••••••" required />
+            <span class="helper-text">Temporary password - teacher will change on first login</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Date of Birth</label>
+            <input type="date" name="DOB" required />
+          </div>
+          <div>
+            <label class="required">Grade Level</label>
+            <select name="gradeLevel" required>
+              <option value="">Select grade level</option>
+              <option value="Prep 1">Prep 1</option>
+              <option value="Prep 2">Prep 2</option>
+              <option value="Grade 1">Grade 1</option>
+              <option value="Grade 2">Grade 2</option>
+              <option value="Grade 3">Grade 3</option>
+              <option value="Grade 4">Grade 4</option>
+              <option value="Grade 5">Grade 5</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="required">Program Type</label>
+            <select name="programType" required>
+              <option value="">Select program type</option>
+              <option value="Tahfiidth">Tahfiidth</option>
+              <option value="Khatm">Khatm</option>
+            </select>
+          </div>
+          <div>
+            <label class="required">Date of Enrollment</label>
+            <input type="date" name="enrollmentDate" required />
+          </div>
+        </div>
+
+        <input type="hidden" name="role" value="student" />
+        <button class="submit-btn" type="submit">Create Student</button>
+      </form>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>User Management</h2>
+      <div class="tabs">
+        <button id="studentButton" class="tab-btn active" data-target="studentTable">Students</button>
+        <button id="teacherButton" class="tab-btn" data-target="teacherTable">Teachers</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="studentTable">
+        <thead>
+          <tr>
+            <th>Student Number</th>
+            <th>Student Name</th>
+            <th>Age</th>
+            <th>Program</th>
+            <th>Grade Level</th>
+            <th>Parents/Guardians</th>
+            <th>Enrollment Date</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% students.forEach(student=> { %>
+            <tr>
+              <td>
+                <%= student.studentInfo && student.studentInfo.studentNumber ?
+                  student.studentInfo.studentNumber : "N/A" %>
+              </td>
+              <td>
+                <%= student.firstName || student.userName %> <%= student.lastName || "" %>
+              </td>
+              <td><%= getAge(student.DOB) %></td>
+              <td>
+                <%= student.studentInfo && student.studentInfo.programType ? student.studentInfo.programType : "N/A" %>
+              </td>
+              <td>
+                <%= student.studentInfo && student.studentInfo.gradeLevel ? student.studentInfo.gradeLevel : "N/A" %>
+              </td>
+              <td>
+                <% if (student.studentInfo && student.studentInfo.parents && student.studentInfo.parents.length> 0) { %>
+                  <%= student.studentInfo.parents.map(p=> {
+                    const name = p.parentName || "";
+                    const rel = p.relationship ? ` (${p.relationship})` : "";
+                    return name + rel;
+                  }).join(", ") %>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td>
+                <% if (student.studentInfo && student.studentInfo.enrollmentDate) { %>
+                  <%= student.studentInfo.enrollmentDate.toLocaleDateString('en-US') %>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td><%= student.userName %></td>
+              <td><%= student.email %></td>
+              <td>
+                <button class="action-btn" type="button">Edit</button>
+                <% if(user.role==="admin" ) { %>
+                  <form action="/admin/users/<%= student._id %>?_method=DELETE" method="POST" style="display:inline;">
+                    <button class="action-btn" type="submit">Delete</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <table id="teacherTable" class="hidden">
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Teacher Name</th>
+            <th>Subjects</th>
+            <th>Classes Assigned</th>
+            <th>Hire Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% teachers.forEach(teacher=> { %>
+            <tr>
+              <td>
+                <%= teacher.teacherInfo && teacher.teacherInfo.employeeId ? teacher.teacherInfo.employeeId : "N/A" %>
+              </td>
+              <td>
+                <%= teacher.firstName || teacher.userName %> <%= teacher.lastName || "" %>
+              </td>
+              <td>
+                <% if (teacher.teacherInfo && teacher.teacherInfo.subjects && teacher.teacherInfo.subjects.length> 0) { %>
+                  <%= teacher.teacherInfo.subjects.join(", ") %>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td>
+                <% if (teacher.teacherInfo && teacher.teacherInfo.classes && teacher.teacherInfo.classes.length > 0) { %>
+                  <%= teacher.teacherInfo.classes.length %> class(es)
+                <% } else { %>
+                  0
+                <% } %>
+              </td>
+              <td>
+                <% if (teacher.teacherInfo && teacher.teacherInfo.hireDate) { %>
+                  <%= teacher.teacherInfo.hireDate.toLocaleDateString('en-US') %>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td>Active</td>
+              <td>
+                <button class="action-btn" type="button">Edit</button>
+                <% if(user.role==="admin" ) { %>
+                  <form action="/admin/users/<%= teacher._id %>?_method=DELETE" method="POST" style="display:inline;">
+                    <button class="action-btn" type="submit">Delete</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const tables = {
+    studentTable: document.getElementById("studentTable"),
+    teacherTable: document.getElementById("teacherTable")
+  };
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      Object.entries(tables).forEach(([id, table]) => {
+        table.classList.toggle("hidden", id !== btn.dataset.target);
+      });
+    });
+  });
+</script>
+
+<%- include('../partials/adminFooter')-%>

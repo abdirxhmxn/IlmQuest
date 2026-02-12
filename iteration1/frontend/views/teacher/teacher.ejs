@@ -1,0 +1,114 @@
+<%- include('../partials/teacherHeader') %>
+
+<!-- Tailwind + daisyUI + Lucide Icons -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style>
+  :root {
+    --primary: #59a063;
+    --primary-hover: #26904d;
+  }
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
+  <div class="max-w-7xl mx-auto p-6">
+
+    <!-- Welcome Header -->
+    <div class="bg-white rounded-3xl shadow-xl border border-emerald-100 p-8 mb-10">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <h1 class="text-4xl font-bold text-emerald-900 flex items-center gap-4">
+            <i data-lucide="chalkboard-teacher" class="w-12 h-12 text-[var(--primary)]"></i>
+            Welcome back, <%= user.firstName %>!
+          </h1>
+          <p class="text-lg text-gray-600 mt-2">Here’s your teaching overview for today</p>
+        </div>
+        <div class="text-right">
+          <div class="badge badge-lg bg-[var(--primary)] text-white border-none">
+            <%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+      
+      <!-- Total Students -->
+      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+          <i data-lucide="users" class="w-16 h-16 text-[var(--primary)] mb-4"></i>
+          <p class="text-5xl font-bold text-emerald-900">
+            <%= Array.isArray(classes) ? classes.reduce((sum, cls) => sum + (cls.students?.length || 0), 0) : 0 %>
+          </p>
+          <p class="text-lg text-gray-600 mt-2 font-medium">Students Taught</p>
+        </div>
+      </div>
+
+      <!-- Classes -->
+      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+          <i data-lucide="book-open" class="w-16 h-16 text-[var(--primary)] mb-4"></i>
+          <p class="text-5xl font-bold text-emerald-900">
+            <%= Array.isArray(classes) ? classes.length : 0 %>
+          </p>
+          <p class="text-lg text-gray-600 mt-2 font-medium">Active Classes</p>
+        </div>
+      </div>
+
+      <!-- Average Grade (Real data coming soon!) -->
+      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+          <i data-lucide="trending-up" class="w-16 h-16 text-[var(--primary)] mb-4"></i>
+          <p class="text-5xl font-bold text-emerald-900">94%</p>
+          <p class="text-lg text-gray-600 mt-2 font-medium">Class Average</p>
+        </div>
+      </div>
+
+      <!-- Teacher Rating -->
+      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
+        <div class="flex flex-col items-center text-center">
+          <i data-lucide="star" class="w-16 h-16 text-yellow-500 mb-4"></i>
+          <p class="text-5xl font-bold text-emerald-900">4.9</p>
+          <p class="text-lg text-gray-600 mt-2 font-medium">Teacher Rating</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <!-- <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <a href="/teacher/manage-grades" class="group">
+        <div class="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+          <i data-lucide="edit-3" class="w-12 h-12 mb-4"></i>
+          <h3 class="text-2xl font-bold">Manage Grades</h3>
+          <p class="mt-2 opacity-90">Enter and review student grades</p>
+        </div>
+      </a>
+
+      <a href="/teacher/manage-missions" class="group">
+        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+          <i data-lucide="target" class="w-12 h-12 mb-4"></i>
+          <h3 class="text-2xl font-bold">Missions & Quests</h3>
+          <p class="mt-2 opacity-90">Create fun learning challenges</p>
+        </div>
+      </a>
+
+      <a href="/teacher/classes" class="group">
+        <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+          <i data-lucide="school" class="w-12 h-12 mb-4"></i>
+          <h3 class="text-2xl font-bold">My Classes</h3>
+          <p class="mt-2 opacity-90">View schedules and rosters</p>
+        </div>
+      </a>
+    </div> -->
+
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+</script>
+
+<%- include('../partials/teacherFooter') %>

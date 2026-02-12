@@ -1,0 +1,179 @@
+<%- include('../partials/teacherHeader') %>
+  <link rel="stylesheet" href="/css/teacherAttendance.css">
+  <link rel="stylesheet" href="/css/teacherGrades.css">
+  <main class="attendance-page">
+    <div class="page-heading">
+      <h1>Attendance</h1>
+      <p>Track daily presence across classes.</p>
+    </div>
+    <!-- Class Tabs -->
+    <div class="class-filters">
+      <% classes.forEach((cls, i)=> { %>
+        <button class="class-btn <%= i === 0 ? 'active' : '' %>" data-class-index="<%= i %>">
+          <%= cls.className %> (<%= cls.students.length %>)
+        </button>
+        <% }) %>
+    </div>
+    <form class="filter-bar" action="/teacher/manage-attendance/save" method="POST">
+      <div class="field">
+        <label>Select Class</label>
+        <select name="classId" required>
+          <option value="">-- Select Class --</option>
+          <% classes.forEach(cls=> { %>
+            <option value="<%= cls._id %>">
+              <%= cls.className %>
+            </option>
+            <% }) %>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Select Student</label>
+        <select name="studentId" required>
+          <option value="">-- Select Student --</option>
+
+          <% classes.forEach(cls=> { %>
+            <% cls.students.forEach(student=> { %>
+              <option value="<%= student._id %>">
+                <%= student.name %> — <%= cls.className %>
+              </option>
+              <% }) %>
+                <% }) %>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Date</label>
+        <input type="date" name="date" required>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <select name="status" required>
+          <option value="Present">Present</option>
+          <option value="Absent">Absent</option>
+          <option value="Late">Late</option>
+          <option value="Excused">Excused</option>
+          <option value="Holiday">Holiday</option>
+          <option value="Weather">Weather</option>
+        </select>
+      </div>
+
+      <button type="submit" class="save-btn">Save Record</button>
+    </form>
+
+    <div class="month-buttons">
+      <% (months || []).forEach((month, mIndex)=> { %>
+        <button class="months <%= mIndex === 0 ? 'active-month' : '' %>" data-month="<%= month.index %>">
+          <%= month.name %>
+        </button>
+        <% }) %>
+    </div>
+
+    <!-- One block per Class + Month combo -->
+    <% classes.forEach((cls, classIndex)=> { %>
+      <% (months || []).forEach((month, monthIndex)=> { %>
+        <div class="class-card month-card <%= classIndex === 0 && monthIndex === 0 ? '' : 'hidden' %>"
+          data-class-index="<%= classIndex %>" data-month-index="<%= month.index %>"
+          id="card-<%= classIndex %>-<%= month.index %>">
+
+          <header>
+            <h2>
+              <%= cls.className %> — <%= month.name %>
+                  <%= selectedYear %>
+            </h2>
+            <p class="meta">
+              <%= cls.students.length %> students
+            </p>
+          </header>
+
+          <div class="sheet-wrap">
+            <table class="sheet-table attendance-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <% for (let day=1; day <=month.days; day++) { %>
+                    <th>
+                      <%= day %>
+                    </th>
+                    <% } %>
+                </tr>
+              </thead>
+              <tbody>
+                <% cls.students.forEach(student=> { %>
+                  <tr>
+                    <td class="student-cell">
+                      <%= student.name %>
+                    </td>
+
+                    <% for (let day=1; day <=month.days; day++) { %>
+                      <% // Build the exact key used in attendanceMap const
+                        dateStr=`${selectedYear}-${String(month.index + 1).padStart(2, '0'
+                        )}-${String(day).padStart(2, '0' )}`; const key=`${cls._id}_${dateStr}_${student._id}`; const
+                        status=attendanceMap[key] || '' ; %>
+
+                        <td class="status-cell <%= status.toLowerCase() %>">
+                          <%= status ? { Present: 'Present' , Absent: 'Absent' , Late: 'Late' , Excused: 'Excused' ,
+                            Holiday: 'Holiday' , Weather: 'Weather' }[status] || status : '' %>
+                        </td>
+                        <% } %>
+                  </tr>
+                  <!-- End day loop -->
+
+                  </tr>
+                  <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <% }) %>
+          <% }) %>
+  </main>
+
+  <script>
+    // Class Tab Switching
+    document.querySelectorAll('.class-btn').forEach((btn, index) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const activeMonth = document.querySelector('.months.active-month')?.dataset.month || 0;
+
+        document.querySelectorAll('.month-card').forEach(card => {
+          card.classList.add('hidden');
+          if (card.dataset.classIndex == index && card.dataset.monthIndex == activeMonth) {
+            card.classList.remove('hidden');
+          }
+        });
+      });
+    });
+
+    document.querySelectorAll('.months').forEach((btn, index) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.months').forEach(b => b.classList.remove('active-month'));
+        btn.classList.add('active-month');
+
+        const activeClass = document.querySelector('.class-btn.active')?.dataset.classIndex || 0;
+
+        document.querySelectorAll('.month-card').forEach(card => {
+          card.classList.add('hidden');
+          if (card.dataset.classIndex == activeClass && card.dataset.monthIndex == btn.dataset.month) {
+            card.classList.remove('hidden');
+          }
+        });
+      });
+    });
+
+    // Optional: Helper to show checkmark, X, etc.
+    function getStatusSymbol(status) {
+      const symbols = {
+        Present: '✓',
+        Absent: '✗',
+        Late: 'L',
+        Excused: 'E',
+        Holiday: 'H',
+        Weather: 'W'
+      };
+      return symbols[status] || '';
+    }
+  </script>

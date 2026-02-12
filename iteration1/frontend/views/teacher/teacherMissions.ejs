@@ -1,0 +1,139 @@
+<%- include('../partials/teacherHeader') -%>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/teacherDashboard.css">
+  <link rel="stylesheet" href="/css/teacherMissions.css">
+  <title>Teacher Missions - IlmQuest</title>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header-section">
+      <div class="welcome">
+        <h1>Teacher Dashboard</h1>
+        <p>Welcome back, <%= user.firstName %>! Create and manage missions.</p>
+      </div>
+       <div> <!--class="user-badge" -->
+        <div class="role"><%= user.role %></div>
+        <!-- <div class="class-name">Classes: <%= classes ? classes.length : 0 %></div> -->
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Create Mission</h2>
+      <div class="form-container">
+        <form action="/teacher/manage-missions/create-mission" method="POST">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="missionTitle">Mission Title *</label>
+              <input type="text" name="missionTitle" id="missionTitle" required>
+            </div>
+            <div class="form-group">
+              <label for="missionDescription">Mission Description *</label>
+              <input type="text" name="missionDescription" id="missionDescription" required>
+            </div>
+            <div class="form-group">
+              <label for="type">Mission Type *</label>
+              <select id="type" name="type" required>
+                <option value="">Select Type</option>
+                <option value="Ilm">Knowledge</option>
+                <option value="Adab & Akhlaq">Characters and Morals</option>
+                <option value="Ihsaan">Pursuit of Excellence</option>
+                <!-- <option value="Taqwa">Taqwa</option> -->
+                <option value="Amanah">Trust and Responsibility</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="category">Mission Category *</label>
+              <select id="category" name="category" required>
+                <option value="">Select Category</option>
+                <option value="Solo">Solo</option>
+                <option value="Team">Team</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="rank">Mission Rank *</label>
+              <select id="rank" name="rank" required>
+                <option value="">Select Rank</option>
+                <option value="F">F</option>
+                <option value="E">E</option>
+                <option value="D">D</option>
+                <option value="C">C</option>
+                <option value="B">B</option>
+                <option value="A">A</option>
+                <option value="S">S</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="missionPoints">Mission Points *</label>
+              <input type="number" name="missionPoints" id="missionPoints" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="timeLimit">Time Limit *</label>
+              <select id="timeLimit" name="timeLimit" required>
+                <option value="">Select</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Timed">Timed</option>
+                <option value="None">None</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="dueDate">Due Date</label>
+              <input type="date" id="dueDate" name="dueDate" />
+            </div>
+          </div>
+          <button type="submit" class="btn">Create Mission</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Mission Records</h2>
+      <div class="table-container">
+        <% if (missions && missions.length> 0) { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Rank</th>
+              <th>Points</th>
+              <th>Time Limit / Due</th>
+              <th>Assigned Classes</th>
+              <th>Assigned Students</th>
+              <th>Created By</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% missions.forEach(mission=> { %>
+            <tr>
+              <td><%= mission.title %></td>
+              <td><%= mission.description %></td>
+              <td><%= mission.type %></td>
+              <td><%= mission.rank %></td>
+              <td><%= mission.pointsXP %></td>
+              <td><%= mission.timeLimit %> / <%= mission.dueDate ? mission.dueDate.toDateString() : '—' %></td>
+              <td>—</td>
+              <td>—</td>
+              <td><%= mission.createdBy?.name || 'Teacher' %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <% } else { %>
+        <div class="empty-state">
+          <p>No missions yet. Create your first mission above.</p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/main.js"></script>
+  <script src="/edit.js"></script>
+<%- include('../partials/teacherFooter') -%>
+</body>

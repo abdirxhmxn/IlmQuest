@@ -1,0 +1,151 @@
+<%- include('partials/header') -%>
+
+  <main class="landing-shell">
+    <section class="landing-hero">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <i class="fas fa-star"></i>
+          IlmQuest • Learning & Growth Platform
+          <i class="fas fa-star"></i>
+        </div>
+        <h1 class="hero-title">
+          Empowering Learners Through
+          <span class="highlight">Personalized Education</span>
+        </h1>
+        <p class="hero-text">
+          A calm, focused space for structured learning, skill-building, and academic progress.
+          Track achievements, stay motivated, and keep families informed every step of the way.
+        </p>
+
+        <div class="cta-row">
+          <a class="primary-btn" href="/signup">Start Your Journey</a>
+          <a class="secondary-btn" href="/login">Log In</a>
+        </div>
+      </div>
+
+      <!-- <div class="hero-card glass">
+      <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" class="logo-img hero-logo">
+      <p class="card-text">Built for schools, learning centers, and homeschooling families.</p>
+      <ul class="hero-list">
+        <li><i class="fas fa-book-open"></i> Progress tracking and learning plans</li>
+        <li><i class="fas fa-user-graduate"></i> Academic performance, missions, and rewards</li>
+        <li><i class="fas fa-users"></i> Parent-ready updates and attendance</li>
+      </ul>
+      <div class="mini-cta">
+        <a class="primary-btn" href="/signup">Create Account</a>
+        <a class="secondary-btn" href="/login">Sign In</a>
+      </div>
+    </div> -->
+    </section>
+
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-value">500+</div>
+        <div class="stat-label">Active Learners</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">30+</div>
+        <div class="stat-label">Experienced Educators</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">95%</div>
+        <div class="stat-label">Success Rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">10+</div>
+        <div class="stat-label">Years Experience</div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="section-head">
+        <h2>Everything You Need to Excel</h2>
+        <p>Powerful tools for learners, teachers, and parents to stay aligned and informed.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="icon-pill"><i class="fas fa-book-open"></i></div>
+          <h3>Progress Tracking</h3>
+          <p>Monitor learning journeys with personalized goals and structured plans.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-pill"><i class="fas fa-graduation-cap"></i></div>
+          <h3>Academic Excellence</h3>
+          <p>Organize subjects, assignments, and performance in one central dashboard.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-pill"><i class="fas fa-users"></i></div>
+          <h3>Parent Portal</h3>
+          <p>Share real-time updates on attendance, progress, and achievements.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-pill"><i class="fas fa-trophy"></i></div>
+          <h3>Gamified Learning</h3>
+          <p>Earn badges, complete missions, and unlock rewards on the path to growth.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="audience">
+      <div class="section-head">
+        <h2>Designed for Everyone</h2>
+        <p>Tailored experiences for students, teachers, and parents.</p>
+      </div>
+      <div class="audience-grid">
+        <!-- Students -->
+        <div class="audience-card">
+          <div class="audience-icon">
+            <i data-lucide="graduation-cap"></i>
+          </div>
+          <h3>Students</h3>
+          <p>Track progress, complete missions, and stay motivated.</p>
+          <!-- <a class="secondary-btn" href="/login">View Dashboard</a> -->
+        </div>
+
+        <!-- Teachers -->
+        <div class="audience-card">
+          <div class="audience-icon">
+            <i data-lucide="book-open"></i>
+          </div>
+          <h3>Teachers</h3>
+          <p>Manage classes, attendance, and performance effortlessly.</p>
+          <!-- <a class="secondary-btn" href="/login">View Dashboard</a> -->
+        </div>
+
+        <!-- Parents -->
+        <div class="audience-card">
+          <div class="audience-icon">
+            <i data-lucide="heart-handshake"></i>
+          </div>
+          <h3>Parents</h3>
+          <p>Stay informed with real-time updates and communication tools.</p>
+          <!-- <a class="secondary-btn" href="/login">View Updates</a> -->
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-final">
+      <div class="cta-card">
+        <div class="stars">
+          <i class="fas fa-star"></i>
+          <i class="fas fa-star"></i>
+          <i class="fas fa-star"></i>
+        </div>
+        <h2>Ready to Begin Your Journey?</h2>
+        <p>Join IlmQuest today and take the first step toward a smarter, more organized learning experience.</p>
+        <div class="cta-row">
+          <a class="primary-btn" href="/signup">Create Your Account</a>
+          <a class="secondary-btn" href="/login">Log In</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') -%>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+      // Auto-render all icons on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        lucide.createIcons();
+      });
+    </script>

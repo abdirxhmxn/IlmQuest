@@ -1,0 +1,87 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f6f9f7;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: #1b1f1b;
+  color: #f0f7f1;
+  border-bottom: 2px solid #2f855a;
+}
+
+.admin-header .logo-btn {
+  background: linear-gradient(135deg, #2f855a, #3ca870);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 1.4rem;
+}
+
+.admin-header .greeting h3 {
+  margin: 0;
+  color: #cbd5cb;
+}
+
+.admin-header .greeting h2 {
+  margin: 0;
+  color: #fff;
+}
+
+.admin-nav {
+  list-style: none;
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-nav a {
+  color: #e5f3e7;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-nav a:hover {
+  color: #9ae6b4;
+}
+
+.admin-footer {
+  margin-top: 28px;
+  padding: 16px;
+  background: #f0fff4;
+  border-top: 1px solid #c8e0ca;
+}
+
+.admin-footer nav {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.admin-footer a {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #dbe7dc;
+  background: #fff;
+  color: #1b4332;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.admin-footer a:hover {
+  background: #e6f4e8;
+}
+
+.admin-footer .copyright {
+  text-align: center;
+  margin-top: 8px;
+  color: #4a6654;
+  font-size: 0.9rem;
+}
