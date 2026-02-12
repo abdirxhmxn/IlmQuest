@@ -330,6 +330,7 @@
             <td><%= mission.dueDate ? mission.dueDate.toDateString() : "No limit" %></td>
             <td>
               <form method="POST" action="/student/missions/complete?_method=PUT" style="display:inline;">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <input type="hidden" name="missionId" value="<%= mission._id %>">
                 <button type="submit" class="complete-btn">Complete</button>
               </form>
@@ -385,6 +386,7 @@
       <p><strong>Created By:</strong> <span id="modalCreator"></span></p>
     </div>
     <form id="beginForm" method="POST" action="/student/missions/begin?_method=PUT">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <input type="hidden" name="missionId" id="beginMissionId">
       <button type="submit" class="begin-btn">Begin Mission</button>
     </form>

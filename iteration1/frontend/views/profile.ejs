@@ -225,6 +225,7 @@
                         <!-- MAIN FORM -->
                         <form action="/profile/edit-profile/<%= user._id %>?_method=PUT" method="POST"
                           class="space-y-5">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
 
 

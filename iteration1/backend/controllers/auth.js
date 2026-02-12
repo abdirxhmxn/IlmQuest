@@ -13,8 +13,6 @@ exports.getLogin = (req, res) => {
 };
 
 exports.postLogin = (req, res, next) => {
-  console.log(" LOGIN POST HIT:", req.body);
-
   const validationErrors = [];
   if (!validator.isEmail(req.body.email))
     validationErrors.push({ msg: "Please enter a valid email address." });
@@ -30,8 +28,6 @@ exports.postLogin = (req, res, next) => {
   });
 
   passport.authenticate("local", (err, user, info) => {
-    console.log("AUTH CALLBACK USER:", user);
-
     if (err) return next(err);
     if (!user) {
       req.flash("errors", info);
@@ -226,7 +222,7 @@ exports.putResetPassword = async (req, res, next) => {
     const password = req.body["new-password"];
     const confirmPassword = req.body["confirm-password"];
 
-    const user = await User.findById(req.user._id).select("+password");
+    const user = await User.findOne({ _id: req.user._id, schoolId: req.schoolId }).select("+password");
     if (!user) {
       req.flash("errors", { msg: "User not found." });
       return res.redirect("/reset-password");

@@ -264,6 +264,7 @@
         <p>Set up teacher credentials and profile details.</p>
       </div>
       <form action="/admin/teachers/add" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <div class="field-row">
           <div>
             <label class="required">First Name</label>
@@ -335,6 +336,7 @@
         <p>Capture student details and enrollment information.</p>
       </div>
       <form action="/admin/students/add" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <div class="field-row">
           <div>
             <label class="required">First Name</label>
@@ -481,6 +483,7 @@
                 <button class="action-btn" type="button">Edit</button>
                 <% if(user.role==="admin" ) { %>
                   <form action="/admin/users/<%= student._id %>?_method=DELETE" method="POST" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                     <button class="action-btn" type="submit">Delete</button>
                   </form>
                 <% } %>
@@ -537,6 +540,7 @@
                 <button class="action-btn" type="button">Edit</button>
                 <% if(user.role==="admin" ) { %>
                   <form action="/admin/users/<%= teacher._id %>?_method=DELETE" method="POST" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                     <button class="action-btn" type="submit">Delete</button>
                   </form>
                 <% } %>

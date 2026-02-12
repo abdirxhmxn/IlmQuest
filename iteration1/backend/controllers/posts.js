@@ -81,7 +81,6 @@ module.exports = {
     }
   },
   createStudent: async (req, res) => {
-    console.log(req.body)
     try {
       await User.create({
         schoolId: req.schoolId,
@@ -200,6 +199,10 @@ module.exports = {
         return res.status(404).send("Parent not found");
       }
 
+      if (String(student.schoolId) !== String(parent.schoolId)) {
+        return res.status(403).send("Cross-tenant assignment is not allowed");
+      }
+
       const parentName = `${parent.firstName} ${parent.lastName}`;
       const studentName = `${student.firstName} ${student.lastName}`;
 
@@ -232,9 +235,6 @@ module.exports = {
           childName: studentName
         });
         await parent.save();
-      } else {
-        alert('Cannot Add duplicates')
-        // res.send("Cannot add duplicates")
       }
 
       res.redirect("/admin/users");
@@ -254,11 +254,9 @@ module.exports = {
       const studentIDs = Array.isArray(req.body.students)
         ? req.body.students
         : req.body.students ? [req.body.students] : [];
-      console.log(teacherIDs, req.body.teachers)
       // Fetch users to attach names
       const teachers = await User.find(scopedQuery(req, { _id: { $in: teacherIDs }, role: 'teacher' }));
       const students = await User.find(scopedQuery(req, { _id: { $in: studentIDs }, role: 'student' }));
-      console.log(teachers)
 
       // Format schedule
       const scheduleData = req.body.schedule ? JSON.parse(req.body.schedule) : {};
@@ -320,9 +318,12 @@ module.exports = {
         return res.status(404).send("Class not found");
       }
 
+      if (String(student.schoolId) !== String(classObj.schoolId)) {
+        return res.status(403).send("Cross-tenant assignment is not allowed");
+      }
+
       const studentName = `${student.firstName} ${student.lastName}`;
       const className = classObj.className;
-      console.log(className)
       // Prevent duplicate enrollment
       const alreadyInClass = classObj.students.some(
         s => s._id?.toString() === studentID

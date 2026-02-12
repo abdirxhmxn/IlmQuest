@@ -15,6 +15,7 @@
         <% }) %>
     </div>
     <form class="filter-bar" action="/teacher/manage-attendance/save" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <div class="field">
         <label>Select Class</label>
         <select name="classId" required>

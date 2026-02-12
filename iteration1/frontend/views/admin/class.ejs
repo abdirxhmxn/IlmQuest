@@ -305,6 +305,7 @@
         </div>
 
         <form action="/admin/classes/add" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="field-row">
             <div>
               <label class="required">Class Name</label>
@@ -457,6 +458,7 @@
                   <% if(user.role==="admin" ) { %>
                     <form action="/admin/classes/delete/<%= c._id %>?_method=DELETE" method="POST"
                       style="display:inline;">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                       <input type="hidden" name="classID" value="<%= c._id %>">
                       <button class="action-btn" type="submit">Delete</button>
                     </form>

@@ -280,6 +280,7 @@
         <!-- Body -->
         <div class="modal-body">
             <form action="/teacher/manage-grades/add" method="POST" class="space-y-6">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
                 <input type="hidden" name="classId" id="classId">
                 <input type="hidden" name="subject" id="subject">

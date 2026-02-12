@@ -8,13 +8,14 @@ const School = require("../models/School");
 const User = require("../models/User");
 
 async function run() {
-  if (!process.env.DB_STRING) {
-    throw new Error("DB_STRING is missing in environment.");
+  const dbString = process.env.DB_STRING || process.argv[2];
+  if (!dbString) {
+    throw new Error("DB_STRING is required. Set DB_STRING env var or pass as argv[2].");
   }
 
-  await mongoose.connect(process.env.DB_STRING);
+  await mongoose.connect(dbString);
 
-  const runId = Date.now();
+  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const schoolAEmail = `tenant-a-${runId}@ilmquest.test`;
   const schoolBEmail = `tenant-b-${runId}@ilmquest.test`;
 

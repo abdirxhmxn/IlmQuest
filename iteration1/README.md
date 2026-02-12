@@ -39,5 +39,12 @@ API_SECRET=your-cloudinary-api-secret
 ## Scripts
 - `npm start` — run server with nodemon.
 
+## Security hardening notes (iteration1)
+- CSRF protection is enabled for non-GET form submissions, including dashboard mutations (admin/teacher/student) and auth/recovery flows.
+- Every POST form must include a hidden `_csrf` field rendered from `csrfToken`.
+- In production, secure session cookies require trusted proxy mode when the app is behind a TLS-terminating proxy/load balancer.
+- The server sets `app.set("trust proxy", 1)` in production for platforms like Render, Heroku, Nginx, and Cloudflare.
+- Set `NODE_ENV=production` and `SESSION_SECRET` in `backend/config/.env`.
+
 ## Iterations
 This folder is iteration0. Keep future work in iteration1+ folders to preserve history.
