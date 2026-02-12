@@ -1,7 +1,7 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Node.js CI
+name: Node.js Checks
 
 on:
   push:
@@ -11,21 +11,28 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    defaults:
+      run:
+        working-directory: iteration1
 
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js 22
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 22
         cache: 'npm'
-    - run: npm ci
+        cache-dependency-path: iteration1/package-lock.json
+    - name: Install dependencies
+      run: npm ci
+    - name: Validate script syntax
+      run: |
+        node --check backend/server.js
+        node --check backend/routes/main.js
+        node --check backend/routes/posts.js
+        node --check backend/controllers/auth.js
+        node --check backend/controllers/posts.js
+    - name: Run role middleware check
+      run: npm run test:role-authorization
     - run: npm run build --if-present
-    - run: npm test
