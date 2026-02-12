@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: iteration1
+    env:
+      NODE_ENV: test
+      PORT: '8880'
+      SECURITY_TEST_BASE_URL: http://localhost:8880
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      DB_STRING: ${{ secrets.DB_STRING_TEST }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: iteration1/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start server
+        run: |
+          node backend/server.js > /tmp/ilmquest-server.log 2>&1 &
+          echo $! > server.pid
+
+      - name: Wait for server
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8880/ >/dev/null; then
+              echo "Server is reachable"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server failed to start within 30 seconds"
+          exit 1
+
+      - name: Run CSRF security tests
+        run: npm run security:test:csrf
+
+      - name: Run role authorization test
+        run: npm run test:role-authorization
+
+      - name: Run tenant isolation test
+        run: npm run test:tenant-isolation
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill "$(cat server.pid)" || true
+            rm -f server.pid
+          fi
