@@ -101,32 +101,39 @@ exports.getSignup = (req, res) => {
 
 exports.postSignup = async (req, res, next) => {
   let createdSchoolId = null;
+
   try {
     const submittedUserName = (req.body.userName || req.body.adminUser || "").trim();
     const schoolName = (req.body.schoolName || "").trim();
     const adminName = (req.body.adminName || "").trim();
     const phone = (req.body.phone || "").trim();
+
     const validationErrors = [];
 
-    if (validator.isEmpty(schoolName))
+    if (validator.isEmpty(schoolName)) {
       validationErrors.push({ msg: "School name is required." });
-    if (validator.isEmpty(adminName))
+    }
+    if (validator.isEmpty(adminName)) {
       validationErrors.push({ msg: "Administrator name is required." });
-    if (!validator.isEmail(req.body.email))
+    }
+    if (!validator.isEmail(req.body.email || "")) {
       validationErrors.push({ msg: "Please enter a valid email address." });
-    if (validator.isEmpty(submittedUserName))
+    }
+    if (validator.isEmpty(submittedUserName)) {
       validationErrors.push({ msg: "Username is required." });
-    if (validator.isEmpty(phone))
+    }
+    if (validator.isEmpty(phone)) {
       validationErrors.push({ msg: "Phone number is required." });
-    if (!validator.isLength(req.body.password, { min: 8 }))
-      validationErrors.push({
-        msg: "Password must be at least 8 characters long",
-      });
-    if (req.body.adminUser !== req.body.confirmUsername)
-      validationErrors.push({ msg: "Usernames do not match" });
-
-    if (req.body.password !== req.body.confirmPassword)
-      validationErrors.push({ msg: "Passwords do not match" });
+    }
+    if (!validator.isLength(req.body.password || "", { min: 8 })) {
+      validationErrors.push({ msg: "Password must be at least 8 characters long." });
+    }
+    if ((req.body.adminUser || "") !== (req.body.confirmUsername || "")) {
+      validationErrors.push({ msg: "Usernames do not match." });
+    }
+    if ((req.body.password || "") !== (req.body.confirmPassword || "")) {
+      validationErrors.push({ msg: "Passwords do not match." });
+    }
 
     if (validationErrors.length) {
       req.flash("errors", validationErrors);
@@ -136,63 +143,117 @@ exports.postSignup = async (req, res, next) => {
     req.body.email = validator.normalizeEmail(req.body.email, {
       gmail_remove_dots: false,
     });
-    const [existingUser, existingSchool] = await Promise.all([
-      User.findOne({
-        $or: [{ email: req.body.email }, { userName: submittedUserName }],
-      }),
-      School.findOne({
-        $or: [{ schoolName }, { schoolEmail: req.body.email }],
-      }),
+
+    const email = req.body.email;
+    const username = submittedUserName;
+
+    // Type-specific duplicate checks
+    const [
+      existingSchoolName,
+      existingSchoolEmail,
+      existingUserName,
+      existingUserEmail,
+    ] = await Promise.all([
+      School.findOne({ schoolName }),
+      School.findOne({ schoolEmail: email }),
+      User.findOne({ userName: username }),
+      User.findOne({ email }),
     ]);
 
-    if (existingUser || existingSchool) {
-      req.flash("errors", {
-        msg: "Account with that school name, email address, or username already exists.",
-      });
+    const dupErrors = [];
+    if (existingSchoolName) dupErrors.push({ msg: "That school name is already taken." });
+    // if (existingSchoolEmail) dupErrors.push({ msg: "That school email is already in use." });
+    if (existingUserName) dupErrors.push({ msg: "That username is already taken." });
+    if (existingUserEmail) dupErrors.push({ msg: "That email is already in use." });
+
+    if (dupErrors.length) {
+      req.flash("errors", dupErrors);
       return res.redirect("../signup");
     }
 
+    // Create School
     const school = new School({
       schoolName,
-      schoolEmail: req.body.email,
+      schoolEmail: email,
+      // NOTE: Consider removing password from School entirely.
       password: req.body.password,
-      adminUser: submittedUserName,
-      contactEmail: req.body.email,
+      adminUser: username,
+      contactEmail: email,
       contactPhone: phone,
     });
 
     await school.save();
     createdSchoolId = school._id;
 
+    // Create Admin User
     const [firstName, ...lastNameParts] = adminName.split(" ");
     const user = new User({
       schoolId: school._id,
-      userName: submittedUserName,
-      email: req.body.email,
+      userName: username,
+      email,
       password: req.body.password,
       role: "admin",
       firstName: firstName || "",
       lastName: lastNameParts.join(" "),
     });
+
     await user.save();
 
-    // Login user after signup
-    req.logIn(school, (err) => {
-      if (err) return next(err);
-      res.redirect("/login");
-    });
-
+    // Do NOT auto-login. Force manual login.
+    req.flash("success", { msg: "Account created successfully. Please log in." });
+    return res.redirect("/login");
   } catch (err) {
-    if (createdSchoolId) {
-      await School.deleteOne({ _id: createdSchoolId });
+    try {
+      if (createdSchoolId) {
+        await School.deleteOne({ _id: createdSchoolId });
+      }
+    } catch (cleanupErr) {
+      // ignore cleanup errors; original error is more important
     }
-    if (err.code === 11000) {
-      req.flash("errors", {
-        msg: "Duplicate value found for school, email, or username.",
-      });
+
+    if (err && err.code === 11000) {
+      // If something slipped past the pre-check, still return a safe message
+      req.flash("errors", [{ msg: "Duplicate value found for school, email, or username." }]);
       return res.redirect("../signup");
     }
+
     return next(err);
+  }
+};
+exports.putResetPassword = async (req, res, next) => {
+  try {
+
+    const password = req.body["new-password"];
+    const confirmPassword = req.body["confirm-password"];
+
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) {
+      req.flash("errors", { msg: "User not found." });
+      return res.redirect("/reset-password");
+    }
+
+    const validationErrors = [];
+    if (!validator.isLength(password || "", { min: 8 })) {
+      validationErrors.push({ msg: "Password must be at least 8 characters long." });
+    }
+    if ((password || "") !== (confirmPassword || "")) {
+      validationErrors.push({ msg: "Passwords do not match." });
+    }
+
+    if (validationErrors.length) {
+      req.flash("errors", validationErrors);
+      return res.redirect("/reset-password");
+    }
+
+    user.password = password;
+    await user.save();
+
+    req.flash("success", { msg: "Password updated successfully." });
+    return res.redirect("/login");
+  } catch (err) {
+    console.error("Error in putResetPassword:", err);
+    req.flash("errors", { msg: "An error occurred while resetting the password. Please try again." });
+    return res.redirect("/reset-password");
   }
 };
 // User.findOne(

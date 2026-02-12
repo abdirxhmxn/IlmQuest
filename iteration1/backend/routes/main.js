@@ -22,6 +22,11 @@ router.post("/login", authController.postLogin);
 router.post("/signup", authController.postSignup);
 
 // =============================================
+// 2a. AUTH ROUTES (Password Reset)
+// =============================================
+router.get("/reset-password", ensureAuth, homeController.getResetPassword);
+router.put("/reset-password", ensureAuth, authController.putResetPassword);
+// =============================================
 // 3. GLOBAL AUTHENTICATED ROUTES (All Roles)
 // =============================================
 router.use(requireTenant);
@@ -81,7 +86,6 @@ router.get("/student/home", ensureAuth, homeController.getMainPage);
 router.get("/student/grades", ensureAuth, homeController.getGrades);
 router.get("/student/missions", ensureAuth, homeController.getStudentMissions);
 router.get("/student/library", ensureAuth, homeController.getLibrary);
-
 // =============================================
 // 7. PARENT ROUTES
 // =============================================

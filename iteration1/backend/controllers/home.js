@@ -405,6 +405,19 @@ module.exports = {
       return res.status(500).send("Error loading users"); // only 1 response
     }
   },
+  getResetPassword: async (req, res) => {
+    try {
+      if (!req.user) return res.redirect("/login");
+
+      res.render("resetPassword.ejs", {
+        user: req.user,
+        messages: req.flash(),
+      });
+    } catch (err) {
+      console.error("Error rendering reset password page:", err);
+      res.status(500).send("Error loading reset password page.");
+    }
+  },
   getClasses: async (req, res) => {
     try {
       const students = await User.find(scopedQuery(req, { role: "student" })).lean()
