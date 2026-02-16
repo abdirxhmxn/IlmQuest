@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/components.css">
 <link rel="stylesheet" href="/css/layout.css">
+<script src="/js/nav-toggle.js" defer></script>
 
 <header class="header-bar">
     <div class="header-left">
@@ -20,7 +21,19 @@
             </h2>
         </div>
     </div>
-    <nav>
+    <button
+        type="button"
+        class="nav-toggle"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+        aria-controls="admin-nav"
+        data-nav-toggle
+    >
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+    </button>
+    <nav class="header-nav" id="admin-nav" data-nav-menu>
         <ul class="nav-links">
             <li><a href="/admin/home">Home</a></li>
             <li><a href="/admin/users">Users</a></li>

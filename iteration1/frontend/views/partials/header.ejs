@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/css/components.css" />
 <link rel="stylesheet" href="/css/style.css" />
 <link rel="stylesheet" href="/css/pages/marketing-header.css">
+<script src="/js/nav-toggle.js" defer></script>
 </head>
 
 <body>
@@ -22,7 +23,19 @@
       <a href="/" class="brand-name">IlmQuest</a>
     </div>
     <div class="header-right">
-      <nav class="nav-links">
+      <button
+        type="button"
+        class="nav-toggle"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+        aria-controls="public-nav"
+        data-nav-toggle
+      >
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+      <nav class="nav-links header-nav" id="public-nav" data-nav-menu>
         <a href="/login" class="nav-link">Sign in</a>
         <a href="/signup" class="nav-link">Get Started</a>
       </nav>

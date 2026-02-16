@@ -1,6 +1,7 @@
 <link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/components.css">
 <link rel="stylesheet" href="/css/layout.css">
+<script src="/js/nav-toggle.js" defer></script>
 <header class="header-bar">
     <div class="header-left">
         <button class="logo-btn">
@@ -15,7 +16,20 @@
         </div>
     </div>
 
-    <nav>
+    <button
+        type="button"
+        class="nav-toggle"
+        aria-label="Toggle navigation"
+        aria-expanded="false"
+        aria-controls="teacher-nav"
+        data-nav-toggle
+    >
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+    </button>
+
+    <nav class="header-nav" id="teacher-nav" data-nav-menu>
         <ul class="nav-links" id="menu">
             <li><a href="/teacher/home">Home</a></li>
             <li><a href="/teacher/manage-missions">Missions</a></li>
