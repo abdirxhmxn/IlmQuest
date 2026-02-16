@@ -8,6 +8,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:tenant-isolation": "node backend/scripts/tenant-isolation-check.js",
     "test:role-authorization": "node backend/scripts/role-authorization-check.js",
+    "test:admin-mutations": "node backend/scripts/admin-mutation-check.js",
+    "test:user-uniqueness": "npm run db:indexes:apply && node backend/scripts/user-uniqueness-check.js",
+    "db:indexes:dry": "node backend/scripts/sync-user-indexes.js --dry-run",
+    "db:indexes:apply": "node backend/scripts/sync-user-indexes.js --apply",
+    "db:sync-user-indexes:dry-run": "npm run db:indexes:dry",
+    "db:sync-user-indexes:apply": "npm run db:indexes:apply",
     "security:test:csrf": "node --test security-tests/csrf-attack.test.js"
   },
   "author": "",

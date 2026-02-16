@@ -1,9 +1,15 @@
 function scopedQuery(req, extra = {}) {
-  return { schoolId: req.schoolId, ...extra };
+  const base = { schoolId: req.schoolId };
+  if (!extra.includeDeleted) base.deletedAt = null;
+  const { includeDeleted, ...rest } = extra;
+  return { ...base, ...rest };
 }
 
 function scopedIdQuery(req, id, extra = {}) {
-  return { _id: id, schoolId: req.schoolId, ...extra };
+  const base = { _id: id, schoolId: req.schoolId };
+  if (!extra.includeDeleted) base.deletedAt = null;
+  const { includeDeleted, ...rest } = extra;
+  return { ...base, ...rest };
 }
 
 module.exports = {

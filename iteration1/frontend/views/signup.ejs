@@ -1,31 +1,14 @@
 <%- include('partials/header') -%>
-  <link rel="stylesheet" href="/css/authLogin.css" />
-  <style>
-    .auth-panel {
-      max-width: 850px;
-    }
-
-    .form-group-column {
-      display: flex;
-      gap: 1rem;
-      flex: 1;
-      width: 100%;
-      justify-content: space-between;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/pages/auth.css" />
+  <link rel="stylesheet" href="/css/pages/signup.css">
   <div class="auth-shell">
     <div class="auth-panel">
       <div class="logo-section">
         <div class="logo">
-          <img src="/imgs/finalLogo.jpg" alt="IlmQuest Logo" class="logo-img" style=" width: 82px;
-    height: 82px;
-    border-radius: 16px;
-    object-fit: cover;
-    box-shadow: 0 8px 20px rgba(14, 159, 110, 0.15);
-    margin-bottom: 1rem;">
+          <img src="/imgs/finalLogo.jpg" alt="IlmQuest Logo" class="logo-img logo-img-auth">
         </div>
       </div>
-      <h1 class="logo-title" style="text-align: center;margin-bottom: 1em;">Create your account</h1>
+      <h1 class="logo-title signup-title">Create your account</h1>
 
       <% if (messages && (messages.errors || messages.info)) { %>
         <div class="flash-messages">
@@ -66,14 +49,14 @@
 
               <div class="form-group-column">
                 <!-- Work Email -->
-                <div class="form-group" style="width: 47%;">
+                <div class="form-group split-col">
                   <label for="email" class="form-label">Work Email Address</label>
                   <input type="email" id="email" name="email" class="form-input" placeholder="admin@school.edu"
                     required>
                 </div>
 
                 <!-- Phone  -->
-                <div class="form-group" style="width: 47%;">
+                <div class="form-group split-col">
                   <label for="phone" class="form-label">Phone Number</label>
                   <input type="text" id="phone" name="phone" class="form-input" placeholder="(555) 123-4567" required>
                 </div>
@@ -81,26 +64,26 @@
 
               <div class="form-group-column" >
                 <!-- Username -->
-                <div class="form-group" style="width: 47%;">
+                <div class="form-group split-col">
                   <label for="adminUser" class="form-label">Username</label>
                   <input type="text" id="adminUser" name="adminUser" class="form-input" required placeholder="Create a username">
                 </div>
 
                 <!-- Confirm Password -->
-                <div class="form-group" style="width: 47%;">
+                <div class="form-group split-col">
                   <label for="confirmUsername" class="form-label">Confirm Username</label>
                   <input type="text" id="confirmUsername" name="confirmUsername" class="form-input" required placeholder="Re-enter your username">
                 </div>
               </div>
               <div class="form-group-column" >
                 <!-- Password -->
-                <div class="form-group" style="width: 47%;">
+                <div class="form-group split-col">
                   <label for="password" class="form-label">Password</label>
                   <input type="password" id="password" name="password" class="form-input" required placeholder="Create a password">
                 </div>
 
                 <!-- Confirm Password -->
-                <div class="form-group" style="width: 47%;">
+                <div class="form-group split-col">
                   <label for="confirmPassword" class="form-label">Confirm Password</label>
                   <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" required placeholder="Re-enter your password">
                 </div>

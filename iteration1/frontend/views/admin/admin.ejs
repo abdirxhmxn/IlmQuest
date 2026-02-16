@@ -1,300 +1,156 @@
 <%- include('../partials/adminHeader') -%>
 
-<style>
-  :root {
-    --green-900: #0f3d2e;
-    --green-800: #145239;
-    --green-700: #1b6b46;
-    --green-100: #e5f3eb;
-    --green-050: #f4fbf5;
-    --card-bg: #f8fff6;
-  }
+  <link rel="stylesheet" href="/css/pages/admin-dashboard.css">
 
-  body {
-    background: var(--green-050);
-  }
-
-  .admin-page {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2.5rem 1.5rem 3rem;
-    background: var(--green-050);
-  }
-
-  .page-heading {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    margin-bottom: 1.5rem;
-    color: var(--green-900);
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .stat-card {
-    background: var(--card-bg);
-    border: 1px solid #d6e9dd;
-    border-radius: 14px;
-    padding: 1.25rem;
-    box-shadow: 0 10px 30px rgba(15, 61, 46, 0.06);
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .stat-label {
-    font-size: 0.95rem;
-    color: var(--green-700);
-    letter-spacing: 0.01em;
-  }
-
-  .stat-value {
-    font-size: 2.1rem;
-    font-weight: 700;
-    color: var(--green-900);
-  }
-
-  .stat-link {
-    align-self: flex-start;
-    margin-top: 0.4rem;
-    padding: 0.4rem 0.85rem;
-    border-radius: 8px;
-    background: var(--green-800);
-    color: #fff;
-    border: 1px solid var(--green-800);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: background 0.2s ease, transform 0.1s ease;
-  }
-
-  .stat-link:hover {
-    background: var(--green-900);
-    transform: translateY(-1px);
-  }
-
-  .panel {
-    background: var(--card-bg);
-    border: 1px solid #d6e9dd;
-    border-radius: 14px;
-    box-shadow: 0 14px 38px rgba(15, 61, 46, 0.08);
-    overflow: hidden;
-  }
-
-  .panel-header {
-    padding: 1.1rem 1.25rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--green-100);
-    border-bottom: 1px solid #d6e9dd;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .tab-btn {
-    padding: 0.55rem 1rem;
-    border-radius: 10px;
-    border: 1px solid var(--green-800);
-    background: #fff;
-    color: var(--green-800);
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
-  }
-
-  .tab-btn:hover {
-    background: var(--green-100);
-  }
-
-  .tab-btn.active {
-    background: var(--green-800);
-    color: #fff;
-  }
-
-  .table-wrap {
-    padding: 1.25rem;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  thead {
-    background: var(--green-800);
-    color: #fff;
-  }
-
-  th, td {
-    padding: 0.85rem 0.9rem;
-    text-align: left;
-    font-size: 0.95rem;
-  }
-
-  tbody tr:nth-child(odd) {
-    background: #f8fbf9;
-  }
-
-  tbody tr:nth-child(even) {
-    background: #f1f6f3;
-  }
-
-  tbody tr:hover {
-    background: #e5f1e9;
-  }
-
-  .hidden {
-    display: none;
-  }
-
-  @media (max-width: 640px) {
-    .panel-header {
-      align-items: flex-start;
-    }
-
-    .tabs {
-      width: 100%;
-      justify-content: flex-start;
-      flex-wrap: wrap;
-    }
-  }
-</style>
-
-<main class="admin-page">
-  <div class="page-heading">
-    <h1>Admin Dashboard</h1>
-    <p>Overview of your community, classes, and teachers.</p>
-  </div>
-
-  <section class="stats">
-    <div class="stat-card">
-      <span class="stat-label">Total Students</span>
-      <span class="stat-value"><%= students.length %></span>
-      <a class="stat-link" href="/admin/users">Manage Students</a>
+  <main class="admin-page">
+    <div class="page-heading">
+      <h1>Admin Dashboard</h1>
+      <p>Overview of your community, classes, and teachers.</p>
     </div>
-    <div class="stat-card">
-      <span class="stat-label">Total Classes</span>
-      <span class="stat-value"><%= classes.length %></span>
-      <a class="stat-link" href="/admin/classes">Manage Classes</a>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Total Teachers</span>
-      <span class="stat-value"><%= teachers.length %></span>
-      <a class="stat-link" href="/admin/users">Manage Teachers</a>
-    </div>
-  </section>
 
-  <section class="panel">
-    <div class="panel-header">
-      <div>
-        <h2 style="margin:0; color: var(--green-900);">Directory</h2>
-        <p style="margin:0; color: var(--green-700); font-size: 0.95rem;">Switch between students, teachers, and classes.</p>
+    <section class="stats">
+      <div class="stat-card">
+        <span class="stat-label">Total Students</span>
+        <span class="stat-value">
+          <%= students.length %>
+        </span>
+        <a class="stat-link" href="/admin/users">Manage Students</a>
       </div>
-      <div class="tabs">
-        <button class="tab-btn active" data-target="students-table">Students</button>
-        <button class="tab-btn" data-target="classes-table">Classes</button>
-        <button class="tab-btn" data-target="teachers-table">Teachers</button>
+      <div class="stat-card">
+        <span class="stat-label">Total Classes</span>
+        <span class="stat-value">
+          <%= classes.length %>
+        </span>
+        <a class="stat-link" href="/admin/classes">Manage Classes</a>
       </div>
-    </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Teachers</span>
+        <span class="stat-value">
+          <%= teachers.length %>
+        </span>
+        <a class="stat-link" href="/admin/users">Manage Teachers</a>
+      </div>
+    </section>
 
-    <div class="table-wrap">
-      <table id="students-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Grade Level</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% students.forEach(student=> { %>
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="directory-title">Directory</h2>
+          <p class="directory-subtitle">Switch between students, teachers, and
+            classes.</p>
+        </div>
+        <div class="tabs">
+          <button class="tab-btn active" data-target="students-table">Students</button>
+          <button class="tab-btn" data-target="classes-table">Classes</button>
+          <button class="tab-btn" data-target="teachers-table">Teachers</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="students-table">
+          <thead>
             <tr>
-              <td><%= student.firstName %></td>
-              <td><%= student.email %></td>
-              <td><%= student.role %></td>
-              <td><%= student.studentInfo.gradeLevel || 'NA' %></td>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Grade Level</th>
             </tr>
-            <% }) %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% students.forEach(student=> { %>
+              <tr>
+                <td>
+                  <%= student.firstName %>  <%= student.lastName %>
+                </td>
+                <td>
+                  <%= student.email %>
+                </td>
+                <td class="caps-cell">
+                  <%= student.role %>
+                </td>
+                <td class="caps-cell">
+                  <%= student.studentInfo.gradeLevel || 'NA' %>
+                </td>
+              </tr>
+              <% }) %>
+          </tbody>
+        </table>
 
-      <table id="classes-table" class="hidden">
-        <thead>
-          <tr>
-            <th>Class Name</th>
-            <th>Class Code</th>
-            <th>Teachers</th>
-            <th>Students</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% classes.forEach(cls=> { %>
+        <table id="classes-table" class="hidden">
+          <thead>
             <tr>
-              <td><%= cls.className %></td>
-              <td><%= cls.classCode %></td>
-              <td><%= cls.teachers.length %></td>
-              <td><%= cls.students.length %></td>
+              <th>Class Name</th>
+              <th>Class Code</th>
+              <th>Teachers</th>
+              <th>Students</th>
             </tr>
-            <% }) %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% classes.forEach(cls=> { %>
+              <tr>
+                <td>
+                  <%= cls.className %>
+                </td>
+                <td>
+                  <%= cls.classCode %>
+                </td>
+                <td>
+                  <%= cls.teachers.length %>
+                </td>
+                <td>
+                  <%= cls.students.length %>
+                </td>
+              </tr>
+              <% }) %>
+          </tbody>
+        </table>
 
-      <table id="teachers-table" class="hidden">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% teachers.forEach(teacher=> { %>
+        <table id="teachers-table" class="hidden">
+          <thead>
             <tr>
-              <td>
-                <% if (teacher.gender==="female" ) { %>
-                  Ms. <%= teacher.lastName %>
-                <% } else { %>
-                  Mr. <%= teacher.lastName %>
-                <% } %>
-              </td>
-              <td><%= teacher.email %></td>
-              <td><%= teacher.role %></td>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
             </tr>
-            <% }) %>
-        </tbody>
-      </table>
-    </div>
-  </section>
-</main>
+          </thead>
+          <tbody>
+            <% teachers.forEach(teacher=> { %>
+              <tr>
+                <td>
+                  <% if (teacher.gender==="female" ) { %>
+                    Ms. <%= teacher.lastName %>
+                      <% } else { %>
+                        Mr. <%= teacher.lastName %>
+                          <% } %>
+                </td>
+                <td>
+                  <%= teacher.email %>
+                </td>
+                <td>
+                  <%= teacher.role %>
+                </td>
+              </tr>
+              <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
-<script>
-  const tabButtons = document.querySelectorAll(".tab-btn");
-  const tables = document.querySelectorAll(".table-wrap table");
+  <script>
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tables = document.querySelectorAll(".table-wrap table");
 
-  tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      tabButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        tabButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
 
-      tables.forEach(table => {
-        table.classList.toggle("hidden", table.id !== btn.dataset.target);
+        tables.forEach(table => {
+          table.classList.toggle("hidden", table.id !== btn.dataset.target);
+        });
       });
     });
-  });
-</script>
+  </script>
 
-<%- include('../partials/adminFooter') -%>
+  <%- include('../partials/adminFooter') -%>

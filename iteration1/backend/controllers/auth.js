@@ -2,6 +2,7 @@ const passport = require("passport");
 const validator = require("validator");
 const User = require("../models/User");
 const School = require("../models/School");
+const { normalizeEmail, mapDuplicateKeyError } = require("../utils/userIdentifiers");
 
 exports.getLogin = (req, res) => {
   if (req.user) {
@@ -23,9 +24,7 @@ exports.postLogin = (req, res, next) => {
     req.flash("errors", validationErrors);
     return res.redirect("/login");
   }
-  req.body.email = validator.normalizeEmail(req.body.email, {
-    gmail_remove_dots: false,
-  });
+  req.body.email = normalizeEmail(req.body.email);
 
   passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
@@ -136,9 +135,7 @@ exports.postSignup = async (req, res, next) => {
       return res.redirect("../signup");
     }
 
-    req.body.email = validator.normalizeEmail(req.body.email, {
-      gmail_remove_dots: false,
-    });
+    req.body.email = normalizeEmail(req.body.email);
 
     const email = req.body.email;
     const username = submittedUserName;
@@ -147,20 +144,14 @@ exports.postSignup = async (req, res, next) => {
     const [
       existingSchoolName,
       existingSchoolEmail,
-      existingUserName,
-      existingUserEmail,
     ] = await Promise.all([
       School.findOne({ schoolName }),
       School.findOne({ schoolEmail: email }),
-      User.findOne({ userName: username }),
-      User.findOne({ email }),
     ]);
 
     const dupErrors = [];
     if (existingSchoolName) dupErrors.push({ msg: "That school name is already taken." });
-    // if (existingSchoolEmail) dupErrors.push({ msg: "That school email is already in use." });
-    if (existingUserName) dupErrors.push({ msg: "That username is already taken." });
-    if (existingUserEmail) dupErrors.push({ msg: "That email is already in use." });
+    if (existingSchoolEmail) dupErrors.push({ msg: "That school email is already in use." });
 
     if (dupErrors.length) {
       req.flash("errors", dupErrors);
@@ -208,8 +199,8 @@ exports.postSignup = async (req, res, next) => {
     }
 
     if (err && err.code === 11000) {
-      // If something slipped past the pre-check, still return a safe message
-      req.flash("errors", [{ msg: "Duplicate value found for school, email, or username." }]);
+      const conflict = mapDuplicateKeyError(err);
+      req.flash("errors", [{ msg: conflict?.message || "A unique identifier already exists for this school." }]);
       return res.redirect("../signup");
     }
 
@@ -222,7 +213,7 @@ exports.putResetPassword = async (req, res, next) => {
     const password = req.body["new-password"];
     const confirmPassword = req.body["confirm-password"];
 
-    const user = await User.findOne({ _id: req.user._id, schoolId: req.schoolId }).select("+password");
+    const user = await User.findOne({ _id: req.user._id, schoolId: req.schoolId, deletedAt: null }).select("+password");
     if (!user) {
       req.flash("errors", { msg: "User not found." });
       return res.redirect("/reset-password");

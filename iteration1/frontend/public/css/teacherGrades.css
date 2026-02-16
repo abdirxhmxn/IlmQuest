@@ -13,7 +13,7 @@
    Base Styles
 ----------------------------------------*/
 body {
-    background: linear-gradient(135deg, var(--green-050) 0%, #ffffff 100%);
+    background: var(--green-050);
     color: var(--green-900);
     font-family: "Segoe UI", sans-serif;
   
@@ -429,7 +429,7 @@ details[open] .chevron {
 
 /* Modal Header */
 #gradeModal .modal-header {
-    background: linear-gradient(135deg, #145239, #1e6b52);
+    background: #145239;
     color: white;
     padding: 1.5rem 2rem;
     display: flex;
@@ -556,4 +556,20 @@ details[open] .chevron {
     background: #1e6b52;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(20, 82, 57, 0.4);
+}
+
+.subject-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.student-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
 }

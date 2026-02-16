@@ -103,12 +103,7 @@ body {
   /* top: 100px; */
   margin-top: 100px;
   background-color: #FCF8F5;
-  background-image: repeating-linear-gradient(135deg,
-      rgba(0, 0, 0, 0) 0px,
-      rgba(0, 0, 0, 0) 20px,
-      rgba(20, 82, 57, 0.04) 21px,
-      /* very soft green tint – matches your brand */
-      rgba(20, 82, 57, 0.04) 22px);
+  background-image: none;
 }
 
 /* stack vertically on mobile */
@@ -362,12 +357,7 @@ body {
   /* border: 1px solid black; */
   margin-top: 0;
   padding: 4rem 1rem;
-  background-image: repeating-linear-gradient(135deg,
-      rgba(0, 0, 0, 0) 0px,
-      rgba(0, 0, 0, 0) 20px,
-      rgba(20, 82, 57, 0.04) 21px,
-      /* very soft green tint – matches your brand */
-      rgba(20, 82, 57, 0.04) 22px);
+  background-image: none;
 }
 
 /* FIXED: Use columns, not rows */
@@ -447,12 +437,7 @@ body {
   padding: 4rem 2rem;
   border-radius: 24px;
 
-  /* Soft green-tone diagonal gradient */
-  background: linear-gradient(
-    145deg,
-    rgba(14, 159, 110, 0.08) 0%,
-    rgba(255, 255, 255, 0.6) 100%
-  );
+  background: #f5faf7;
 
   border: 1.5px solid rgba(14, 159, 110, 0.2); /* faint green border */
   text-align: center;

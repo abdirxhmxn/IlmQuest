@@ -15,7 +15,7 @@ body {
 }
 
 .admin-header .logo-btn {
-  background: linear-gradient(135deg, #2f855a, #3ca870);
+  background: #2f855a;
   color: #fff;
   border: none;
   border-radius: 10px;

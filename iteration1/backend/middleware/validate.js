@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const { normalizeEmail } = require('../utils/userIdentifiers');
 
 function isHtmlRequest(req) {
   return (req.get('accept') || '').toLowerCase().includes('text/html');
@@ -32,7 +33,7 @@ function validateEmailField(field) {
     if (!value || !validator.isEmail(String(value))) {
       return validationError(req, res, 400, `Invalid email field: ${field}`);
     }
-    req.body[field] = validator.normalizeEmail(String(value), { gmail_remove_dots: false });
+    req.body[field] = normalizeEmail(String(value));
     return next();
   };
 }

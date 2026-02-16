@@ -1,0 +1,33 @@
+.auth-panel {
+      max-width: 850px;
+    }
+
+    .form-group-column {
+      display: flex;
+      gap: 1rem;
+      flex: 1;
+      width: 100%;
+      justify-content: space-between;
+    }
+.signup-title {
+  text-align: center;
+  margin-bottom: 1em;
+}
+
+.split-col {
+  width: 47%;
+}
+
+.auth-subtitle {
+  color: #4b5563;
+  margin-top: -10px;
+  font-size: 0.95rem;
+}
+
+@media (min-width: 360px) {
+  .split-col { width: 100%; }
+}
+
+@media (min-width: 768px) {
+  .split-col { width: 47%; }
+}

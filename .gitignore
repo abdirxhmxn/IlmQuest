@@ -1,4 +1,47 @@
-node_modules
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment and secrets
 .env
-.vscode
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
+!**/.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+id_rsa
+id_rsa.pub
+*.secret
+secrets.json
+credentials.json
+service-account*.json
+
+# Logs and test artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+.nyc_output/
+
+# Build and cache
+dist/
+build/
+.cache/
+tmp/
+*.tmp
+
+# Editor and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
 .DS_Store

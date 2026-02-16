@@ -1,259 +1,6 @@
 <%- include('../partials/inHeader') -%>
 
-<style>
-  :root {
-    --green-900: #0f3d2e;
-    --green-800: #145239;
-    --green-700: #1b6b46;
-    --green-600: #059669;
-    --green-100: #ecfdf5;
-    --green-50:  #f0fdf4;
-    --gray-900:  #1f2937;
-    --gray-600:  #4b5563;
-    --gray-200:  #e5e7eb;
-    --gray-100:  #f3f4f6;
-    --white:     #ffffff;
-    --shadow-sm: 0 8px 20px rgba(15,61,46,0.08);
-    --shadow-md: 0 14px 34px rgba(15,61,46,0.12);
-    --radius:    16px;
-  }
-
-  body {
-    background-color: #FCF8F5;
-    background-image: repeating-linear-gradient(135deg, rgba(20,82,57,0.03) 0px, rgba(20,82,57,0.03) 20px, transparent 20px, transparent 40px),
-                      repeating-linear-gradient(45deg, rgba(20,82,57,0.02) 0px, rgba(20,82,57,0.02) 18px, transparent 18px, transparent 36px);
-    color: var(--gray-900);
-    min-height: 100vh;
-  }
-
-  main {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
-  }
-
-  /* ===== HERO HEADER ===== */
-  .page-header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-  .page-title {
-    font-size: 3.2rem;
-    font-weight: 900;
-    background: linear-gradient(90deg, var(--green-900), var(--green-600));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-  }
-  .user-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 1rem;
-    background: white;
-    padding: 1rem 2rem;
-    border-radius: 100px;
-    box-shadow: var(--shadow-sm);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--green-800);
-    border: 2px solid var(--green-100);
-  }
-  .user-badge i { font-size: 1.6rem; color: var(--green-600); }
-
-  /* ===== RANK FILTER ===== */
-  .rank-filter {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.8rem;
-    justify-content: center;
-    margin: 2.5rem 0;
-  }
-  .rank-btn {
-    padding: 0.75rem 1.4rem;
-    border: 2px solid var(--green-800);
-    background: white;
-    color: var(--green-800);
-    font-weight: 700;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  .rank-btn.active, .rank-btn:hover {
-    background: var(--green-800);
-    color: white;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(20,82,57,0.25);
-  }
-
-  /* ===== MISSIONS GRID ===== */
-  .missions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.8rem;
-    margin: 3rem 0;
-  }
-  .mission-card {
-    background: white;
-    border-radius: var(--radius);
-    padding: 1.8rem;
-    box-shadow: var(--shadow-md);
-    border: 1px solid rgba(14,159,110,0.15);
-    transition: all 0.3s ease;
-  }
-  .mission-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(15,61,46,0.18);
-  }
-  .mission-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--green-900);
-    margin-bottom: 0.6rem;
-  }
-  .mission-desc {
-    color: var(--gray-600);
-    margin-bottom: 1rem;
-    line-height: 1.5;
-  }
-  .mission-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 1rem 0;
-  }
-  .tag {
-    background: var(--green-100);
-    color: var(--green-800);
-    padding: 0.35rem 0.8rem;
-    border-radius: 50px;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-  .select-mission {
-    width: 100%;
-    margin-top: 1rem;
-    padding: 0.9rem;
-    background: var(--green-800);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-  .select-mission:hover {
-    background: var(--green-900);
-    transform: translateY(-2px);
-  }
-
-  /* ===== TABLES ===== */
-  .section-title {
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: var(--green-900);
-    margin: 4rem 0 1.5rem;
-    text-align: center;
-  }
-  .missions-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    background: white;
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-    margin-bottom: 3rem;
-  }
-  .missions-table thead {
-    background: linear-gradient(90deg, var(--green-800), var(--green-700));
-    color: white;
-  }
-  .missions-table th,
-  .missions-table td {
-    padding: 1.2rem 1rem;
-    text-align: left;
-  }
-  .missions-table tbody tr {
-    transition: background 0.2s;
-  }
-  .missions-table tbody tr:hover {
-    background: var(--green-50);
-  }
-  .missions-table .complete-btn {
-    background: var(--green-600);
-    color: white;
-    border: none;
-    padding: 0.6rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .missions-table .complete-btn:hover {
-    background: var(--green-700);
-  }
-
-  /* ===== MODAL ===== */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-  }
-  .modal {
-    background: white;
-    width: 90%;
-    max-width: 560px;
-    border-radius: var(--radius);
-    padding: 2.5rem;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.25);
-    position: relative;
-    animation: modalPop 0.4s ease;
-  }
-  @keyframes modalPop {
-    from { opacity: 0; transform: scale(0.9); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-  .close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: #dc2626;
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-  }
-  .begin-btn {
-    background: var(--green-800);
-    color: white;
-    padding: 1rem 2.5rem;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.2rem;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
-    margin: 1.5rem 0;
-  }
-  .begin-btn:hover {
-    background: var(--green-900);
-  }
-
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 768px) {
-    .page-title { font-size: 2.6rem; }
-    .user-badge { flex-direction: column; padding: 1.2rem; }
-    .missions-grid { grid-template-columns: 1fr; }
-  }
-</style>
+<link rel="stylesheet" href="/css/pages/student-missions.css">
 
 <main>
   <!-- Hero Header -->
@@ -301,7 +48,7 @@
           <span class="tag"><%= mission.rank %> Rank</span>
           <span class="tag">+<%= mission.pointsXP %> XP</span>
         </div>
-        <small style="color:#6b7280;">by <%= mission.createdBy.name %></small>
+        <small class="mission-byline">by <%= mission.createdBy.name %></small>
       </div>
     <% }) %>
   </div>
@@ -329,7 +76,7 @@
             <td>+<%= mission.pointsXP %> XP</td>
             <td><%= mission.dueDate ? mission.dueDate.toDateString() : "No limit" %></td>
             <td>
-              <form method="POST" action="/student/missions/complete?_method=PUT" style="display:inline;">
+              <form method="POST" action="/student/missions/complete?_method=PUT" class="inline-form">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <input type="hidden" name="missionId" value="<%= mission._id %>">
                 <button type="submit" class="complete-btn">Complete</button>
@@ -338,7 +85,7 @@
           </tr>
         <% }) %>
       <% } else { %>
-        <tr><td colspan="6" style="text-align:center; padding:2rem; color:#6b7280;">No active missions — choose one above!</td></tr>
+        <tr><td colspan="6" class="table-empty table-empty-muted">No active missions — choose one above!</td></tr>
       <% } %>
     </tbody>
   </table>
@@ -357,7 +104,7 @@
     <tbody>
       <% if (students && students.length > 0) { %>
         <% students.forEach((student, i) => { %>
-          <tr <%= student._id.toString() === user._id.toString() ? 'style="background: #FCF8F5 !important; font-weight:600;"' : '' %>>
+          <tr class="<%= student._id.toString() === user._id.toString() ? 'leader-me' : '' %>">
             <td><%= i + 1 %></td>
             <td><%= student.firstName %> <%= student.lastName %> <%= student._id.toString() === user._id.toString() ? '(You)' : '' %></td>
             <td><%= student.rank %></td>
@@ -365,7 +112,7 @@
           </tr>
         <% }) %>
       <% } else { %>
-        <tr><td colspan="4" style="text-align:center; padding:2rem;">No students yet</td></tr>
+        <tr><td colspan="4" class="table-empty">No students yet</td></tr>
       <% } %>
     </tbody>
   </table>
@@ -375,9 +122,9 @@
 <div class="modal-overlay" id="missionModal">
   <div class="modal">
     <button class="close-btn" id="closeModal">X</button>
-    <h2 id="modalTitle" style="color:var(--green-900); margin-top:0;"></h2>
-    <p id="modalDescription" style="color:var(--gray-600);"></p>
-    <div style="margin:1.5rem 0; display:grid; gap:0.6rem; text-align:left;">
+    <h2 id="modalTitle" class="modal-title"></h2>
+    <p id="modalDescription" class="modal-description"></p>
+    <div class="modal-meta">
       <p><strong>Type:</strong> <span id="modalType"></span></p>
       <p><strong>Category:</strong> <span id="modalCategory"></span></p>
       <p><strong>Rank:</strong> <span id="modalRank"></span></p>

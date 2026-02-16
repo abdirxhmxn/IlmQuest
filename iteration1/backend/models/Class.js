@@ -72,6 +72,8 @@ const ClassSchema = new mongoose.Schema({
   roomNumber: { type: String },
 
   capacity: { type: Number, default: 20 },
+  deletedAt: { type: Date, default: null, index: true },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
 }, { timestamps: true });
 

@@ -170,3 +170,9 @@
             font-size: 1.8rem;
         }
     }
+
+.auth-subtitle {
+    color: #4b5563;
+    margin-top: -10px;
+    font-size: 0.95rem;
+}

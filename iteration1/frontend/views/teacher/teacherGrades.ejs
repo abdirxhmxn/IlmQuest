@@ -80,7 +80,7 @@
                 <% cls.subjects.forEach(subject=> { %>
                 <div class="subject-block">
                     <header>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; font-weight: 600;">
+                        <div class="subject-title-row">
                             <i data-lucide="book-open"></i><span> <%= subject.name %></span>
                         </div>
                         <button onclick="openGradeModal('<%= cls._id %>', '<%= subject.name %>')" class="btn-primary">
@@ -92,7 +92,7 @@
                         <% cls.students.forEach(student => { %>
                         <details class="student-accordion">
                             <summary class="student-summary">
-                                <span style="display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600;">
+                                <span class="student-title-row">
                                     <i data-lucide="user"></i> <%= student.name %>
                                 </span>
                                 <i data-lucide="chevron-down" class="chevron"></i>

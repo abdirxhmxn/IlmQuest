@@ -6,7 +6,57 @@ const Mission = require("../models/Missions")
 const Grade = require("../models/Grades")
 const School = require("../models/School");
 const Attendance = require("../models/Attendance");
+const { isHtmlRequest } = require("../middleware/validate");
+const { pickAllowedFields, validateUserPatchPayload, validateClassPatchPayload } = require("../middleware/adminMutations");
+const { logAdminAction, simpleDiff } = require("../utils/audit");
+const {
+  normalizeEmail,
+  normalizeIdentifier,
+  normalizeStudentNumber,
+  mapDuplicateKeyError
+} = require("../utils/userIdentifiers");
 const { scopedQuery, scopedIdQuery } = require("../utils/tenant");
+
+function respondMutation(req, res, statusCode, payload, redirectPath) {
+  if (isHtmlRequest(req)) {
+    if (statusCode >= 400) {
+      req.flash("errors", [{ msg: payload.message || "Request failed." }]);
+    }
+    return res.status(statusCode).redirect(redirectPath);
+  }
+  return res.status(statusCode).json(payload);
+}
+
+function conflictResponse(req, res, redirectPath, err) {
+  const conflict = mapDuplicateKeyError(err);
+  if (!conflict) {
+    return respondMutation(req, res, 500, { message: "Request failed." }, redirectPath);
+  }
+  return respondMutation(
+    req,
+    res,
+    409,
+    { error: "conflict", field: conflict.field, message: conflict.message },
+    redirectPath
+  );
+}
+
+function generateEmployeeIdCandidate() {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const prefix = Array.from({ length: 3 }, () => letters[Math.floor(Math.random() * letters.length)]).join("");
+  const numbers = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+  return `${prefix}-${numbers}`;
+}
+
+async function generateUniqueTeacherEmployeeId(req, maxAttempts = 50) {
+  for (let i = 0; i < maxAttempts; i += 1) {
+    const candidate = generateEmployeeIdCandidate();
+    const normalized = normalizeIdentifier(candidate);
+    const exists = await User.findOne(scopedQuery(req, { employeeIdNormalized: normalized })).lean();
+    if (!exists) return candidate;
+  }
+  throw new Error("Unable to generate a unique employee ID.");
+}
 
 module.exports = {
   getProfile: async (req, res) => {
@@ -82,11 +132,22 @@ module.exports = {
   },
   createStudent: async (req, res) => {
     try {
-      await User.create({
+      const normalizedEmail = normalizeEmail(req.body.email);
+      const emailConflict = await User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean();
+      if (emailConflict) {
+        return respondMutation(
+          req,
+          res,
+          409,
+          { error: "conflict", field: "email", message: "Email already exists for this school." },
+          "/admin/users"
+        );
+      }
+      const student = new User({
         schoolId: req.schoolId,
         // Login credentials
         userName: req.body.userName,
-        email: req.body.email,
+        email: normalizedEmail,
         password: req.body.password,
 
         // Role
@@ -106,6 +167,7 @@ module.exports = {
           parents: []
         }
       });
+      await student.save();
 
       console.log('Student created successfully');
       res.redirect('/admin/users');
@@ -113,9 +175,7 @@ module.exports = {
     } catch (err) {
       console.error('Error creating student:', err);
 
-      if (err.code === 11000) {
-        return res.status(400).send('Error: Username or email already exists.');
-      }
+      if (err.code === 11000) return conflictResponse(req, res, "/admin/users", err);
 
       res.status(500).send('Error: Could not create student.');
     }
@@ -123,10 +183,25 @@ module.exports = {
 
   createTeacher: async (req, res) => {
     try {
-      await User.create({
+      const normalizedEmail = normalizeEmail(req.body.email);
+      const emailConflict = await User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean();
+
+      if (emailConflict) {
+        return respondMutation(
+          req,
+          res,
+          409,
+          { error: "conflict", field: "email", message: "Email already exists for this school." },
+          "/admin/users"
+        );
+      }
+
+      const generatedEmployeeId = await generateUniqueTeacherEmployeeId(req);
+
+      const teacher = new User({
         schoolId: req.schoolId,
         userName: req.body.userName,
-        email: req.body.email,
+        email: normalizedEmail,
         password: req.body.password,
         role: 'teacher',
         firstName: req.body.firstName,
@@ -134,11 +209,12 @@ module.exports = {
         DOB: req.body.DOB || null,
         gender: req.body.gender || null,
         teacherInfo: {
-          employeeId: req.body.employeeId,
+          employeeId: generatedEmployeeId,
           hireDate: req.body.hireDate || Date.now(),
           subjects: req.body.subjects ? req.body.subjects.split(',').map(s => s.trim()) : []
         }
       });
+      await teacher.save();
 
       console.log('Teacher created successfully');
       res.redirect('/admin/users');
@@ -146,9 +222,7 @@ module.exports = {
     } catch (err) {
       console.error('Error creating teacher:', err);
 
-      if (err.code === 11000) {
-        return res.status(400).send('Error: Username, email, or employee ID already exists.');
-      }
+      if (err.code === 11000) return conflictResponse(req, res, "/admin/users", err);
 
       res.status(500).send('Error: Could not create teacher.');
     }
@@ -156,10 +230,22 @@ module.exports = {
 
   createParent: async (req, res) => {
     try {
-      await User.create({
+      const normalizedEmail = normalizeEmail(req.body.email);
+      const emailConflict = await User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean();
+      if (emailConflict) {
+        return respondMutation(
+          req,
+          res,
+          409,
+          { error: "conflict", field: "email", message: "Email already exists for this school." },
+          "/admin/users"
+        );
+      }
+
+      const parent = new User({
         schoolId: req.schoolId,
         userName: req.body.userName,
-        email: req.body.email,
+        email: normalizedEmail,
         password: req.body.password,
         role: 'parent',
         firstName: req.body.firstName,
@@ -170,6 +256,7 @@ module.exports = {
           children: []
         }
       });
+      await parent.save();
 
       console.log(' Parent created successfully');
       res.redirect('/admin');
@@ -177,9 +264,7 @@ module.exports = {
     } catch (err) {
       console.error(' Error creating parent:', err);
 
-      if (err.code === 11000) {
-        return res.status(400).send('Error: Username or email already exists.');
-      }
+      if (err.code === 11000) return conflictResponse(req, res, "/admin/users", err);
 
       res.status(500).send('Error: Could not create parent.');
     }
@@ -649,6 +734,186 @@ module.exports = {
     }
   },
 
+  patchUser: async (req, res) => {
+    try {
+      const userId = req.params.id;
+
+      if (req.user.role !== "admin") {
+        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/users");
+      }
+
+      const targetUser = await User.findOne(scopedIdQuery(req, userId));
+      if (!targetUser) {
+        return respondMutation(req, res, 404, { message: "User not found." }, "/admin/users");
+      }
+
+      const allowedBase = ["firstName", "lastName", "userName", "email"];
+      const allowedStudent = ["age", "programType", "gradeLevel", "enrollmentDate"];
+      const allowedTeacher = ["subjects", "hireDate"];
+      const allowedFields =
+        targetUser.role === "student"
+          ? [...allowedBase, ...allowedStudent]
+          : targetUser.role === "teacher"
+            ? [...allowedBase, ...allowedTeacher]
+            : allowedBase;
+      const filteredPayload = pickAllowedFields(req.body || {}, allowedFields);
+
+      const { isValid, errors, clean } = validateUserPatchPayload(filteredPayload, targetUser.role);
+      if (!isValid) {
+        return respondMutation(
+          req,
+          res,
+          422,
+          { message: "Validation failed.", errors },
+          "/admin/users"
+        );
+      }
+
+      const before = {
+        firstName: targetUser.firstName || "",
+        lastName: targetUser.lastName || "",
+        userName: targetUser.userName || "",
+        email: targetUser.email || "",
+        age: targetUser.DOB ? Math.max(1, new Date().getUTCFullYear() - new Date(targetUser.DOB).getUTCFullYear()) : null,
+        programType: targetUser.studentInfo?.programType || "",
+        gradeLevel: targetUser.studentInfo?.gradeLevel || "",
+        enrollmentDate: targetUser.studentInfo?.enrollmentDate || null,
+        subjects: targetUser.teacherInfo?.subjects || [],
+        hireDate: targetUser.teacherInfo?.hireDate || null
+      };
+
+      if (clean.firstName !== undefined) targetUser.firstName = clean.firstName;
+      if (clean.lastName !== undefined) targetUser.lastName = clean.lastName;
+      if (clean.userName !== undefined) targetUser.userName = clean.userName;
+      if (clean.email !== undefined) targetUser.email = clean.email;
+
+      if (targetUser.role === "student") {
+        targetUser.studentInfo = targetUser.studentInfo || {};
+        if (clean.programType !== undefined) targetUser.studentInfo.programType = clean.programType;
+        if (clean.gradeLevel !== undefined) targetUser.studentInfo.gradeLevel = clean.gradeLevel;
+        if (clean.enrollmentDate !== undefined) targetUser.studentInfo.enrollmentDate = clean.enrollmentDate;
+        if (clean.age !== undefined) {
+          const today = new Date();
+          const dobYear = today.getUTCFullYear() - clean.age;
+          targetUser.DOB = new Date(Date.UTC(dobYear, today.getUTCMonth(), today.getUTCDate()));
+        }
+      }
+
+      if (targetUser.role === "teacher") {
+        targetUser.teacherInfo = targetUser.teacherInfo || {};
+        if (clean.subjects !== undefined) targetUser.teacherInfo.subjects = clean.subjects;
+        if (clean.hireDate !== undefined) targetUser.teacherInfo.hireDate = clean.hireDate;
+      }
+
+      if (clean.email !== undefined) {
+        const existingEmail = await User.findOne(
+          scopedQuery(req, {
+            _id: { $ne: targetUser._id },
+            emailNormalized: normalizeEmail(clean.email)
+          })
+        ).lean();
+        if (existingEmail) {
+          return respondMutation(
+            req,
+            res,
+            409,
+            { error: "conflict", field: "email", message: "Email already exists for this school." },
+            "/admin/users"
+          );
+        }
+      }
+
+      await targetUser.save();
+
+      const after = {
+        id: targetUser._id.toString(),
+        firstName: targetUser.firstName || "",
+        lastName: targetUser.lastName || "",
+        userName: targetUser.userName || "",
+        email: targetUser.email || "",
+        age: targetUser.DOB ? Math.max(1, new Date().getUTCFullYear() - new Date(targetUser.DOB).getUTCFullYear()) : null,
+        programType: targetUser.studentInfo?.programType || "",
+        gradeLevel: targetUser.studentInfo?.gradeLevel || "",
+        enrollmentDate: targetUser.studentInfo?.enrollmentDate || null,
+        subjects: targetUser.teacherInfo?.subjects || [],
+        hireDate: targetUser.teacherInfo?.hireDate || null
+      };
+
+      await logAdminAction(req, {
+        action: "admin.user.patch",
+        targetType: "user",
+        targetId: targetUser._id,
+        before,
+        after,
+        diff: simpleDiff(before, after)
+      });
+
+      return respondMutation(req, res, 200, { message: "User updated.", data: after }, "/admin/users");
+    } catch (err) {
+      console.error("Error updating user:", err);
+      if (err.code === 11000) return conflictResponse(req, res, "/admin/users", err);
+      return respondMutation(req, res, 500, { message: "Error updating user." }, "/admin/users");
+    }
+  },
+
+  patchClass: async (req, res) => {
+    try {
+      const classId = req.params.id;
+      if (req.user.role !== "admin") {
+        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/classes");
+      }
+
+      const classDoc = await Class.findOne(scopedIdQuery(req, classId));
+      if (!classDoc) {
+        return respondMutation(req, res, 404, { message: "Class not found." }, "/admin/classes");
+      }
+
+      const allowedFields = ["className", "roomNumber", "capacity", "active"];
+      const filteredPayload = pickAllowedFields(req.body || {}, allowedFields);
+      const { isValid, errors, clean } = validateClassPatchPayload(filteredPayload);
+
+      if (!isValid) {
+        return respondMutation(req, res, 422, { message: "Validation failed.", errors }, "/admin/classes");
+      }
+
+      const before = {
+        className: classDoc.className || "",
+        roomNumber: classDoc.roomNumber || "",
+        capacity: classDoc.capacity,
+        active: !!classDoc.active
+      };
+
+      if (clean.className !== undefined) classDoc.className = clean.className;
+      if (clean.roomNumber !== undefined) classDoc.roomNumber = clean.roomNumber;
+      if (clean.capacity !== undefined) classDoc.capacity = clean.capacity;
+      if (clean.active !== undefined) classDoc.active = clean.active;
+
+      await classDoc.save();
+
+      const after = {
+        id: classDoc._id.toString(),
+        className: classDoc.className || "",
+        roomNumber: classDoc.roomNumber || "",
+        capacity: classDoc.capacity,
+        active: !!classDoc.active
+      };
+
+      await logAdminAction(req, {
+        action: "admin.class.patch",
+        targetType: "class",
+        targetId: classDoc._id,
+        before,
+        after,
+        diff: simpleDiff(before, after)
+      });
+
+      return respondMutation(req, res, 200, { message: "Class updated.", data: after }, "/admin/classes");
+    } catch (err) {
+      console.error("Error updating class:", err);
+      return respondMutation(req, res, 500, { message: "Error updating class." }, "/admin/classes");
+    }
+  },
+
 
 
   deletePost: async (req, res) => {
@@ -668,56 +933,179 @@ module.exports = {
   },
   deleteUser: async (req, res) => {
     try {
-      // Find user by id
-      let userID = req.params.id
-
-      const user = await User.findOne(scopedIdQuery(req, userID));
-      if (!user) return res.status(404).send("User not found");
-
-      //remove student from class
-      //remove student from parent array
-
-      //to prevent other users from being able to delete
+      const userID = req.params.id;
       if (req.user.role !== "admin") {
-        return res.status(403).send("Unauthorized");
+        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/users");
       }
 
+      const user = await User.findOne(scopedIdQuery(req, userID));
+      if (!user) return respondMutation(req, res, 404, { message: "User not found." }, "/admin/users");
 
-      // Delete  user
-      await User.deleteOne(scopedIdQuery(req, userID));
+      const before = {
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        userName: user.userName || "",
+        email: user.email || "",
+        role: user.role
+      };
 
-      console.log("User deleted");
-      res.redirect("/admin/users");
+      user.deletedAt = new Date();
+      user.deletedBy = req.user._id;
+      await user.save();
+
+      await logAdminAction(req, {
+        action: "admin.user.soft_delete",
+        targetType: "user",
+        targetId: user._id,
+        before,
+        after: { ...before, deletedAt: user.deletedAt }
+      });
+
+      return respondMutation(req, res, 200, { message: "User deleted." }, "/admin/users");
 
     } catch (err) {
       console.error(err);
-      return res.status(500).send(err.message || "Error deleting user");
+      return respondMutation(req, res, 500, { message: err.message || "Error deleting user." }, "/admin/users");
     }
   },
   deleteClass: async (req, res) => {
     try {
-      // Find user by id
-      let classID = req.params.id
-      console.log(classID)
-      const classDelete = await Class.findOne(scopedIdQuery(req, classID));
-      if (!classDelete) return res.status(404).send("Class not found");
-      console.log(classDelete)
-
-      //to prevent other users from being able to delete
+      const classID = req.params.id;
       if (req.user.role !== "admin") {
-        return res.status(403).send("Unauthorized");
+        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/classes");
       }
 
+      const classDelete = await Class.findOne(scopedIdQuery(req, classID));
+      if (!classDelete) return respondMutation(req, res, 404, { message: "Class not found." }, "/admin/classes");
 
-      // Delete  user
-      await Class.deleteOne(scopedIdQuery(req, classID));
+      const before = {
+        className: classDelete.className || "",
+        classCode: classDelete.classCode || "",
+        active: !!classDelete.active
+      };
 
-      console.log("class deleted");
-      res.redirect("/admin/classes");
+      classDelete.deletedAt = new Date();
+      classDelete.deletedBy = req.user._id;
+      await classDelete.save();
+
+      await logAdminAction(req, {
+        action: "admin.class.soft_delete",
+        targetType: "class",
+        targetId: classDelete._id,
+        before,
+        after: { ...before, deletedAt: classDelete.deletedAt }
+      });
+
+      return respondMutation(req, res, 200, { message: "Class deleted." }, "/admin/classes");
 
     } catch (err) {
       console.error(err);
-      return res.status(500).send(err.message || "Error deleting user");
+      return respondMutation(req, res, 500, { message: err.message || "Error deleting class." }, "/admin/classes");
+    }
+  },
+  restoreUser: async (req, res) => {
+    try {
+      if (req.user.role !== "admin") {
+        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/users");
+      }
+      const user = await User.findOne(scopedIdQuery(req, req.params.id, { includeDeleted: true }));
+      if (!user) return respondMutation(req, res, 404, { message: "User not found." }, "/admin/users");
+
+      const emailNormalized = user.emailNormalized || normalizeEmail(user.email);
+      if (emailNormalized) {
+        const emailConflict = await User.findOne(
+          scopedQuery(req, {
+            _id: { $ne: user._id },
+            emailNormalized
+          })
+        ).lean();
+        if (emailConflict) {
+          return respondMutation(
+            req,
+            res,
+            409,
+            { error: "conflict", field: "email", message: "Email already exists for this school." },
+            "/admin/users"
+          );
+        }
+      }
+
+      const employeeIdNormalized = user.employeeIdNormalized || normalizeIdentifier(user.teacherInfo?.employeeId);
+      if (employeeIdNormalized) {
+        const employeeConflict = await User.findOne(
+          scopedQuery(req, {
+            _id: { $ne: user._id },
+            employeeIdNormalized
+          })
+        ).lean();
+        if (employeeConflict) {
+          return respondMutation(
+            req,
+            res,
+            409,
+            { error: "conflict", field: "employeeId", message: "Employee ID already exists for this school." },
+            "/admin/users"
+          );
+        }
+      }
+
+      const studentNumberNormalized = user.studentNumberNormalized || normalizeStudentNumber(user.studentInfo?.studentNumber);
+      if (studentNumberNormalized) {
+        const studentNumberConflict = await User.findOne(
+          scopedQuery(req, {
+            _id: { $ne: user._id },
+            studentNumberNormalized
+          })
+        ).lean();
+        if (studentNumberConflict) {
+          return respondMutation(
+            req,
+            res,
+            409,
+            { error: "conflict", field: "studentNumber", message: "Student number already exists for this school." },
+            "/admin/users"
+          );
+        }
+      }
+
+      user.deletedAt = null;
+      user.deletedBy = null;
+      await user.save();
+      await logAdminAction(req, {
+        action: "admin.user.restore",
+        targetType: "user",
+        targetId: user._id,
+        before: { deletedAt: new Date() },
+        after: { deletedAt: null }
+      });
+      return respondMutation(req, res, 200, { message: "User restored." }, "/admin/users");
+    } catch (err) {
+      console.error(err);
+      if (err.code === 11000) return conflictResponse(req, res, "/admin/users", err);
+      return respondMutation(req, res, 500, { message: err.message || "Error restoring user." }, "/admin/users");
+    }
+  },
+  restoreClass: async (req, res) => {
+    try {
+      if (req.user.role !== "admin") {
+        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/classes");
+      }
+      const classDoc = await Class.findOne(scopedIdQuery(req, req.params.id, { includeDeleted: true }));
+      if (!classDoc) return respondMutation(req, res, 404, { message: "Class not found." }, "/admin/classes");
+      classDoc.deletedAt = null;
+      classDoc.deletedBy = null;
+      await classDoc.save();
+      await logAdminAction(req, {
+        action: "admin.class.restore",
+        targetType: "class",
+        targetId: classDoc._id,
+        before: { deletedAt: new Date() },
+        after: { deletedAt: null }
+      });
+      return respondMutation(req, res, 200, { message: "Class restored." }, "/admin/classes");
+    } catch (err) {
+      console.error(err);
+      return respondMutation(req, res, 500, { message: err.message || "Error restoring class." }, "/admin/classes");
     }
   }
 };

@@ -64,18 +64,23 @@ router.get("/admin/classes", homeController.getClasses);
 
 // --- POST (Create) ---
 router.post("/admin/students/add", requireFields(["firstName", "lastName", "email", "userName", "password", "gradeLevel", "programType"]), validateEmailField("email"), postsController.createStudent);
-router.post("/admin/teachers/add", requireFields(["firstName", "lastName", "email", "userName", "password", "employeeId"]), validateEmailField("email"), postsController.createTeacher);
+router.post("/admin/teachers/add", requireFields(["firstName", "lastName", "email", "userName", "password"]), validateEmailField("email"), postsController.createTeacher);
 router.post("/admin/parents/add", requireFields(["firstName", "lastName", "email", "userName", "password"]), validateEmailField("email"), postsController.createParent);
 router.post("/admin/classes/add", requireFields(["className"]), postsController.createClass);
 router.post("/admin/school", requireFields(["schoolName", "schoolEmail", "password", "adminUser"]), validateEmailField("schoolEmail"), postsController.createSchool);
 
-// --- PUT (Assign) ---
+// --- PUT/PATCH (Update + Assign) ---
 router.put("/admin/assign/student-to-parent", requireFields(["parentID", "studentID"]), postsController.assignParentToStudent);
 router.put("/admin/assign/student-to-class", requireFields(["classID", "studentID"]), postsController.assignStudentToClass);
+router.patch("/admin/users/:id", validateObjectIdParam("id"), postsController.patchUser);
+router.put("/admin/users/:id", validateObjectIdParam("id"), postsController.patchUser);
+router.patch("/admin/classes/:id", validateObjectIdParam("id"), postsController.patchClass);
 
 // --- DELETE ---
 router.delete("/admin/users/:id", validateObjectIdParam("id"), postsController.deleteUser);
 router.delete("/admin/classes/delete/:id", validateObjectIdParam("id"), postsController.deleteClass);
+router.patch("/admin/users/:id/restore", validateObjectIdParam("id"), postsController.restoreUser);
+router.patch("/admin/classes/:id/restore", validateObjectIdParam("id"), postsController.restoreClass);
 // =============================================
 // 5. TEACHER ROUTES
 // =============================================

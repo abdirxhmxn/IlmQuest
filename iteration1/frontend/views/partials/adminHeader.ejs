@@ -1,4 +1,11 @@
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/components.css">
 <link rel="stylesheet" href="/css/layout.css">
+
 <header class="header-bar">
     <div class="header-left">
         <button class="logo-btn">
@@ -6,8 +13,11 @@
         </button>
         <div class="greeting">
             <!-- <h3>Assalāmu ʿalaykum,</h3> -->
-             <h3>Welcome back,</h3>
-            <h2><%= user?.firstName || "Admin" %> <%= user?.lastName%></h2>
+            <h3>Welcome back,</h3>
+            <h2>
+                <%= user?.firstName || "Admin" %>
+                    <%= user?.lastName%>
+            </h2>
         </div>
     </div>
     <nav>
@@ -16,7 +26,8 @@
             <li><a href="/admin/users">Users</a></li>
             <li><a href="/admin/classes">Classes</a></li>
             <li><a href="/admin/communication">Communication</a></li>
-            <li><a href="/logout">Logout</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <!-- <li><a href="/logout">Logout</a></li> -->
         </ul>
     </nav>
 </header>
