@@ -1,98 +1,120 @@
+const crypto = require("crypto");
 const passport = require("passport");
 const validator = require("validator");
 const User = require("../models/User");
 const School = require("../models/School");
+const env = require("../config/env");
+const { sendPasswordResetEmail, isMailerConfigured } = require("../utils/mailer");
 const { normalizeEmail, mapDuplicateKeyError } = require("../utils/userIdentifiers");
+
+const RESET_TOKEN_BYTES = 32;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const RESET_TOKEN_PATTERN = /^[a-f0-9]{64}$/i;
+const FORGOT_PASSWORD_MESSAGE = "If an account exists for that email, you will receive a password reset link shortly.";
+
+function getRoleHome(role) {
+  const routes = {
+    admin: "/admin/home",
+    teacher: "/teacher/home",
+    parent: "/parent/home",
+    student: "/student/home"
+  };
+
+  return routes[role] || "/student/home";
+}
+
+function createResetTokenPair() {
+  const rawToken = crypto.randomBytes(RESET_TOKEN_BYTES).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+  return { rawToken, tokenHash };
+}
+
+function getResetTokenHash(token) {
+  return crypto.createHash("sha256").update(String(token || "")).digest("hex");
+}
+
+function isValidResetToken(token) {
+  return RESET_TOKEN_PATTERN.test(String(token || ""));
+}
+
+function appBaseUrl(req) {
+  if (env.APP_BASE_URL) {
+    return env.APP_BASE_URL.replace(/\/+$/, "");
+  }
+  return `${req.protocol}://${req.get("host")}`;
+}
 
 exports.getLogin = (req, res) => {
   if (req.user) {
     return res.redirect("/profile");
   }
-  res.render("login", {
-    title: "Login",
-  });
+  return res.render("login", { title: "Login" });
 };
 
 exports.postLogin = (req, res, next) => {
   const validationErrors = [];
-  if (!validator.isEmail(req.body.email))
+  if (!validator.isEmail(req.body.email || "")) {
     validationErrors.push({ msg: "Please enter a valid email address." });
-  if (validator.isEmpty(req.body.password))
+  }
+  if (validator.isEmpty(req.body.password || "")) {
     validationErrors.push({ msg: "Password cannot be blank." });
+  }
 
   if (validationErrors.length) {
     req.flash("errors", validationErrors);
     return res.redirect("/login");
   }
+
   req.body.email = normalizeEmail(req.body.email);
 
-  passport.authenticate("local", (err, user, info) => {
+  return passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
     if (!user) {
       req.flash("errors", info);
       return res.redirect("/login");
     }
 
-    req.logIn(user, (err) => {
-      if (err) {
-        console.error("LOGIN ERROR:", err);
-        return next(err);
+    req.logIn(user, (loginErr) => {
+      if (loginErr) {
+        console.error("LOGIN ERROR:", loginErr);
+        return next(loginErr);
       }
 
-
-
-      req.session.save((err) => {
-        if (err) {
-          return next(err);
+      req.session.save((sessionErr) => {
+        if (sessionErr) {
+          return next(sessionErr);
         }
-        if (req.user.role === 'admin') {
-          return res.redirect('/admin/home')
-        } else if (req.user.role === 'teacher') {
-          return res.redirect('/teacher/home')
-        } else {
-          return res.redirect("/student/home")
-        }
+        return res.redirect(getRoleHome(req.user.role));
       });
     });
-  })(req, res, next); // << ADD next HERE
-
+  })(req, res, next);
 };
 
 exports.logout = (req, res) => {
   req.logout((err) => {
     if (err) {
-      console.log('Error during logout:', err);
+      console.log("Error during logout:", err);
       return res.redirect("/");
     }
-    console.log('User has logged out.');
+    console.log("User has logged out.");
 
-    req.session.destroy((err) => {
-      if (err) {
-        console.log("Error: Failed to destroy the session during logout.", err);
+    req.session.destroy((sessionErr) => {
+      if (sessionErr) {
+        console.log("Error: Failed to destroy the session during logout.", sessionErr);
       }
-      res.clearCookie('connect.sid'); // Clear the session cookie
-      res.redirect("/");
+      res.clearCookie("connect.sid");
+      return res.redirect("/");
     });
   });
 };
 
-
 exports.getSignup = (req, res) => {
   if (req.user) {
-    const role = req.user.role;
-
-    const routes = {
-      admin: "/admin/home",
-      teacher: "/teacher/home",
-      student: "/student/home"
-    };
-
-    return res.redirect(routes[role]);
+    return res.redirect(getRoleHome(req.user.role));
   }
 
   return res.render("signup.ejs", { title: "Create Account" });
 };
-
 
 exports.postSignup = async (req, res, next) => {
   let createdSchoolId = null;
@@ -140,13 +162,9 @@ exports.postSignup = async (req, res, next) => {
     const email = req.body.email;
     const username = submittedUserName;
 
-    // Type-specific duplicate checks
-    const [
-      existingSchoolName,
-      existingSchoolEmail,
-    ] = await Promise.all([
+    const [existingSchoolName, existingSchoolEmail] = await Promise.all([
       School.findOne({ schoolName }),
-      School.findOne({ schoolEmail: email }),
+      School.findOne({ schoolEmail: email })
     ]);
 
     const dupErrors = [];
@@ -158,21 +176,18 @@ exports.postSignup = async (req, res, next) => {
       return res.redirect("../signup");
     }
 
-    // Create School
     const school = new School({
       schoolName,
       schoolEmail: email,
-      // NOTE: Consider removing password from School entirely.
       password: req.body.password,
       adminUser: username,
       contactEmail: email,
-      contactPhone: phone,
+      contactPhone: phone
     });
 
     await school.save();
     createdSchoolId = school._id;
 
-    // Create Admin User
     const [firstName, ...lastNameParts] = adminName.split(" ");
     const user = new User({
       schoolId: school._id,
@@ -181,13 +196,12 @@ exports.postSignup = async (req, res, next) => {
       password: req.body.password,
       role: "admin",
       firstName: firstName || "",
-      lastName: lastNameParts.join(" "),
+      lastName: lastNameParts.join(" ")
     });
 
     await user.save();
 
-    // Do NOT auto-login. Force manual login.
-    req.flash("success", { msg: "Account created successfully. Please log in." });
+    req.flash("info", [{ msg: "Account created successfully. Please log in." }]);
     return res.redirect("/login");
   } catch (err) {
     try {
@@ -195,7 +209,7 @@ exports.postSignup = async (req, res, next) => {
         await School.deleteOne({ _id: createdSchoolId });
       }
     } catch (cleanupErr) {
-      // ignore cleanup errors; original error is more important
+      console.error("Failed to rollback school after signup error:", cleanupErr);
     }
 
     if (err && err.code === 11000) {
@@ -207,15 +221,171 @@ exports.postSignup = async (req, res, next) => {
     return next(err);
   }
 };
-exports.putResetPassword = async (req, res, next) => {
-  try {
 
+exports.getForgotPassword = (req, res) => {
+  if (req.user) {
+    return res.redirect("/reset-password");
+  }
+
+  return res.render("forgotPassword.ejs", {
+    title: "Forgot Password"
+  });
+};
+
+exports.postForgotPassword = async (req, res, next) => {
+  try {
+    const email = normalizeEmail(req.body.email || "");
+
+    if (!isMailerConfigured()) {
+      req.flash("errors", [{ msg: "Password reset email is currently unavailable. Please contact support." }]);
+      return res.redirect("/forgot-password");
+    }
+
+    const users = await User.find({
+      deletedAt: null,
+      $or: [{ emailNormalized: email }, { email }]
+    }).select("_id role schoolId");
+
+    if (users.length) {
+      const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+      const resetLinks = [];
+
+      for (const account of users) {
+        const { rawToken, tokenHash } = createResetTokenPair();
+        await User.updateOne(
+          { _id: account._id, deletedAt: null },
+          {
+            $set: {
+              resetPasswordTokenHash: tokenHash,
+              resetPasswordExpiresAt: expiresAt
+            }
+          }
+        );
+
+        resetLinks.push({
+          role: account.role,
+          schoolId: account.schoolId ? String(account.schoolId) : "",
+          resetUrl: `${appBaseUrl(req)}/reset-password/${rawToken}`
+        });
+      }
+
+      let emailResult;
+      try {
+        emailResult = await sendPasswordResetEmail({
+          to: email,
+          resetLinks,
+          expiresAt
+        });
+      } catch (mailErr) {
+        console.error("Failed to send password reset email:", mailErr);
+        req.flash("errors", [{ msg: "We could not send the reset email right now. Please try again shortly." }]);
+        return res.redirect("/forgot-password");
+      }
+
+      if (!emailResult || emailResult.sent !== true) {
+        console.error("Failed to send password reset email:", emailResult);
+        req.flash("errors", [{ msg: "We could not send the reset email right now. Please try again shortly." }]);
+        return res.redirect("/forgot-password");
+      }
+    }
+
+    req.flash("info", [{ msg: FORGOT_PASSWORD_MESSAGE }]);
+    return res.redirect("/forgot-password");
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.getResetPasswordByToken = async (req, res, next) => {
+  try {
+    const token = String(req.params.token || "").trim();
+    if (!isValidResetToken(token)) {
+      req.flash("errors", [{ msg: "This password reset link is invalid or has expired." }]);
+      return res.redirect("/forgot-password");
+    }
+
+    const tokenHash = getResetTokenHash(token);
+    const user = await User.findOne({
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpiresAt: { $gt: new Date() },
+      deletedAt: null
+    }).select("_id");
+
+    if (!user) {
+      req.flash("errors", [{ msg: "This password reset link is invalid or has expired." }]);
+      return res.redirect("/forgot-password");
+    }
+
+    return res.render("resetPasswordToken.ejs", {
+      title: "Set New Password",
+      token
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.postResetPasswordByToken = async (req, res, next) => {
+  try {
+    const token = String(req.params.token || "").trim();
     const password = req.body["new-password"];
     const confirmPassword = req.body["confirm-password"];
 
-    const user = await User.findOne({ _id: req.user._id, schoolId: req.schoolId, deletedAt: null }).select("+password");
+    if (!isValidResetToken(token)) {
+      req.flash("errors", [{ msg: "This password reset link is invalid or has expired." }]);
+      return res.redirect("/forgot-password");
+    }
+
+    const validationErrors = [];
+    if (!validator.isLength(password || "", { min: 8 })) {
+      validationErrors.push({ msg: "Password must be at least 8 characters long." });
+    }
+    if ((password || "") !== (confirmPassword || "")) {
+      validationErrors.push({ msg: "Passwords do not match." });
+    }
+
+    if (validationErrors.length) {
+      req.flash("errors", validationErrors);
+      return res.redirect(`/reset-password/${token}`);
+    }
+
+    const tokenHash = getResetTokenHash(token);
+    const user = await User.findOne({
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpiresAt: { $gt: new Date() },
+      deletedAt: null
+    }).select("+password");
+
     if (!user) {
-      req.flash("errors", { msg: "User not found." });
+      req.flash("errors", [{ msg: "This password reset link is invalid or has expired." }]);
+      return res.redirect("/forgot-password");
+    }
+
+    user.password = password;
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpiresAt = null;
+    await user.save();
+
+    req.flash("info", [{ msg: "Your password was reset successfully. Please sign in." }]);
+    return res.redirect("/login");
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.putResetPassword = async (req, res) => {
+  try {
+    const password = req.body["new-password"];
+    const confirmPassword = req.body["confirm-password"];
+
+    const user = await User.findOne({
+      _id: req.user._id,
+      schoolId: req.schoolId,
+      deletedAt: null
+    }).select("+password");
+
+    if (!user) {
+      req.flash("errors", [{ msg: "User not found." }]);
       return res.redirect("/reset-password");
     }
 
@@ -233,43 +403,15 @@ exports.putResetPassword = async (req, res, next) => {
     }
 
     user.password = password;
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpiresAt = null;
     await user.save();
 
-    req.flash("success", { msg: "Password updated successfully." });
+    req.flash("info", [{ msg: "Password updated successfully. Please sign in again." }]);
     return res.redirect("/login");
   } catch (err) {
     console.error("Error in putResetPassword:", err);
-    req.flash("errors", { msg: "An error occurred while resetting the password. Please try again." });
+    req.flash("errors", [{ msg: "An error occurred while resetting the password. Please try again." }]);
     return res.redirect("/reset-password");
   }
 };
-// User.findOne(
-//   { $or: [{ email: req.body.email }, { userName: req.body.userName }] },
-//   (err, existingUser) => {
-//     if (err) {
-//       return next(err);
-//     }
-//     if (existingUser) {
-//       req.flash("errors", {
-//         msg: "Account with that email address or username already exists.",
-//       });
-//       return res.redirect("../signup");
-//     }
-//     user.save((err) => {
-//       if (err) {
-//         return next(err);
-//       }
-//       req.logIn(user, (err) => {
-//         if (err) {
-//           return next(err);
-//         }
-//         res.redirect("/main");
-//       });
-//     });
-//   }
-// );
-
-//   } catch (err) {
-//   console.log('error')
-// }
-// };

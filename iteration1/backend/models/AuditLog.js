@@ -27,5 +27,6 @@ const AuditLogSchema = new mongoose.Schema(
 
 AuditLogSchema.index({ schoolId: 1, actorId: 1, createdAt: -1 });
 AuditLogSchema.index({ schoolId: 1, targetId: 1, createdAt: -1 });
+AuditLogSchema.index({ schoolId: 1, action: 1, createdAt: -1 });
 
 module.exports = mongoose.model("AuditLog", AuditLogSchema);

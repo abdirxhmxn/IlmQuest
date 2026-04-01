@@ -1,0 +1,328 @@
+<%- include('../partials/parentShellStart', {
+  pageTitle: 'IlmQuest Parent Portal',
+  pageStyles: ['/css/pages/parent-dashboard.css'],
+  activePage: activePage || 'dashboard',
+  user
+}) %>
+
+<%
+  const summary = portal || {};
+  const children = Array.isArray(summary.childSummaries) ? summary.childSummaries : [];
+  const selectedChild = summary.selectedChild || null;
+  const selectedChildId = summary.selectedChildId || "";
+  const gradesSummary = summary.selectedGradesSummary || {};
+  const attendanceSummary = summary.selectedAttendanceSummary || {};
+  const paymentHistory = Array.isArray(summary.payments) ? summary.payments : [];
+  const nextPayment = summary.nextPayment || null;
+  const ring = summary.paymentRing || {};
+  const reports = Array.isArray(summary.recentReports) ? summary.recentReports : [];
+  const announcements = Array.isArray(summary.announcements) ? summary.announcements : [];
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+  const fmtCurrency = (value, currency) => new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: String(currency || 'USD').toUpperCase()
+  }).format(Number(value || 0));
+%>
+
+<header class="parent-page-header">
+  <button
+    type="button"
+    class="parent-sidebar-toggle"
+    data-parent-sidebar-toggle
+    aria-controls="parentSidebar"
+    aria-label="Toggle sidebar"
+    aria-expanded="true"
+  >
+    Hide Menu
+  </button>
+  <div class="parent-page-title">
+    <h1>Family Dashboard</h1>
+    <p>Track academic progress, attendance, and upcoming payments in one place.</p>
+  </div>
+  <div class="parent-top-actions">
+    <a class="parent-action-link" href="/parent/home#payments">Pay Now</a>
+    <a class="parent-action-link" href="/parent/home#grades">View Grades</a>
+    <% if (selectedChildId) { %>
+      <a class="parent-action-link" href="/parent/reports/<%= selectedChildId %>/download">Download Report</a>
+    <% } %>
+  </div>
+</header>
+
+<% if (successMessages.length > 0) { %>
+  <div class="parent-flash parent-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="parent-flash parent-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="parent-card intro-card">
+  <div class="intro-headline">
+    <h2>Welcome back, <%= user?.firstName || 'Parent' %></h2>
+    <p>You currently have <strong><%= children.length %></strong> linked child account(s).</p>
+  </div>
+  <div class="intro-metrics">
+    <article>
+      <p class="metric-label">Family Balance</p>
+      <p class="metric-value"><%= fmtCurrency(summary.familyOutstanding || 0, nextPayment?.currency || 'USD') %></p>
+    </article>
+    <article>
+      <p class="metric-label">Total Paid</p>
+      <p class="metric-value"><%= fmtCurrency(summary.totalPaid || 0, nextPayment?.currency || 'USD') %></p>
+    </article>
+  </div>
+</section>
+
+<section class="parent-card section-card">
+  <header class="section-head">
+    <h3>Announcements</h3>
+    <p>Pinned and recent updates relevant to your family.</p>
+  </header>
+  <% if (!announcements.length) { %>
+    <div class="parent-empty-state">No announcements are available right now.</div>
+  <% } else { %>
+    <div class="parent-announcement-list">
+      <% announcements.forEach((item) => { %>
+        <article class="parent-announcement-item">
+          <div class="parent-announcement-head">
+            <h4><%= item.title %></h4>
+            <% if (item.isPinned) { %><span class="status-chip status-success">Pinned</span><% } %>
+          </div>
+          <p><%= item.summary || item.content || '' %></p>
+          <small>Published <%= item.publishLabel || item.createdAtLabel %></small>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<section id="children" class="parent-card child-switcher-card">
+  <header class="section-head">
+    <h3>Children</h3>
+    <p>Switch child context to view detailed progress.</p>
+  </header>
+  <% if (children.length === 0) { %>
+    <div class="parent-empty-state">No children are linked to this parent account yet. Please contact your school admin.</div>
+  <% } else { %>
+    <div class="child-card-grid">
+      <% children.forEach((child) => { %>
+        <a href="/parent/home?childId=<%= child.childId %>" class="child-card <%= child.childId === selectedChildId ? 'active' : '' %>">
+          <div class="child-card-top">
+            <h4><%= child.fullName %></h4>
+            <span class="status-chip status-<%= child.statusChip?.tone || 'neutral' %>"><%= child.statusChip?.label || 'In Progress' %></span>
+          </div>
+          <p><strong>Class:</strong> <%= child.className %></p>
+          <p><strong>Program:</strong> <%= child.programType %> · <%= child.gradeLevel %></p>
+          <div class="child-card-metrics">
+            <span>Grade <strong><%= child.overallAverageLabel %></strong></span>
+            <span>Attendance <strong><%= child.attendanceRateLabel %></strong></span>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<section class="portal-grid">
+  <article class="parent-card summary-card">
+    <header class="section-head">
+      <h3>Academic Summary</h3>
+      <p><%= selectedChild ? selectedChild.fullName : 'No child selected' %></p>
+    </header>
+    <% if (!selectedChild) { %>
+      <div class="parent-empty-state">Select a child to view academic details.</div>
+    <% } else { %>
+      <dl class="summary-list">
+        <div><dt>Overall Grade</dt><dd><%= selectedChild.overallAverageLabel %></dd></div>
+        <div><dt>Class</dt><dd><%= selectedChild.className %></dd></div>
+        <div><dt>Teacher</dt><dd><%= selectedChild.teacherNames %></dd></div>
+        <div><dt>Attendance</dt><dd><%= selectedChild.attendanceRateLabel %></dd></div>
+      </dl>
+    <% } %>
+  </article>
+
+  <article id="payments" class="parent-card payment-card">
+    <header class="section-head">
+      <h3>Next Payment</h3>
+      <p>Upcoming tuition and fee visibility.</p>
+    </header>
+
+    <div class="payment-layout">
+      <div class="payment-ring-wrap">
+        <div
+          class="payment-ring"
+          data-payment-ring
+          data-percent="<%= Number(ring.percent || 0) %>"
+          data-state="<%= ring.state || 'none' %>"
+        >
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-track" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-progress" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-center">
+            <p class="ring-amount"><%= ring.amountLabel || '$0.00' %></p>
+            <p class="ring-status"><%= ring.statusLabel || 'No payment due' %></p>
+          </div>
+        </div>
+        <p class="ring-due"><%= ring.dueLabel || 'No pending invoices' %></p>
+      </div>
+
+      <div class="payment-meta">
+        <% if (!nextPayment) { %>
+          <div class="parent-empty-state">No upcoming payment is currently configured.</div>
+        <% } else { %>
+          <dl class="summary-list">
+            <div><dt>Expected Amount</dt><dd><%= fmtCurrency(nextPayment.expectedAmount, nextPayment.currency) %></dd></div>
+            <div><dt>Outstanding</dt><dd><%= fmtCurrency(nextPayment.amountDue, nextPayment.currency) %></dd></div>
+            <div><dt>Due Date</dt><dd><%= nextPayment.dueDateLabel %></dd></div>
+            <div><dt>Status</dt><dd><span class="status-chip status-<%= String(nextPayment.status || '').toLowerCase() %>"><%= nextPayment.status %></span></dd></div>
+          </dl>
+
+          <form action="/parent/payments/checkout" method="POST" class="pay-now-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <% if (nextPayment._id) { %>
+              <input type="hidden" name="paymentId" value="<%= nextPayment._id %>" />
+            <% } else if (selectedChildId) { %>
+              <input type="hidden" name="childId" value="<%= selectedChildId %>" />
+            <% } %>
+            <input type="hidden" name="amount" value="<%= Number(nextPayment.amountDue || 0) %>" />
+            <button type="submit" class="pay-now-btn">Pay Now</button>
+            <p class="pay-note">Checkout requests are captured safely. No card charge is executed until processor integration is completed.</p>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section id="grades" class="parent-card section-card">
+  <header class="section-head">
+    <h3>Grades</h3>
+    <p>Subject-level performance and latest teacher feedback.</p>
+  </header>
+  <% if (!selectedChild || !Array.isArray(gradesSummary.subjectRows) || gradesSummary.subjectRows.length === 0) { %>
+    <div class="parent-empty-state">No grades are available for the selected child yet.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="portal-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Average</th>
+            <th>Teacher Comment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% gradesSummary.subjectRows.forEach((row) => { %>
+            <tr>
+              <td><%= row.subject %></td>
+              <td><strong><%= row.averageLabel %></strong></td>
+              <td><%= row.teacherComment || '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<section id="attendance" class="parent-card section-card">
+  <header class="section-head">
+    <h3>Attendance</h3>
+    <p>Absence, excused, and late-arrival breakdown.</p>
+  </header>
+  <% if (!selectedChild) { %>
+    <div class="parent-empty-state">Select a child to view attendance details.</div>
+  <% } else { %>
+    <div class="attendance-summary-grid">
+      <article>
+        <p class="metric-label">Attendance Rate</p>
+        <p class="metric-value"><%= Number.isFinite(Number(attendanceSummary.attendanceRate)) ? `${Number(attendanceSummary.attendanceRate).toFixed(1)}%` : 'N/A' %></p>
+      </article>
+      <article>
+        <p class="metric-label">Absences</p>
+        <p class="metric-value"><%= attendanceSummary.absences || 0 %></p>
+      </article>
+      <article>
+        <p class="metric-label">Excused</p>
+        <p class="metric-value"><%= attendanceSummary.excused || 0 %></p>
+      </article>
+      <article>
+        <p class="metric-label">Late Arrivals</p>
+        <p class="metric-value"><%= attendanceSummary.late || 0 %></p>
+      </article>
+    </div>
+  <% } %>
+</section>
+
+<section class="portal-grid">
+  <article class="parent-card section-card">
+    <header class="section-head">
+      <h3>Payment History</h3>
+      <p>All recorded family-level and student-level payment records.</p>
+    </header>
+    <% if (paymentHistory.length === 0) { %>
+      <div class="parent-empty-state">No payment records are available yet.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="portal-table">
+          <thead>
+            <tr>
+              <th>Due Date</th>
+              <th>Child</th>
+              <th>Category</th>
+              <th>Expected</th>
+              <th>Paid</th>
+              <th>Status</th>
+              <th>Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% paymentHistory.forEach((row) => { %>
+              <tr class="<%= row.status === 'Overdue' ? 'row-overdue' : '' %>">
+                <td><%= row.dueDateLabel %></td>
+                <td><%= row.childName || 'Family' %></td>
+                <td><%= row.category || row.title || 'Payment' %></td>
+                <td><%= fmtCurrency(row.expectedAmount, row.currency) %></td>
+                <td><%= fmtCurrency(row.paidAmount, row.currency) %></td>
+                <td><span class="status-chip status-<%= String(row.status || '').toLowerCase() %>"><%= row.status %></span></td>
+                <td><%= row.receiptReference || row.processorReference || '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </article>
+
+  <article id="reports" class="parent-card section-card">
+    <header class="section-head">
+      <h3>Reports</h3>
+      <p>Download child reports and review recent report activity.</p>
+    </header>
+    <% if (selectedChildId) { %>
+      <a class="parent-action-link report-download-link" href="/parent/reports/<%= selectedChildId %>/download">
+        Download Latest Report for Selected Child
+      </a>
+    <% } %>
+    <% if (reports.length === 0) { %>
+      <div class="parent-empty-state">No report activity is available yet.</div>
+    <% } else { %>
+      <ul class="report-list">
+        <% reports.forEach((entry) => { %>
+          <li>
+            <span><strong><%= entry.studentName %></strong></span>
+            <span><%= entry.generatedAtLabel %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+</section>
+
+<script src="/js/parent-dashboard.js"></script>
+
+<%- include('../partials/parentShellEnd') %>

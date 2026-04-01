@@ -28,5 +28,7 @@ const AttendanceSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 AttendanceSchema.index({ schoolId: 1, classId: 1, date: 1 });
+AttendanceSchema.index({ schoolId: 1, date: -1 });
+AttendanceSchema.index({ schoolId: 1, "records.studentId": 1, date: -1 });
 
 module.exports = mongoose.model("Attendance", AttendanceSchema);

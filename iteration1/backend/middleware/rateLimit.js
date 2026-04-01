@@ -23,14 +23,26 @@ function makeLimiter({ windowMs, max, keyGenerator }) {
   });
 }
 
+function tenantUserKey(req) {
+  const schoolId = req.schoolId || req.user?.schoolId || "no-school";
+  const userId = req.user?._id || req.ip || "anonymous";
+  return `${schoolId}:${userId}`;
+}
+
 const loginLimiter = makeLimiter({ windowMs: 15 * 60 * 1000, max: 10 });
 const signupLimiter = makeLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
 const recoveryLimiter = makeLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
 const resetLimiter = makeLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
+const adminMutationLimiter = makeLimiter({ windowMs: 60 * 1000, max: 120, keyGenerator: tenantUserKey });
+const reportGenerationLimiter = makeLimiter({ windowMs: 10 * 60 * 1000, max: 40, keyGenerator: tenantUserKey });
+const financeSyncLimiter = makeLimiter({ windowMs: 5 * 60 * 1000, max: 20, keyGenerator: tenantUserKey });
 
 module.exports = {
   loginLimiter,
   signupLimiter,
   recoveryLimiter,
-  resetLimiter
+  resetLimiter,
+  adminMutationLimiter,
+  reportGenerationLimiter,
+  financeSyncLimiter
 };

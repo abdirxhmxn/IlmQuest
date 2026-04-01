@@ -3,6 +3,7 @@ const { normalizeEmail } = require("../utils/userIdentifiers");
 
 const STUDENT_GRADE_LEVELS = ["Prep 1", "Prep 2", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"];
 const STUDENT_PROGRAM_TYPES = ["Tahfiidth", "Khatm"];
+const SUPPORTED_CURRENCIES = ["USD", "CAD", "EUR", "GBP"];
 
 function pickAllowedFields(source, allowedFields) {
   const out = {};
@@ -100,6 +101,35 @@ function validateUserPatchPayload(payload, role) {
         errors.hireDate = "Invalid hire date.";
       } else {
         clean.hireDate = parsed;
+      }
+    }
+  }
+
+  if (role === "parent") {
+    if (payload.monthlyTuitionAmount !== undefined) {
+      const amount = Number(payload.monthlyTuitionAmount);
+      if (!Number.isFinite(amount) || amount < 0) {
+        errors.monthlyTuitionAmount = "Monthly tuition amount must be 0 or greater.";
+      } else {
+        clean.monthlyTuitionAmount = Math.round(amount * 100) / 100;
+      }
+    }
+
+    if (payload.billingDayOfMonth !== undefined) {
+      const day = Number(payload.billingDayOfMonth);
+      if (!Number.isInteger(day) || day < 1 || day > 28) {
+        errors.billingDayOfMonth = "Billing day must be between 1 and 28.";
+      } else {
+        clean.billingDayOfMonth = day;
+      }
+    }
+
+    if (payload.currency !== undefined) {
+      const value = String(payload.currency || "").trim().toUpperCase();
+      if (!SUPPORTED_CURRENCIES.includes(value)) {
+        errors.currency = "Unsupported currency.";
+      } else {
+        clean.currency = value;
       }
     }
   }

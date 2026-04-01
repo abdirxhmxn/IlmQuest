@@ -209,6 +209,12 @@ main {
     margin-bottom: 2em;
 }
 
+.subject-title-row .weight {
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    color: #d1fae5;
+}
+
 .subject-block .students {
     padding: 16px;
     background: #f8fdf9;

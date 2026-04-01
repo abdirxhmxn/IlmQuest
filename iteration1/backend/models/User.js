@@ -6,6 +6,43 @@ const {
   normalizeStudentNumber
 } = require("../utils/userIdentifiers");
 
+const StudentParentLinkSchema = new mongoose.Schema(
+  {
+    parentID: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    parentName: { type: String, trim: true, default: "" },
+    relationship: {
+      type: String,
+      enum: ["Mother", "Father", "Guardian", "Other"],
+      default: "Guardian"
+    },
+    linkedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
+const ParentChildLinkSchema = new mongoose.Schema(
+  {
+    childID: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    childName: { type: String, trim: true, default: "" },
+    relationship: {
+      type: String,
+      enum: ["Mother", "Father", "Guardian", "Other"],
+      default: "Guardian"
+    },
+    linkedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
+const ParentBillingProfileSchema = new mongoose.Schema(
+  {
+    monthlyTuitionAmount: { type: Number, default: 0, min: 0 },
+    billingDayOfMonth: { type: Number, default: 1, min: 1, max: 28 },
+    currency: { type: String, trim: true, default: "USD" }
+  },
+  { _id: false }
+);
+
 //
 // Main User Schema
 //
@@ -21,7 +58,7 @@ const UserSchema = new mongoose.Schema({
   userName: { type: String, required: true, trim: true },
   email: { type: String, required: true, lowercase: true, trim: true },
   emailNormalized: { type: String, default: undefined },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
 
   // Role
   role: {
@@ -39,6 +76,7 @@ const UserSchema = new mongoose.Schema({
     enum: ["male", "female", "other"], 
   },
   profileImage: { type: String },
+  profileImageCloudinaryId: { type: String, trim: true, default: "" },
 
   // STUDENT INFO
   studentInfo: {
@@ -53,7 +91,8 @@ const UserSchema = new mongoose.Schema({
       default: "Khatm"
     },
     classId: { type: mongoose.Schema.Types.ObjectId, ref: "Class" },
-    studentNumber: { type: Number }
+    studentNumber: { type: Number },
+    parents: { type: [StudentParentLinkSchema], default: [] }
   },
   studentNumberNormalized: { type: String, default: undefined },
   // TEACHER INFO
@@ -62,6 +101,10 @@ const UserSchema = new mongoose.Schema({
     hireDate: { type: Date },
     classes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Class" }],
     subjects: [{ type: String }]
+  },
+  parentInfo: {
+    children: { type: [ParentChildLinkSchema], default: [] },
+    billingProfile: { type: ParentBillingProfileSchema, default: () => ({}) }
   },
   employeeIdNormalized: { type: String, default: undefined },
 
@@ -72,6 +115,8 @@ const UserSchema = new mongoose.Schema({
     enum: ["F", "E", "D", "C", "B", "A", "S"],
     default: "F"
   },
+  resetPasswordTokenHash: { type: String, default: null, select: false, index: true },
+  resetPasswordExpiresAt: { type: Date, default: null, select: false },
   deletedAt: { type: Date, default: null, index: true },
   deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
 
@@ -79,6 +124,10 @@ const UserSchema = new mongoose.Schema({
 
 UserSchema.index({ schoolId: 1, userName: 1 });
 UserSchema.index({ emailNormalized: 1, deletedAt: 1 });
+UserSchema.index({ schoolId: 1, role: 1, deletedAt: 1, createdAt: -1 });
+UserSchema.index({ schoolId: 1, "studentInfo.classId": 1, role: 1, deletedAt: 1 });
+UserSchema.index({ schoolId: 1, "parentInfo.children.childID": 1, role: 1, deletedAt: 1 });
+UserSchema.index({ schoolId: 1, "studentInfo.parents.parentID": 1, role: 1, deletedAt: 1 });
 UserSchema.index(
   { schoolId: 1, emailNormalized: 1 },
   {

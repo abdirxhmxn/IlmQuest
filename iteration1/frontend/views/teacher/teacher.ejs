@@ -1,109 +1,203 @@
 <%- include('../partials/teacherHeader') %>
 
-<!-- Tailwind + daisyUI + Lucide Icons -->
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-
 <link rel="stylesheet" href="/css/pages/teacher-dashboard.css">
 
-<div class="min-h-screen bg-emerald-50">
-  <div class="max-w-7xl mx-auto p-6">
+<%
+  const announcements = Array.isArray(teacherAnnouncements) ? teacherAnnouncements : [];
+%>
 
-    <!-- Welcome Header -->
-    <div class="bg-white rounded-3xl shadow-xl border border-emerald-100 p-8 mb-10">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-          <h1 class="text-4xl font-bold text-emerald-900 flex items-center gap-4">
-            <i data-lucide="chalkboard-teacher" class="w-12 h-12 text-[var(--primary)]"></i>
-            Welcome back, <%= user.firstName %>!
-          </h1>
-          <p class="text-lg text-gray-600 mt-2">Here’s your teaching overview for today</p>
-        </div>
-        <div class="text-right">
-          <div class="badge badge-lg bg-[var(--primary)] text-white border-none">
-            <%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) %>
+<main class="teacher-dashboard-page">
+  <section class="dashboard-shell">
+    <header class="dashboard-header">
+      <div>
+        <h1>Teacher Dashboard</h1>
+        <p>Welcome back, <strong><%= user.firstName %></strong>. Review each class and keep plans on track.</p>
+      </div>
+      <a class="btn-secondary" href="/teacher/customize">Customize Classes</a>
+    </header>
+
+    <% if (!classes || classes.length === 0) { %>
+      <div class="empty-state">
+        <h2>No Classes Assigned</h2>
+        <p>Your dashboard sections will appear once classes are assigned to you.</p>
+      </div>
+    <% } else { %>
+      <section class="announcement-stream">
+        <header>
+          <h2>School Announcements</h2>
+          <p>Pinned and recently published updates relevant to your classes.</p>
+        </header>
+        <% if (!announcements.length) { %>
+          <div class="announcement-empty">No announcements available right now.</div>
+        <% } else { %>
+          <div class="announcement-stream-list">
+            <% announcements.forEach((item) => { %>
+              <article class="announcement-stream-item">
+                <div class="announcement-stream-head">
+                  <h3><%= item.title %></h3>
+                  <% if (item.isPinned) { %><span class="meta-pill">Pinned</span><% } %>
+                </div>
+                <p><%= item.summary || item.content || '' %></p>
+                <small>Published <%= item.publishLabel || item.createdAtLabel %></small>
+              </article>
+            <% }) %>
           </div>
-        </div>
-      </div>
-    </div>
+        <% } %>
+      </section>
 
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-      
-      <!-- Total Students -->
-      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
-        <div class="flex flex-col items-center text-center">
-          <i data-lucide="users" class="w-16 h-16 text-[var(--primary)] mb-4"></i>
-          <p class="text-5xl font-bold text-emerald-900">
-            <%= Array.isArray(classes) ? classes.reduce((sum, cls) => sum + (cls.students?.length || 0), 0) : 0 %>
-          </p>
-          <p class="text-lg text-gray-600 mt-2 font-medium">Students Taught</p>
-        </div>
+      <div class="class-tabs">
+        <% classes.forEach((cls, index) => { %>
+          <button class="class-tab <%= index === 0 ? 'active' : '' %>" data-class-index="<%= index %>" type="button">
+            <span><%= cls.className %></span>
+            <small><%= (cls.students || []).length %> students</small>
+          </button>
+        <% }) %>
       </div>
 
-      <!-- Classes -->
-      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
-        <div class="flex flex-col items-center text-center">
-          <i data-lucide="book-open" class="w-16 h-16 text-[var(--primary)] mb-4"></i>
-          <p class="text-5xl font-bold text-emerald-900">
-            <%= Array.isArray(classes) ? classes.length : 0 %>
-          </p>
-          <p class="text-lg text-gray-600 mt-2 font-medium">Active Classes</p>
-        </div>
-      </div>
+      <% classes.forEach((cls, classIndex) => { %>
+        <article class="class-panel <%= classIndex === 0 ? 'active' : '' %>" data-class-index="<%= classIndex %>">
+          <header class="class-panel-header">
+            <div>
+              <h2><%= cls.teacherSettings?.displayTitle || cls.className %></h2>
+              <p><%= cls.teacherSettings?.welcomeMessage || 'Plan lessons, monitor progress, and update student outcomes.' %></p>
+            </div>
+            <div class="panel-meta">
+              <span class="meta-pill">Code: <%= cls.classCode %></span>
+              <span class="meta-pill">Layout: <%= cls.teacherSettings?.dashboardLayout || 'comfortable' %></span>
+              <span class="meta-pill">Schema: v<%= cls.currentConfigVersion || 1 %></span>
+            </div>
+          </header>
 
-      <!-- Average Grade (Real data coming soon!) -->
-      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
-        <div class="flex flex-col items-center text-center">
-          <i data-lucide="trending-up" class="w-16 h-16 text-[var(--primary)] mb-4"></i>
-          <p class="text-5xl font-bold text-emerald-900">94%</p>
-          <p class="text-lg text-gray-600 mt-2 font-medium">Class Average</p>
-        </div>
-      </div>
+          <div class="section-grid layout-<%= cls.teacherSettings?.dashboardLayout || 'comfortable' %>">
+            <% if (cls.activeSectionKeys.includes('classOverview')) { %>
+              <section class="dashboard-card">
+                <h3>Class Overview</h3>
+                <div class="card-metrics">
+                  <div>
+                    <span class="metric-label">Students</span>
+                    <strong><%= cls.dashboardMetrics?.students || 0 %></strong>
+                  </div>
+                  <div>
+                    <span class="metric-label">Subjects</span>
+                    <strong><%= cls.dashboardMetrics?.subjects || 0 %></strong>
+                  </div>
+                  <div>
+                    <span class="metric-label">Room</span>
+                    <strong><%= cls.roomNumber || 'TBD' %></strong>
+                  </div>
+                </div>
+              </section>
+            <% } %>
 
-      <!-- Teacher Rating -->
-      <div class="bg-white rounded-3xl p-8 shadow-xl border border-emerald-100 hover:shadow-2xl transition-all duration-300">
-        <div class="flex flex-col items-center text-center">
-          <i data-lucide="star" class="w-16 h-16 text-yellow-500 mb-4"></i>
-          <p class="text-5xl font-bold text-emerald-900">4.9</p>
-          <p class="text-lg text-gray-600 mt-2 font-medium">Teacher Rating</p>
-        </div>
-      </div>
-    </div>
+            <% if (cls.activeSectionKeys.includes('attendanceSummary')) { %>
+              <section class="dashboard-card">
+                <h3>Attendance Summary</h3>
+                <p class="card-value"><%= cls.dashboardMetrics?.attendanceRate !== null ? `${cls.dashboardMetrics?.attendanceRate}%` : 'No data yet' %></p>
+                <p class="card-note">Present rate over the last 30 days.</p>
+              </section>
+            <% } %>
 
-    <!-- Quick Actions -->
-    <!-- <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <a href="/teacher/manage-grades" class="group">
-        <div class="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-          <i data-lucide="edit-3" class="w-12 h-12 mb-4"></i>
-          <h3 class="text-2xl font-bold">Manage Grades</h3>
-          <p class="mt-2 opacity-90">Enter and review student grades</p>
-        </div>
-      </a>
+            <% if (cls.activeSectionKeys.includes('gradeSummary')) { %>
+              <section class="dashboard-card">
+                <h3>Grade Summary</h3>
+                <p class="card-value"><%= cls.dashboardMetrics?.classAveragePercent ? `${cls.dashboardMetrics.classAveragePercent}%` : 'No grades yet' %></p>
+                <p class="card-note"><%= cls.dashboardMetrics?.gradesRecorded || 0 %> assessments recorded.</p>
+              </section>
+            <% } %>
 
-      <a href="/teacher/manage-missions" class="group">
-        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-          <i data-lucide="target" class="w-12 h-12 mb-4"></i>
-          <h3 class="text-2xl font-bold">Missions & Quests</h3>
-          <p class="mt-2 opacity-90">Create fun learning challenges</p>
-        </div>
-      </a>
+            <% if (cls.activeSectionKeys.includes('assignmentsMissions')) { %>
+              <section class="dashboard-card">
+                <h3>Assignments & Missions</h3>
+                <p class="card-note">You have created <strong><%= cls.dashboardMetrics?.missionsCreated || 0 %></strong> missions.</p>
+                <div class="quick-links">
+                  <a href="/teacher/manage-missions">Manage Missions</a>
+                  <a href="/teacher/manage-grades">Manage Grades</a>
+                </div>
+              </section>
+            <% } %>
 
-      <a href="/teacher/classes" class="group">
-        <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-8 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-          <i data-lucide="school" class="w-12 h-12 mb-4"></i>
-          <h3 class="text-2xl font-bold">My Classes</h3>
-          <p class="mt-2 opacity-90">View schedules and rosters</p>
-        </div>
-      </a>
-    </div> -->
+            <% if (cls.activeSectionKeys.includes('leaderboard')) { %>
+              <section class="dashboard-card">
+                <h3>Leaderboard</h3>
+                <% if (cls.topStudents && cls.topStudents.length > 0) { %>
+                  <ol class="leaderboard-list">
+                    <% cls.topStudents.forEach((student) => { %>
+                      <li>
+                        <span><%= student.name %></span>
+                        <strong><%= student.points %> pts</strong>
+                      </li>
+                    <% }) %>
+                  </ol>
+                <% } else { %>
+                  <p class="card-note">No ranking data yet.</p>
+                <% } %>
+              </section>
+            <% } %>
 
-  </div>
-</div>
+            <% if (cls.activeSectionKeys.includes('announcements')) { %>
+              <section class="dashboard-card">
+                <h3>Announcements</h3>
+                <% if (cls.recentAnnouncements && cls.recentAnnouncements.length > 0) { %>
+                  <ul class="announcement-list">
+                    <% cls.recentAnnouncements.forEach((item) => { %>
+                      <li>
+                        <strong><%= item.title %></strong>
+                        <span><%= item.detail %></span>
+                      </li>
+                    <% }) %>
+                  </ul>
+                <% } else { %>
+                  <p class="card-note">No recent updates for this class.</p>
+                <% } %>
+              </section>
+            <% } %>
+
+            <% if (cls.activeSectionKeys.includes('quickLinks')) { %>
+              <section class="dashboard-card">
+                <h3>Quick Links</h3>
+                <div class="quick-links">
+                  <a href="/teacher/manage-attendance">Attendance</a>
+                  <a href="/teacher/manage-grades">Grades</a>
+                  <a href="/teacher/manage-missions">Missions</a>
+                  <a href="/teacher/customize?classId=<%= cls._id %>">Customize This Class</a>
+                </div>
+              </section>
+            <% } %>
+
+            <% if (cls.activeSectionKeys.includes('performanceInsights')) { %>
+              <section class="dashboard-card">
+                <h3>Performance Insights</h3>
+                <p class="card-note">Active categories: <strong><%= cls.dashboardMetrics?.categories || 0 %></strong></p>
+                <p class="card-note">Current grading schema: <strong>v<%= cls.currentConfigVersion || 1 %></strong></p>
+                <p class="card-note">Last configuration update:
+                  <strong>
+                    <%= cls.teacherSettings?.updatedAt ? new Date(cls.teacherSettings.updatedAt).toLocaleDateString() : 'Not updated yet' %>
+                  </strong>
+                </p>
+              </section>
+            <% } %>
+          </div>
+        </article>
+      <% }) %>
+    <% } %>
+  </section>
+</main>
 
 <script>
-  lucide.createIcons();
+  const tabButtons = document.querySelectorAll(".class-tab");
+  const panels = document.querySelectorAll(".class-panel");
+
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const classIndex = button.getAttribute("data-class-index");
+      tabButtons.forEach((entry) => entry.classList.remove("active"));
+      panels.forEach((entry) => entry.classList.remove("active"));
+
+      button.classList.add("active");
+      const panel = document.querySelector(`.class-panel[data-class-index="${classIndex}"]`);
+      if (panel) panel.classList.add("active");
+    });
+  });
 </script>
 
 <%- include('../partials/teacherFooter') %>

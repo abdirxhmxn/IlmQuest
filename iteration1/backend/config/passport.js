@@ -20,12 +20,12 @@ module.exports = function (passport) {
               schoolId,
               emailNormalized,
               deletedAt: null
-            });
+            }).select("+password");
           } else {
             const candidates = await User.find({
               emailNormalized,
               deletedAt: null
-            }).limit(2);
+            }).select("+password").limit(2);
 
             if (candidates.length === 1) {
               user = candidates[0];

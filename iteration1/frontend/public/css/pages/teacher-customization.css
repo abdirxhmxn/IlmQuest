@@ -1,0 +1,360 @@
+:root {
+  --custom-bg: #f3f7f4;
+  --custom-card: #ffffff;
+  --custom-border: #d8e3dc;
+  --custom-text: #102018;
+  --custom-muted: #55645c;
+  --custom-primary: #145239;
+  --custom-primary-soft: #e9f3ed;
+  --custom-danger: #b42318;
+}
+
+.teacher-customization-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 18px 36px;
+  color: var(--custom-text);
+}
+
+.settings-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.settings-header p {
+  margin: 6px 0 0;
+  color: var(--custom-muted);
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  border: 1px solid var(--custom-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.btn-primary {
+  background: var(--custom-primary);
+  border-color: var(--custom-primary);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: var(--custom-card);
+  color: var(--custom-text);
+}
+
+.btn-danger {
+  background: #fff5f4;
+  border-color: #efc5c0;
+  color: var(--custom-danger);
+}
+
+.empty-state {
+  background: var(--custom-card);
+  border: 1px solid var(--custom-border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.flash-message {
+  border: 1px solid var(--custom-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.flash-message.success {
+  border-color: #9ccdb1;
+  background: #ecf8f1;
+  color: #1d5d3d;
+}
+
+.flash-message.error {
+  border-color: #efc5c0;
+  background: #fff5f4;
+  color: var(--custom-danger);
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.empty-state p {
+  margin: 8px 0 0;
+  color: var(--custom-muted);
+}
+
+.class-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.class-pill {
+  border: 1px solid var(--custom-border);
+  background: var(--custom-card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.class-pill.active {
+  border-color: var(--custom-primary);
+  background: var(--custom-primary-soft);
+}
+
+.class-pill-title {
+  font-weight: 700;
+}
+
+.class-pill-meta {
+  color: var(--custom-muted);
+  font-size: 0.86rem;
+}
+
+.settings-card {
+  background: var(--custom-card);
+  border: 1px solid var(--custom-border);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--custom-border);
+  margin-bottom: 16px;
+}
+
+.history-warning {
+  border: 1px solid #e7cfa1;
+  background: #fff9ef;
+  color: #6b4f1d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.card-header p {
+  margin: 6px 0 0;
+  color: var(--custom-muted);
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.meta-grid > div {
+  border: 1px solid var(--custom-border);
+  border-radius: 10px;
+  background: #f9fcfa;
+  padding: 10px;
+}
+
+.meta-label {
+  display: block;
+  color: var(--custom-muted);
+  font-size: 0.8rem;
+}
+
+.meta-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+#customizationForm {
+  display: grid;
+  gap: 16px;
+}
+
+.form-section {
+  border: 1px solid var(--custom-border);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.form-section h3 {
+  margin: 0;
+  font-size: 1.06rem;
+}
+
+.section-head p {
+  margin: 6px 0 0;
+  color: var(--custom-muted);
+  font-size: 0.92rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+label {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--custom-border);
+  border-radius: 10px;
+  min-height: 40px;
+  padding: 9px 11px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 94px;
+}
+
+.list-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.list-row {
+  border: 1px solid var(--custom-border);
+  border-radius: 10px;
+  background: #fbfdfb;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(180px, 1.5fr) repeat(3, minmax(90px, 0.7fr)) minmax(90px, 0.8fr);
+  align-items: end;
+}
+
+.section-row {
+  grid-template-columns: minmax(220px, 1.6fr) repeat(2, minmax(100px, 0.8fr));
+}
+
+.row-main,
+.row-small,
+.row-actions {
+  display: grid;
+  gap: 6px;
+}
+
+.row-actions {
+  align-items: end;
+  justify-items: stretch;
+}
+
+.row-meta {
+  color: var(--custom-muted);
+  font-size: 0.78rem;
+}
+
+.status-badge {
+  border: 1px solid var(--custom-border);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  width: fit-content;
+}
+
+.status-badge.active {
+  border-color: #9ccdb1;
+  color: #1d5d3d;
+  background: #ecf8f1;
+}
+
+.status-badge.inactive {
+  border-color: #d7dfda;
+  color: #4f5d54;
+  background: #f5f8f6;
+}
+
+.status-badge.archived {
+  border-color: #efc5c0;
+  color: #8a281c;
+  background: #fff5f4;
+}
+
+.add-row {
+  width: fit-content;
+}
+
+.weight-summary {
+  border: 1px solid var(--custom-border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  background: #f8faf9;
+}
+
+.weight-summary.error {
+  color: var(--custom-danger);
+  border-color: #efc5c0;
+  background: #fff5f4;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 920px) {
+  .list-row,
+  .section-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .form-actions .btn-primary {
+    width: 100%;
+  }
+}

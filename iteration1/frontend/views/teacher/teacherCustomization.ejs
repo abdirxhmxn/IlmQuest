@@ -1,0 +1,458 @@
+<%- include('../partials/teacherHeader') %>
+
+<link rel="stylesheet" href="/css/pages/teacher-customization.css">
+
+<main class="teacher-customization-page">
+  <section class="settings-shell">
+    <header class="settings-header">
+      <div>
+        <h1>Class Customization</h1>
+        <p>Configure your dashboard layout, subjects, and grading structure for each class.</p>
+      </div>
+      <a href="/teacher/home" class="btn-secondary">Back To Dashboard</a>
+    </header>
+
+    <% const successMessages = (typeof messages !== 'undefined' && messages.success) ? messages.success : []; %>
+    <% const errorMessages = (typeof messages !== 'undefined' && messages.error) ? messages.error : []; %>
+    <% if (successMessages.length > 0) { %>
+      <div class="flash-message success"><%= successMessages.join(' ') %></div>
+    <% } %>
+    <% if (errorMessages.length > 0) { %>
+      <div class="flash-message error"><%= errorMessages.join(' ') %></div>
+    <% } %>
+
+    <% if (!classes || classes.length === 0) { %>
+      <div class="empty-state">
+        <h2>No Classes Assigned Yet</h2>
+        <p>Once an admin assigns you to a class, your customization controls will appear here.</p>
+      </div>
+    <% } else { %>
+      <div class="class-selector">
+        <% classes.forEach((cls) => { %>
+          <a
+            class="class-pill <%= String(selectedClass?._id) === String(cls._id) ? 'active' : '' %>"
+            href="/teacher/customize?classId=<%= cls._id %>"
+          >
+            <span class="class-pill-title"><%= cls.className %></span>
+            <span class="class-pill-meta"><%= (cls.students || []).length %> students</span>
+          </a>
+        <% }) %>
+      </div>
+
+      <% if (selectedClass) { %>
+        <article class="settings-card">
+          <header class="card-header">
+            <div>
+              <h2><%= selectedClass.className %></h2>
+              <p>Class code: <strong><%= selectedClass.classCode %></strong></p>
+            </div>
+            <div class="meta-grid">
+              <div>
+                <span class="meta-label">Subjects</span>
+                <span class="meta-value"><%= (selectedClass.activeSubjects || []).length %></span>
+              </div>
+              <div>
+                <span class="meta-label">Categories</span>
+                <span class="meta-value"><%= (selectedClass.activeGradingCategories || []).length %></span>
+              </div>
+              <div>
+                <span class="meta-label">Schema Version</span>
+                <span class="meta-value">v<%= selectedClass.currentConfigVersion || 1 %></span>
+              </div>
+              <div>
+                <span class="meta-label">Recorded Grades</span>
+                <span class="meta-value"><%= selectedClass.gradeCount || 0 %></span>
+              </div>
+            </div>
+          </header>
+
+          <% if ((selectedClass.gradeCount || 0) > 0) { %>
+            <div class="history-warning">
+              <strong>Historical Data Notice:</strong>
+              This class already has recorded grades. Structural grading changes will create a new schema version and older grades will remain tied to previous versions.
+            </div>
+          <% } %>
+
+          <form id="customizationForm" action="/teacher/customize/<%= selectedClass._id %>" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="sectionsJson" id="sectionsJson">
+            <input type="hidden" name="subjectsJson" id="subjectsJson">
+            <input type="hidden" name="gradingCategoriesJson" id="gradingCategoriesJson">
+
+            <section class="form-section">
+              <h3>Page Setup</h3>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="displayTitle">Class Display Title</label>
+                  <input
+                    id="displayTitle"
+                    name="displayTitle"
+                    type="text"
+                    maxlength="90"
+                    value="<%= selectedClass.teacherSettings?.displayTitle || selectedClass.className %>"
+                    placeholder="e.g., Grade 3 Qur'an Mastery"
+                    required
+                  >
+                </div>
+                <div class="field">
+                  <label for="dashboardLayout">Dashboard Layout Style</label>
+                  <select id="dashboardLayout" name="dashboardLayout" required>
+                    <% dashboardLayouts.forEach((layout) => { %>
+                      <option
+                        value="<%= layout %>"
+                        <%= selectedClass.teacherSettings?.dashboardLayout === layout ? 'selected' : '' %>
+                      >
+                        <%= layout.charAt(0).toUpperCase() + layout.slice(1) %>
+                      </option>
+                    <% }) %>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="welcomeMessage">Welcome Message</label>
+                <textarea
+                  id="welcomeMessage"
+                  name="welcomeMessage"
+                  rows="3"
+                  maxlength="220"
+                  placeholder="Write a concise message for your class dashboard."
+                ><%= selectedClass.teacherSettings?.welcomeMessage || '' %></textarea>
+              </div>
+              <div class="field">
+                <label for="customizationReason">Change Note (optional)</label>
+                <input
+                  id="customizationReason"
+                  name="customizationReason"
+                  type="text"
+                  maxlength="160"
+                  placeholder="e.g., Archived midterm category after term close"
+                >
+              </div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-head">
+                <h3>Dashboard Sections</h3>
+                <p>Toggle visibility and set order for dashboard blocks.</p>
+              </div>
+              <div class="list-grid" id="dashboardSectionsList">
+                <% (selectedClass.teacherSettings?.dashboardSections || []).forEach((section) => { %>
+                  <div class="list-row section-row" data-section-key="<%= section.key %>">
+                    <input type="hidden" class="section-key" value="<%= section.key %>">
+                    <div class="row-main">
+                      <label>Label</label>
+                      <input type="text" class="section-label" value="<%= section.label %>" maxlength="50">
+                    </div>
+                    <div class="row-small">
+                      <label>Visible</label>
+                      <input type="checkbox" class="section-visible" <%= section.visible ? 'checked' : '' %>>
+                    </div>
+                    <div class="row-small">
+                      <label>Order</label>
+                      <input type="number" class="section-order" min="0" value="<%= section.order %>">
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-head">
+                <h3>Subjects Taught</h3>
+                <p>Set subjects shown on your class pages. Removing a subject archives it for historical grade safety.</p>
+              </div>
+              <div class="list-grid" id="subjectsList">
+                <% (selectedClass.teacherSettings?.subjectConfig || []).forEach((subject) => { %>
+                  <div class="list-row subject-row" data-is-archived="<%= subject.isArchived ? 'true' : 'false' %>">
+                    <input type="hidden" class="subject-key" value="<%= subject.key %>">
+                    <div class="row-main">
+                      <label>Subject Label</label>
+                      <input type="text" class="subject-name" maxlength="60" value="<%= subject.label || subject.name %>" required>
+                      <small class="row-meta">Key: <%= subject.key %></small>
+                    </div>
+                    <div class="row-small">
+                      <label>Visible</label>
+                      <input type="checkbox" class="subject-active" <%= subject.active && !subject.isArchived ? 'checked' : '' %>>
+                    </div>
+                    <div class="row-small">
+                      <label>Order</label>
+                      <input type="number" class="subject-order" min="0" value="<%= subject.order %>">
+                    </div>
+                    <div class="row-actions">
+                      <span class="status-badge <%= subject.isArchived ? 'archived' : (subject.active ? 'active' : 'inactive') %>">
+                        <%= subject.isArchived ? 'Archived' : (subject.active ? 'Active' : 'Hidden') %>
+                      </span>
+                      <button type="button" class="btn-danger remove-row">Remove</button>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+              <button type="button" class="btn-secondary add-row" id="addSubjectBtn">Add Subject</button>
+            </section>
+
+            <section class="form-section">
+              <div class="section-head">
+                <h3>Grading Categories</h3>
+                <p>Rename, enable, and weight categories. Active weights must equal 100%. Removed categories are archived for history.</p>
+              </div>
+              <div class="list-grid" id="categoriesList">
+                <% (selectedClass.teacherSettings?.gradingCategories || []).forEach((category) => { %>
+                  <div class="list-row category-row" data-is-default="<%= category.isDefault ? 'true' : 'false' %>" data-is-archived="<%= category.isArchived ? 'true' : 'false' %>">
+                    <input type="hidden" class="category-key" value="<%= category.key %>">
+                    <input type="hidden" class="category-default" value="<%= category.isDefault ? 'true' : 'false' %>">
+                    <div class="row-main">
+                      <label>Category Label</label>
+                      <input type="text" class="category-name" maxlength="60" value="<%= category.label || category.name %>" required>
+                      <small class="row-meta">Key: <%= category.key %></small>
+                    </div>
+                    <div class="row-small">
+                      <label>Weight %</label>
+                      <input type="number" class="category-weight" min="0" max="100" step="0.1" value="<%= category.weight %>" required>
+                    </div>
+                    <div class="row-small">
+                      <label>Active</label>
+                      <input type="checkbox" class="category-active" <%= category.active && !category.isArchived ? 'checked' : '' %>>
+                    </div>
+                    <div class="row-small">
+                      <label>Order</label>
+                      <input type="number" class="category-order" min="0" value="<%= category.order %>">
+                    </div>
+                    <div class="row-actions">
+                      <span class="status-badge <%= category.isArchived ? 'archived' : (category.active ? 'active' : 'inactive') %>">
+                        <%= category.isArchived ? 'Archived' : (category.active ? 'Active' : 'Hidden') %>
+                      </span>
+                      <button
+                        type="button"
+                        class="btn-danger remove-row"
+                        <%= category.isDefault ? 'disabled' : '' %>
+                      >
+                        <%= category.isDefault ? 'Default' : 'Remove' %>
+                      </button>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+              <div class="weight-summary" id="weightSummary">Active Weight Total: 0%</div>
+              <button type="button" class="btn-secondary add-row" id="addCategoryBtn">Add Category</button>
+            </section>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">Save Customization</button>
+            </div>
+          </form>
+        </article>
+      <% } %>
+    <% } %>
+  </section>
+</main>
+
+<script>
+  const form = document.getElementById("customizationForm");
+  const subjectsList = document.getElementById("subjectsList");
+  const categoriesList = document.getElementById("categoriesList");
+  const weightSummary = document.getElementById("weightSummary");
+  const sectionsInput = document.getElementById("sectionsJson");
+  const subjectsInput = document.getElementById("subjectsJson");
+  const categoriesInput = document.getElementById("gradingCategoriesJson");
+
+  function toSlug(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "category";
+  }
+
+  function addSubjectRow() {
+    const row = document.createElement("div");
+    row.className = "list-row subject-row";
+    row.dataset.isArchived = "false";
+    row.innerHTML = `
+      <input type="hidden" class="subject-key" value="">
+      <div class="row-main">
+        <label>Subject Label</label>
+        <input type="text" class="subject-name" maxlength="60" required>
+        <small class="row-meta">Key will be generated on save</small>
+      </div>
+      <div class="row-small">
+        <label>Visible</label>
+        <input type="checkbox" class="subject-active" checked>
+      </div>
+      <div class="row-small">
+        <label>Order</label>
+        <input type="number" class="subject-order" min="0" value="0">
+      </div>
+      <div class="row-actions">
+        <span class="status-badge active">Active</span>
+        <button type="button" class="btn-danger remove-row">Remove</button>
+      </div>
+    `;
+    subjectsList.appendChild(row);
+  }
+
+  function addCategoryRow() {
+    const row = document.createElement("div");
+    row.className = "list-row category-row";
+    row.dataset.isDefault = "false";
+    row.dataset.isArchived = "false";
+    row.innerHTML = `
+      <input type="hidden" class="category-key" value="">
+      <input type="hidden" class="category-default" value="false">
+      <div class="row-main">
+        <label>Category Label</label>
+        <input type="text" class="category-name" maxlength="60" required>
+        <small class="row-meta">Key will be generated on save</small>
+      </div>
+      <div class="row-small">
+        <label>Weight %</label>
+        <input type="number" class="category-weight" min="0" max="100" step="0.1" value="0" required>
+      </div>
+      <div class="row-small">
+        <label>Active</label>
+        <input type="checkbox" class="category-active" checked>
+      </div>
+      <div class="row-small">
+        <label>Order</label>
+        <input type="number" class="category-order" min="0" value="0">
+      </div>
+      <div class="row-actions">
+        <span class="status-badge active">Active</span>
+        <button type="button" class="btn-danger remove-row">Remove</button>
+      </div>
+    `;
+    categoriesList.appendChild(row);
+    updateWeightSummary();
+  }
+
+  function updateWeightSummary() {
+    if (!weightSummary) return;
+    const total = Array.from(document.querySelectorAll(".category-row")).reduce((sum, row) => {
+      const active = row.querySelector(".category-active")?.checked;
+      if (!active) return sum;
+      const weight = Number(row.querySelector(".category-weight")?.value || 0);
+      return sum + (Number.isFinite(weight) ? weight : 0);
+    }, 0);
+
+    const rounded = Math.round(total * 100) / 100;
+    weightSummary.textContent = `Active Weight Total: ${rounded}%`;
+    if (Math.abs(rounded - 100) <= 0.01) {
+      weightSummary.classList.remove("error");
+    } else {
+      weightSummary.classList.add("error");
+    }
+  }
+
+  function updateRowStatus(row, type) {
+    const badge = row?.querySelector(".status-badge");
+    if (!badge) return;
+
+    const active = row.querySelector(`.${type}-active`)?.checked;
+    const archived = row.dataset.isArchived === "true";
+
+    badge.classList.remove("active", "inactive", "archived");
+
+    if (active) {
+      badge.textContent = "Active";
+      badge.classList.add("active");
+      return;
+    }
+
+    if (archived) {
+      badge.textContent = "Archived";
+      badge.classList.add("archived");
+      return;
+    }
+
+    badge.textContent = "Hidden";
+    badge.classList.add("inactive");
+  }
+
+  document.getElementById("addSubjectBtn")?.addEventListener("click", addSubjectRow);
+  document.getElementById("addCategoryBtn")?.addEventListener("click", addCategoryRow);
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.classList.contains("remove-row")) return;
+    const row = event.target.closest(".list-row");
+    if (!row) return;
+    row.remove();
+    updateWeightSummary();
+  });
+
+  document.addEventListener("input", (event) => {
+    if (event.target.classList.contains("category-weight") || event.target.classList.contains("category-active")) {
+      updateWeightSummary();
+    }
+  });
+
+  document.addEventListener("change", (event) => {
+    if (event.target.classList.contains("subject-active")) {
+      const row = event.target.closest(".subject-row");
+      if (row && event.target.checked && row.dataset.isArchived === "true") {
+        // Checking an archived subject explicitly restores it for future grading.
+        row.dataset.isArchived = "false";
+      }
+      updateRowStatus(row, "subject");
+    }
+    if (event.target.classList.contains("category-active")) {
+      const row = event.target.closest(".category-row");
+      if (row && event.target.checked && row.dataset.isArchived === "true") {
+        // Checking an archived category explicitly restores it for future grading.
+        row.dataset.isArchived = "false";
+      }
+      updateRowStatus(row, "category");
+    }
+  });
+
+  form?.addEventListener("submit", (event) => {
+    const sections = Array.from(document.querySelectorAll(".section-row")).map((row, index) => ({
+      key: row.querySelector(".section-key")?.value,
+      label: row.querySelector(".section-label")?.value || "",
+      visible: row.querySelector(".section-visible")?.checked || false,
+      order: Number(row.querySelector(".section-order")?.value ?? index)
+    }));
+
+    const subjects = Array.from(document.querySelectorAll(".subject-row")).map((row, index) => ({
+      key: row.querySelector(".subject-key")?.value || "",
+      label: row.querySelector(".subject-name")?.value || "",
+      name: row.querySelector(".subject-name")?.value || "",
+      active: row.querySelector(".subject-active")?.checked || false,
+      order: Number(row.querySelector(".subject-order")?.value ?? index),
+      isArchived: row.dataset.isArchived === "true"
+    }));
+
+    const categories = Array.from(document.querySelectorAll(".category-row")).map((row, index) => {
+      const name = row.querySelector(".category-name")?.value || "";
+      const key = row.querySelector(".category-key")?.value || toSlug(name);
+      return {
+        key,
+        label: name,
+        name,
+        weight: Number(row.querySelector(".category-weight")?.value || 0),
+        active: row.querySelector(".category-active")?.checked || false,
+        order: Number(row.querySelector(".category-order")?.value ?? index),
+        isDefault: row.querySelector(".category-default")?.value === "true",
+        isArchived: row.dataset.isArchived === "true"
+      };
+    });
+
+    const activeTotal = categories.reduce((sum, category) => (
+      category.active ? sum + Number(category.weight || 0) : sum
+    ), 0);
+    if (Math.abs(activeTotal - 100) > 0.01) {
+      event.preventDefault();
+      window.alert("Active grading category weights must total exactly 100%.");
+      return;
+    }
+
+    sectionsInput.value = JSON.stringify(sections);
+    subjectsInput.value = JSON.stringify(subjects);
+    categoriesInput.value = JSON.stringify(categories);
+  });
+
+  updateWeightSummary();
+  document.querySelectorAll(".subject-row").forEach((row) => updateRowStatus(row, "subject"));
+  document.querySelectorAll(".category-row").forEach((row) => updateRowStatus(row, "category"));
+</script>
+
+<%- include('../partials/teacherFooter') %>

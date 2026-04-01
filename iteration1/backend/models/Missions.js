@@ -71,5 +71,9 @@ const MissionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 MissionSchema.index({ schoolId: 1, "createdBy._id": 1 });
+MissionSchema.index({ schoolId: 1, "assignedTo.classInfo": 1, createdAt: -1 });
+MissionSchema.index({ schoolId: 1, "assignedTo.studentInfo": 1, createdAt: -1 });
+MissionSchema.index({ schoolId: 1, "active.studentInfo._id": 1 });
+MissionSchema.index({ schoolId: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Mission", MissionSchema);

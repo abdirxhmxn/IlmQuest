@@ -13,7 +13,7 @@
       </div>
 
       <!-- Flash Messages -->
-      <% if (messages && (messages.errors || messages.info)) { %>
+      <% if (messages && (messages.errors || messages.info || messages.success)) { %>
         <div class="flash-messages">
           <% if (messages.errors) { %>
             <% messages.errors.forEach(msg=> { %>
@@ -29,6 +29,13 @@
                       </div>
                       <% }) %>
                         <% } %>
+                          <% if (messages.success) { %>
+                            <% messages.success.forEach(msg=> { %>
+                              <div class="flash-message flash-info">
+                                <%= msg.msg %>
+                              </div>
+                              <% }) %>
+                                <% } %>
         </div>
         <% } %>
 

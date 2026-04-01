@@ -103,6 +103,28 @@ app.use("/", mainRoutes);
 app.use("/post", postRoutes);
 
 app.use((err, req, res, next) => {
+  if (err?.name !== "MulterError") return next(err);
+
+  const acceptHeader = (req.get("accept") || "").toLowerCase();
+  const wantsHtml = acceptHeader.includes("text/html");
+  const referrer = req.get("Referrer") || req.get("Referer");
+
+  const message = err.code === "LIMIT_FILE_SIZE"
+    ? "Image is too large. Maximum allowed size is 5MB."
+    : "Invalid upload. Please use a JPG or PNG image.";
+
+  if (wantsHtml && referrer) {
+    req.flash("errors", [{ msg: message }]);
+    return res.redirect(referrer);
+  }
+
+  return res.status(400).json({
+    error: "invalid_upload",
+    message
+  });
+});
+
+app.use((err, req, res, next) => {
   if (err.code !== "EBADCSRFTOKEN") return next(err);
 
   const acceptHeader = (req.get("accept") || "").toLowerCase();

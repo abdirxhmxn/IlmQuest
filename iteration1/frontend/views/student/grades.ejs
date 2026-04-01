@@ -39,17 +39,31 @@
                     <% } %>
                 </div>
 
-                <% const gradeWeights = { Homework: 20, Quiz: 15, Test: 25, Exam: 25, Behavior: 7.5, Participation: 7.5 };
-                   const quarterKey = { 'Quarter 1': 'Q1', 'Quarter 2': 'Q2', 'Quarter 3': 'Q3', 'Quarter 4': 'Q4' }; %>
+                <% const quarterKey = { 'Quarter 1': 'Q1', 'Quarter 2': 'Q2', 'Quarter 3': 'Q3', 'Quarter 4': 'Q4' }; %>
 
                 <!-- Subjects & Students -->
                 <div class="subjects-wrapper">
-                    <% cls.subjects.forEach(subject => { %>
+                    <% if (!cls.displaySubjects || cls.displaySubjects.length === 0) { %>
+                        <div class="subject-block">
+                            <header><i data-lucide="book-open"></i>No Active Subjects</header>
+                            <div class="students">
+                                <div class="student-content">
+                                    <p class="no-grades">Your teacher has not enabled subjects for this class yet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+                    <% (cls.displaySubjects || []).forEach(subject => { %>
                         <div class="subject-block">
                             <!-- Subject Header -->
                             <header>
                                 <i data-lucide="book-open"></i>
-                                <%= subject.name %>
+                                <%= subject.label || subject.name %>
+                                <% if (subject.isArchived || subject.isHistorical) { %>
+                                    <span class="weight">(Historical)</span>
+                                <% } else if (!subject.active) { %>
+                                    <span class="weight">(Hidden)</span>
+                                <% } %>
                             </header>
 
                             <!-- Student Grades -->
@@ -57,7 +71,7 @@
                                 <div class="student-content">
 
                                     <!-- Subject Average -->
-                                    <% const subjectAvg = getSubjectAverage ? getSubjectAverage(grades, user._id, subject.name) : "100.00"; %>
+                                    <% const subjectAvg = getSubjectAverage ? getSubjectAverage(grades, user._id, subject.key, { classId: cls._id, settings: cls.teacherSettings, weightMap: cls.categoryWeightMap }) : "100.00"; %>
                                     <div class="subject-average">
                                         <div class="average-badge">
                                             <i data-lucide="activity"></i>
@@ -83,19 +97,23 @@
                                                     </summary>
 
                                                     <div class="quarter-content">
-                                                        <% ['Homework', 'Quiz', 'Test', 'Exam', 'Behavior', 'Participation'].forEach(category => { %>
+                                                        <% if (!cls.displayCategories || cls.displayCategories.length === 0) { %>
+                                                            <div class="no-grades">No grading categories configured.</div>
+                                                        <% } %>
+                                                        <% (cls.displayCategories || []).forEach(category => { %>
                                                             <% const matchingGrades = grades.filter(g => {
                                                                 return g.quarter === quarterKey[quarter] && 
-                                                                       g.subject === subject.name && 
-                                                                       g.Assignment.type === category;
+                                                                       getGradeSubjectKey(g) === subject.key && 
+                                                                       getGradeCategoryKey(g) === category.key &&
+                                                                       g.classInfo.some(c => c._id.toString() === cls._id.toString());
                                                             }); %>
 
                                                             <details class="category-accordion">
                                                                 <summary class="category-summary">
                                                                     <span class="label">
                                                                         <i data-lucide="folder-open"></i>
-                                                                        <%= category %>
-                                                                        <span class="weight">(Weight: <%= gradeWeights[category] || '—' %>%)</span>
+                                                                        <%= category.label || category.name %>
+                                                                        <span class="weight">(Weight: <%= category.weight %>%)</span>
                                                                     </span>
                                                                     <i data-lucide="chevron-down" class="chevron"></i>
                                                                 </summary>
@@ -126,7 +144,7 @@
                                                                                         <span class="max">/ <%= g.Assignment.maxScore || 100 %></span>
                                                                                     </div>
                                                                                     <div class="meta">
-                                                                                        <%= g.Assignment.type %> • <%= g.quarter %>
+                                                                                        <%= category.label || category.name %> • <%= g.quarter %>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -159,19 +177,23 @@
                                                     </summary>
 
                                                     <div class="quarter-content">
-                                                        <% ['Homework', 'Quiz', 'Test', 'Exam', 'Behavior', 'Participation'].forEach(category => { %>
+                                                        <% if (!cls.displayCategories || cls.displayCategories.length === 0) { %>
+                                                            <div class="no-grades">No grading categories configured.</div>
+                                                        <% } %>
+                                                        <% (cls.displayCategories || []).forEach(category => { %>
                                                             <% const matchingGrades = grades.filter(g => {
                                                                 return g.quarter === quarterKey[quarter] && 
-                                                                       g.subject === subject.name && 
-                                                                       g.Assignment.type === category;
+                                                                       getGradeSubjectKey(g) === subject.key && 
+                                                                       getGradeCategoryKey(g) === category.key &&
+                                                                       g.classInfo.some(c => c._id.toString() === cls._id.toString());
                                                             }); %>
 
                                                             <details class="category-accordion">
                                                                 <summary class="category-summary">
                                                                     <span class="label">
                                                                         <i data-lucide="folder-open"></i>
-                                                                        <%= category %>
-                                                                        <span class="weight">(Weight: <%= gradeWeights[category] || '—' %>%)</span>
+                                                                        <%= category.label || category.name %>
+                                                                        <span class="weight">(Weight: <%= category.weight %>%)</span>
                                                                     </span>
                                                                     <i data-lucide="chevron-down" class="chevron"></i>
                                                                 </summary>
@@ -202,7 +224,7 @@
                                                                                         <span class="max">/ <%= g.Assignment.maxScore || 100 %></span>
                                                                                     </div>
                                                                                     <div class="meta">
-                                                                                        <%= g.Assignment.type %> • <%= g.quarter %>
+                                                                                        <%= category.label || category.name %> • <%= g.quarter %>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>

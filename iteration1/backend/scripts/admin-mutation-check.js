@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+const fs = require("node:fs");
+const path = require("node:path");
 const postsController = require("../controllers/posts");
 const { pickAllowedFields, validateUserPatchPayload } = require("../middleware/adminMutations");
 const { mapDuplicateKeyError } = require("../utils/userIdentifiers");
@@ -71,6 +73,20 @@ async function main() {
   });
   if (!mapped || mapped.field !== "email") {
     throw new Error("Duplicate key mapping failed for emailNormalized.");
+  }
+
+  const routesSource = fs.readFileSync(path.join(__dirname, "../routes/main.js"), "utf8");
+  if (!routesSource.includes("const adminMutationMethods = new Set([\"POST\", \"PUT\", \"PATCH\", \"DELETE\"])")) {
+    throw new Error("Missing global admin mutation method set.");
+  }
+  if (!routesSource.includes("return adminMutationLimiter(req, res, next);")) {
+    throw new Error("Missing global admin mutation limiter application.");
+  }
+  if (!routesSource.includes("reportGenerationLimiter")) {
+    throw new Error("Report generation limiter is not wired.");
+  }
+  if (!routesSource.includes("financeSyncLimiter")) {
+    throw new Error("Finance sync limiter is not wired.");
   }
 
   console.log("Admin mutation check passed.");

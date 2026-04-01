@@ -47,6 +47,7 @@
                 <div class="info-tile"><div class="label">Year</div><div class="value"><%= cls.academicYear.year %></div></div>
                 <div class="info-tile"><div class="label">Semester</div><div class="value"><%= cls.academicYear.semester %></div></div>
                 <div class="info-tile"><div class="label">Quarter</div><div class="value"><%= cls.academicYear.quarter %></div></div>
+                <div class="info-tile"><div class="label">Schema</div><div class="value">v<%= cls.currentConfigVersion || 1 %></div></div>
                 <div class="info-tile"><div class="label">Room</div><div class="value"><%= cls.roomNumber %></div></div>
                 <div class="info-tile"><div class="label">Location</div><div class="value"><%= cls.location %></div></div>
                 <div class="info-tile"><div class="label">Capacity</div><div class="value"><%= cls.capacity %></div></div>
@@ -72,20 +73,36 @@
                 <% } %>
             </div>
 
-            <% const gradeWeights = { Homework:20, Quiz:15, Test:25, Exam:25, Behavior:7.5, Participation:7.5 }; %>
             <% const quarterKey = { 'Quarter 1':'Q1','Quarter 2':'Q2','Quarter 3':'Q3','Quarter 4':'Q4' }; %>
 
             <!-- Subjects -->
             <div class="subjects-wrapper">
-                <% cls.subjects.forEach(subject=> { %>
+                <% if (!cls.displaySubjects || cls.displaySubjects.length === 0) { %>
+                    <div class="page-card">
+                        <p class="schedule-empty">No subjects configured for this class yet.</p>
+                    </div>
+                <% } %>
+                <% (cls.displaySubjects || []).forEach(subject=> { %>
                 <div class="subject-block">
                     <header>
                         <div class="subject-title-row">
-                            <i data-lucide="book-open"></i><span> <%= subject.name %></span>
+                            <i data-lucide="book-open"></i><span> <%= subject.label || subject.name %></span>
+                            <% if (subject.isArchived || subject.isHistorical) { %>
+                                <span class="weight">(Historical)</span>
+                            <% } else if (!subject.active) { %>
+                                <span class="weight">(Hidden)</span>
+                            <% } %>
                         </div>
-                        <button onclick="openGradeModal('<%= cls._id %>', '<%= subject.name %>')" class="btn-primary">
-                            <i data-lucide="plus"></i> Add Grade
-                        </button>
+                        <% if (subject.active && !subject.isArchived) { %>
+                            <button
+                                type="button"
+                                class="btn-primary open-grade-modal-btn"
+                                data-class-id="<%= cls._id %>"
+                                data-subject-name="<%= subject.label || subject.name %>"
+                            >
+                                <i data-lucide="plus"></i> Add Grade
+                            </button>
+                        <% } %>
                     </header>
 
                     <div class="students">
@@ -100,7 +117,7 @@
 
                             <div class="student-body">
                                 <% const subjectAvg = (typeof getSubjectAverage !== "undefined") 
-                                    ? getSubjectAverage(grades, student._id, subject.name)
+                                    ? getSubjectAverage(grades, student._id, subject.key, { classId: cls._id, settings: cls.teacherSettings, weightMap: cls.categoryWeightMap })
                                     : "100.00"; %>
 
                                 <div class="subject-average">
@@ -124,12 +141,16 @@
                                         </summary>
 
                                         <div class="quarter-content">
-                                            <% ['Homework','Quiz','Test','Exam','Behavior','Participation'].forEach(cat => { %>
+                                            <% if (!cls.displayCategories || cls.displayCategories.length === 0) { %>
+                                                <div class="no-grades">No grading categories configured for this class.</div>
+                                            <% } %>
+                                            <% (cls.displayCategories || []).forEach(cat => { %>
 
                                             <% const matching = grades.filter(g =>
                                                 g.quarter === quarterKey[q] &&
-                                                g.subject === subject.name &&
-                                                g.Assignment.type === cat &&
+                                                getGradeSubjectKey(g) === subject.key &&
+                                                getGradeCategoryKey(g) === cat.key &&
+                                                g.classInfo.some(c => c._id.toString() === cls._id.toString()) &&
                                                 g.students.some(s => s._id.toString() === student._id.toString())
                                             ); %>
 
@@ -137,8 +158,8 @@
                                                 <summary class="category-summary">
                                                     <span class="label">
                                                         <i data-lucide="folder-open"></i>
-                                                        <%= cat %>
-                                                        <span class="weight">(Weight: <%= gradeWeights[cat] %>%)</span>
+                                                        <%= cat.label || cat.name %>
+                                                        <span class="weight">(Weight: <%= cat.weight %>%)</span>
                                                     </span>
                                                     <i data-lucide="chevron-down" class="chevron"></i>
                                                 </summary>
@@ -165,7 +186,7 @@
                                                                         <span class="max">/<%= g.Assignment.maxScore || 100 %></span>
                                                                     </div>
                                                                     <div class="meta">
-                                                                        <%= g.Assignment.type %> • <%= g.quarter %>
+                                                                        <%= cat.label || cat.name %> • <%= g.quarter %>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -195,12 +216,16 @@
                                         </summary>
 
                                         <div class="quarter-content">
-                                            <% ['Homework','Quiz','Test','Exam','Behavior','Participation'].forEach(cat => { %>
+                                            <% if (!cls.displayCategories || cls.displayCategories.length === 0) { %>
+                                                <div class="no-grades">No grading categories configured for this class.</div>
+                                            <% } %>
+                                            <% (cls.displayCategories || []).forEach(cat => { %>
 
                                             <% const matching = grades.filter(g =>
                                                 g.quarter === quarterKey[q] &&
-                                                g.subject === subject.name &&
-                                                g.Assignment.type === cat &&
+                                                getGradeSubjectKey(g) === subject.key &&
+                                                getGradeCategoryKey(g) === cat.key &&
+                                                g.classInfo.some(c => c._id.toString() === cls._id.toString()) &&
                                                 g.students.some(s => s._id.toString() === student._id.toString())
                                             ); %>
 
@@ -208,8 +233,8 @@
                                                 <summary class="category-summary">
                                                     <span class="label">
                                                         <i data-lucide="folder-open"></i>
-                                                        <%= cat %>
-                                                        <span class="weight">(Weight: <%= gradeWeights[cat] %>%)</span>
+                                                        <%= cat.label || cat.name %>
+                                                        <span class="weight">(Weight: <%= cat.weight %>%)</span>
                                                     </span>
                                                     <i data-lucide="chevron-down" class="chevron"></i>
                                                 </summary>
@@ -236,7 +261,7 @@
                                                                         <span class="max">/<%= g.Assignment.maxScore || 100 %></span>
                                                                     </div>
                                                                     <div class="meta">
-                                                                        <%= g.Assignment.type %> • <%= g.quarter %>
+                                                                        <%= cat.label || cat.name %> • <%= g.quarter %>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -288,12 +313,12 @@
                 <!-- Student -->
                 <div>
                     <label><i data-lucide="user" class="w-5 h-5"></i> Student</label>
-                    <select name="student" required class="select-input">
+                    <select id="gradeStudent" name="student" required class="select-input">
                         <option value="" disabled selected>Choose a student</option>
 
                         <% classes.forEach(cls => { %>
                             <% cls.students.forEach(student => { %>
-                                <option value="<%= student._id %>">
+                                <option value="<%= student._id %>" data-class-id="<%= cls._id %>">
                                     <%= student.name %> — <%= cls.className %>
                                 </option>
                             <% }) %>
@@ -354,14 +379,15 @@
 
                     <div>
                         <label><i data-lucide="tag" class="w-5 h-5"></i> Category</label>
-                        <select name="Assignment[type]" required class="select-input">
+                        <select id="gradeCategory" name="Assignment[type]" required class="select-input">
                             <option value="" disabled selected>Select type</option>
-                            <option>Homework</option>
-                            <option>Quiz</option>
-                            <option>Test</option>
-                            <option>Exam</option>
-                            <option>Behavior</option>
-                            <option>Participation</option>
+                            <% classes.forEach(cls => { %>
+                                <% (cls.activeGradingCategories || []).forEach(category => { %>
+                                    <option value="<%= category.key %>" data-class-id="<%= cls._id %>">
+                                        <%= category.label || category.name %> (<%= category.weight %>%)
+                                    </option>
+                                <% }) %>
+                            <% }) %>
                         </select>
                     </div>
                 </div>
@@ -386,7 +412,16 @@
 </dialog>
 
 <script>
+    const modal = document.getElementById('gradeModal');
+    const classIdInput = document.getElementById('classId');
+    const subjectInput = document.getElementById('subject');
+    const modalTitle = document.getElementById('modalTitle');
+    const studentSelect = document.getElementById('gradeStudent');
+    const studentOptions = Array.from(studentSelect.querySelectorAll('option[data-class-id]'));
+    const categorySelect = document.getElementById('gradeCategory');
+    const categoryOptions = Array.from(categorySelect.querySelectorAll('option[data-class-id]'));
     const cancelBtn = document.querySelector('#gradeModal .btn-cancel');
+    const openGradeModalBtns = document.querySelectorAll('.open-grade-modal-btn');
     const classBtn = document.querySelectorAll('.class-btn');
 
     classBtn.forEach(btn => {
@@ -408,17 +443,41 @@
         });
     });
     cancelBtn.addEventListener('click', () => {
-        const modal = document.getElementById('gradeModal');
         modal.close();
     });
 
-    function openGradeModal(classId, subjectName) {
-        const modal = document.getElementById('gradeModal');
-        modal.showModal();
-        document.getElementById('modalTitle').textContent = `Add Grade • ${subjectName}`;
-        document.getElementById('classId').value = classId;
-        document.getElementById('subject').value = subjectName;
+    function filterStudentsByClass(classId) {
+        studentSelect.value = '';
+        studentOptions.forEach(option => {
+            const matchesClass = option.getAttribute('data-class-id') === classId;
+            option.hidden = !matchesClass;
+            option.disabled = !matchesClass;
+        });
     }
+
+    function filterCategoriesByClass(classId) {
+        categorySelect.value = '';
+        categoryOptions.forEach(option => {
+            const matchesClass = option.getAttribute('data-class-id') === classId;
+            option.hidden = !matchesClass;
+            option.disabled = !matchesClass;
+        });
+    }
+
+    function openGradeModal(classId, subjectName) {
+        filterStudentsByClass(classId);
+        filterCategoriesByClass(classId);
+        modal.showModal();
+        modalTitle.textContent = `Add Grade • ${subjectName}`;
+        classIdInput.value = classId;
+        subjectInput.value = subjectName;
+    }
+
+    openGradeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            openGradeModal(btn.getAttribute('data-class-id'), btn.getAttribute('data-subject-name'));
+        });
+    });
 
     lucide.createIcons();
 </script>

@@ -1,12 +1,49 @@
-<%- include('../partials/adminHeader')-%>
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Admin Classes',
+  pageStyles: ['/css/pages/admin-class.css'],
+  activePage: activePage || 'classes',
+  user
+}) %>
 
-  <link rel="stylesheet" href="/css/pages/admin-class.css">
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+%>
+<header class="admin-page-header">
+  <button
+    type="button"
+    class="sidebar-toggle"
+    data-sidebar-toggle
+    aria-label="Toggle sidebar"
+    aria-expanded="false"
+    aria-controls="adminSidebar"
+  >
+    <%- icon('menu') %>
+  </button>
+  <div class="admin-page-title">
+    <h1>Class Management</h1>
+    <p>Create classes, set schedules, and review all cohorts.</p>
+  </div>
+  <div class="admin-top-actions">
+    <a class="admin-action-link" href="/admin/users">User Administration</a>
+    <a class="admin-action-link" href="/admin/reports">Reports</a>
+  </div>
+</header>
 
-  <main class="classes-page">
-    <div class="page-heading">
-      <h1>Class Management</h1>
-      <p>Create classes, set schedules, and review all cohorts.</p>
-    </div>
+<%
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+%>
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+  <section class="classes-page">
 
     <section class="form-grid">
       <article class="card" id="classForm">
@@ -181,7 +218,7 @@
         </table>
       </div>
     </section>
-  </main>
+  </section>
 
   <dialog id="deleteClassDialog" class="dialog" aria-labelledby="deleteClassDialogTitle">
     <div class="dialog-card">
@@ -209,7 +246,7 @@
       subjects.push({ name: "", gradeLevel: "" });
 
       const div = document.createElement("div");
-      div.style.marginBottom = "1rem";
+      div.className = "subject-entry";
       div.innerHTML = `
       <label>Subject Name</label>
       <input type="text" class="subject-name" data-index="${index}" placeholder="e.g., Islamic Studies"/>
@@ -448,4 +485,4 @@
     });
   </script>
 
-  <%- include('../partials/adminFooter')-%>
+  <%- include('../partials/adminShellEnd') %>

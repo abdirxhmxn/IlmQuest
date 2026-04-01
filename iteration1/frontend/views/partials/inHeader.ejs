@@ -2,6 +2,10 @@
 <link rel="stylesheet" href="/css/components.css">
 <link rel="stylesheet" href="/css/layout.css">
 <script src="/js/nav-toggle.js" defer></script>
+<%
+  const studentAvatarUrl = String(user?.profileImage || user?.profilePic || "").trim();
+  const studentInitials = `${(user?.firstName || "S").charAt(0)}${(user?.lastName || user?.userName || "U").charAt(0)}`.toUpperCase();
+%>
 <header class="header-bar">
     <div class="header-left">
         <button class="logo-btn">
@@ -14,6 +18,13 @@
             <h2>
                 <%= user.firstName || "Guest" %>
             </h2>
+        </div>
+        <div class="header-user-avatar" aria-hidden="true">
+            <% if (studentAvatarUrl) { %>
+                <img src="<%= studentAvatarUrl %>" alt="" loading="lazy" />
+            <% } else { %>
+                <span><%= studentInitials %></span>
+            <% } %>
         </div>
     </div>
 

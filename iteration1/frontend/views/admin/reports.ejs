@@ -1,0 +1,228 @@
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Admin Reports',
+  pageStyles: ['/css/pages/admin-reports.css'],
+  activePage: activePage || 'reports',
+  user
+}) %>
+
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const metrics = adminMetrics || {};
+  const reportStudents = Array.isArray(students) ? students : [];
+  const reportClasses = Array.isArray(classes) ? classes : [];
+  const initialReportStats = reportStats || metrics.reportStats || {};
+
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+
+  const fmtNumber = (value) => new Intl.NumberFormat('en-US').format(Number(value || 0));
+  const recentActivity = Array.isArray(initialReportStats.recentActivity) ? initialReportStats.recentActivity : [];
+%>
+
+<header class="admin-page-header">
+  <button
+    type="button"
+    class="sidebar-toggle"
+    data-sidebar-toggle
+    aria-label="Toggle sidebar"
+    aria-expanded="false"
+    aria-controls="adminSidebar"
+  >
+    <%- icon('menu') %>
+  </button>
+  <div class="admin-page-title">
+    <h1>Reports</h1>
+    <p>Generate downloadable PDF reports from live student and class data.</p>
+  </div>
+  <div class="admin-top-actions">
+    <a class="admin-action-link" href="/admin/home">Dashboard</a>
+    <a class="admin-action-link" href="/admin/classes">Class Management</a>
+  </div>
+</header>
+
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="reports-summary-grid" id="reportStatsSection">
+  <article class="admin-card reports-kpi">
+    <p class="reports-kpi-label">Students</p>
+    <p class="reports-kpi-value"><%= fmtNumber(metrics.totalStudents || reportStudents.length) %></p>
+    <p class="reports-kpi-meta">Available for report generation</p>
+  </article>
+  <article class="admin-card reports-kpi">
+    <p class="reports-kpi-label">Classes</p>
+    <p class="reports-kpi-value"><%= fmtNumber(metrics.totalClasses || reportClasses.length) %></p>
+    <p class="reports-kpi-meta">Class summary PDF supported</p>
+  </article>
+  <article class="admin-card reports-kpi">
+    <p class="reports-kpi-label">Reports Generated Today</p>
+    <p class="reports-kpi-value" id="reportGeneratedTodayCount"><%= fmtNumber(initialReportStats.generatedToday || 0) %></p>
+    <p class="reports-kpi-meta">Auto-refreshes after each generation</p>
+  </article>
+  <article class="admin-card reports-kpi">
+    <p class="reports-kpi-label">Total Reports Generated</p>
+    <p class="reports-kpi-value" id="reportGeneratedTotalCount"><%= fmtNumber(initialReportStats.totalGenerated || 0) %></p>
+    <p class="reports-kpi-meta">School-wide report generation history</p>
+  </article>
+</section>
+
+<section class="admin-card reports-last-generated">
+  <h2>Last Generated Report</h2>
+  <p id="reportLastGeneratedText"><%= initialReportStats.lastGeneratedLabel || 'No reports generated yet' %></p>
+</section>
+
+<section class="reports-grid">
+  <article class="admin-card reports-panel">
+    <header class="reports-panel-header">
+      <h2>Student Report PDF</h2>
+      <p>Select a student and generate a downloadable PDF.</p>
+    </header>
+    <form
+      id="studentReportForm"
+      class="reports-form"
+      data-base-url="/admin/reports/student"
+      data-mode="student"
+      data-csrf-token="<%= csrfToken %>"
+    >
+      <label for="studentReportSelect">Student</label>
+      <select id="studentReportSelect" name="studentId" required>
+        <option value="">Select a student</option>
+        <% reportStudents.forEach((student) => { %>
+          <% const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.userName || 'Unknown Student'; %>
+          <option value="<%= student._id %>">
+            <%= fullName %>
+            <% if (student.studentInfo?.studentNumber) { %>
+              — #<%= student.studentInfo.studentNumber %>
+            <% } %>
+          </option>
+        <% }) %>
+      </select>
+      <button type="submit" class="reports-submit">Generate + Download Student PDF</button>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    </form>
+
+    <div class="reports-list-wrap">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Student #</th>
+            <th>Direct Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (reportStudents.length === 0) { %>
+            <tr>
+              <td colspan="3" class="reports-empty">No students found for this school.</td>
+            </tr>
+          <% } %>
+          <% reportStudents.slice(0, 15).forEach((student) => { %>
+            <% const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.userName || 'Unknown Student'; %>
+            <tr>
+              <td><%= fullName %></td>
+              <td><%= student.studentInfo?.studentNumber || 'N/A' %></td>
+              <td>
+                <a class="reports-link" href="/admin/reports/student/<%= student._id %>/pdf">Download PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="admin-card reports-panel">
+    <header class="reports-panel-header">
+      <h2>Class Report PDF</h2>
+      <p>Select a class and generate a downloadable class summary PDF.</p>
+    </header>
+    <form
+      id="classReportForm"
+      class="reports-form"
+      data-base-url="/admin/reports/class"
+      data-mode="class"
+      data-csrf-token="<%= csrfToken %>"
+    >
+      <label for="classReportSelect">Class</label>
+      <select id="classReportSelect" name="classId" required>
+        <option value="">Select a class</option>
+        <% reportClasses.forEach((classDoc) => { %>
+          <option value="<%= classDoc._id %>">
+            <%= classDoc.className || 'Untitled Class' %>
+            <% if (classDoc.classCode) { %>
+              — <%= classDoc.classCode %>
+            <% } %>
+          </option>
+        <% }) %>
+      </select>
+      <button type="submit" class="reports-submit">Generate + Download Class PDF</button>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    </form>
+
+    <div class="reports-list-wrap">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Code</th>
+            <th>Direct Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (reportClasses.length === 0) { %>
+            <tr>
+              <td colspan="3" class="reports-empty">No classes found for this school.</td>
+            </tr>
+          <% } %>
+          <% reportClasses.slice(0, 15).forEach((classDoc) => { %>
+            <tr>
+              <td><%= classDoc.className || 'Untitled Class' %></td>
+              <td><%= classDoc.classCode || 'N/A' %></td>
+              <td>
+                <a class="reports-link" href="/admin/reports/class/<%= classDoc._id %>/pdf">Download PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="admin-card reports-activity">
+  <h2>Recent Report Activity</h2>
+  <ul id="reportRecentActivityList" class="report-activity-list">
+    <% if (recentActivity.length === 0) { %>
+      <li class="report-activity-empty">No report activity recorded yet.</li>
+    <% } %>
+    <% recentActivity.forEach((entry) => { %>
+      <li class="report-activity-item">
+        <span><strong><%= entry.targetName %></strong> (<%= entry.reportType %>)</span>
+        <span class="report-activity-time"><%= entry.generatedAtLabel %></span>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+
+<section class="admin-card reports-note">
+  <h3>Report Pipeline Notes</h3>
+  <p>
+    Reports are generated using the LaTeX pipeline and the <code>albayaanreport.cls</code> contract.
+  </p>
+  <p>
+    If generation fails because LaTeX is missing, the UI shows a clean message and no page reload is required.
+  </p>
+</section>
+
+<div id="reportActionStatus" class="reports-action-status" role="status" aria-live="polite"></div>
+
+<script src="/js/admin-reports.js"></script>
+
+<%- include('../partials/adminShellEnd') %>

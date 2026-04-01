@@ -1,0 +1,110 @@
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Admin Attendance',
+  pageStyles: ['/css/pages/admin-attendance.css'],
+  activePage: activePage || 'attendance',
+  user
+}) %>
+
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const pageData = attendancePage || {};
+  const activeItems = Array.isArray(pageData.activeItems) ? pageData.activeItems : [];
+  const expiredItems = Array.isArray(pageData.expiredItems) ? pageData.expiredItems : [];
+  const activeCount = Number(pageData.activeCount || activeItems.length || 0);
+  const expiredCount = Number(pageData.expiredCount || expiredItems.length || 0);
+
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+%>
+
+<header class="admin-page-header">
+  <div class="admin-page-title">
+    <h1>Attendance Highlights</h1>
+    <p><%= activeCount %> active · <%= expiredCount %> expired</p>
+  </div>
+  <div class="admin-top-actions attendance-header-actions">
+    <a class="attendance-create-btn" href="/admin/announcements">
+      <span class="attendance-create-btn-plus" aria-hidden="true">+</span>
+      Manage Announcements
+    </a>
+  </div>
+</header>
+
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="attendance-page">
+  <section class="attendance-group">
+    <h2 class="attendance-group-title">Active</h2>
+
+    <% if (activeItems.length === 0) { %>
+      <article class="attendance-card empty">
+        <p>No active attendance highlights right now.</p>
+      </article>
+    <% } %>
+
+    <% activeItems.forEach((item) => { %>
+      <article class="attendance-card tone-<%= item.tone || 'neutral' %>">
+        <div class="attendance-card-main">
+          <div class="attendance-card-title-row">
+            <span class="attendance-card-icon"><%- icon('announcements') %></span>
+            <h3><%= item.title %></h3>
+            <span class="attendance-chip chip-class"><%= item.className || 'Class' %></span>
+            <% if (item.toneLabel) { %>
+              <span class="attendance-chip chip-tone tone-<%= item.tone || 'neutral' %>"><%= item.toneLabel %></span>
+            <% } %>
+          </div>
+          <p class="attendance-card-detail"><%= item.detail %></p>
+          <p class="attendance-card-meta">
+            <span>Recorded <%= item.recordedLabel %></span>
+            <% if (item.statusLabel) { %>
+              <span class="attendance-card-meta-sep">•</span>
+              <span class="attendance-card-status"><%= item.statusLabel %></span>
+            <% } %>
+          </p>
+        </div>
+        <span class="attendance-card-action" aria-hidden="true"><%- icon('delete') %></span>
+      </article>
+    <% }) %>
+  </section>
+
+  <section class="attendance-group">
+    <h2 class="attendance-group-title">Expired</h2>
+
+    <% if (expiredItems.length === 0) { %>
+      <article class="attendance-card empty">
+        <p>No expired attendance highlights.</p>
+      </article>
+    <% } %>
+
+    <% expiredItems.forEach((item) => { %>
+      <article class="attendance-card tone-expired">
+        <div class="attendance-card-main">
+          <div class="attendance-card-title-row">
+            <span class="attendance-card-icon"><%- icon('announcements') %></span>
+            <h3><%= item.title %></h3>
+            <span class="attendance-chip chip-class"><%= item.className || 'Class' %></span>
+          </div>
+          <p class="attendance-card-detail"><%= item.detail %></p>
+          <p class="attendance-card-meta">
+            <span>Recorded <%= item.recordedLabel %></span>
+            <% if (item.statusLabel) { %>
+              <span class="attendance-card-meta-sep">•</span>
+              <span class="attendance-card-status"><%= item.statusLabel %></span>
+            <% } %>
+          </p>
+        </div>
+        <span class="attendance-card-action" aria-hidden="true"><%- icon('delete') %></span>
+      </article>
+    <% }) %>
+  </section>
+</section>
+
+<%- include('../partials/adminShellEnd') %>

@@ -1,392 +1,439 @@
 <%
-// ==============================
-// IlmQuest Profile (World-class, CSP-friendly, responsive)
-// - No inline onclick handlers (better with CSP/helmet)
-// - Dialog uses <dialog> with JS fallback
-// - Lucide icons gracefully degrade if blocked by CSP
-// - Defensive rendering (won’t crash if some fields missing)
-// - Accessible labels + keyboard friendly
-// ==============================
-
 const role = (user && user.role) ? String(user.role) : "guest";
+const isAdmin = role === "admin";
+const isTeacher = role === "teacher";
+const isStudent = role === "student";
+const isParent = role === "parent";
+const usesShell = isAdmin || isParent;
+
+const profile = profileModel || {};
 const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Profile";
-const username = user?.userName ? String(user.userName) : "";
-const email = user?.email ? String(user.email) : "N/A";
+const roleLabel = profile.roleLabel || ({ admin: "Administrator", teacher: "Teacher", student: "Student", parent: "Parent" }[role] || "User");
+const dashboardPath = profile.dashboardPath || (isAdmin ? "/admin/home" : isTeacher ? "/teacher/home" : isParent ? "/parent/home" : "/student/home");
+const avatarSrc = profile.avatarUrl || user?.profileImage || user?.profilePic || "";
+const avatarInitials = `${(user?.firstName || "I").charAt(0)}${(user?.lastName || user?.userName || "Q").charAt(0)}`.toUpperCase();
+const hasAvatarImage = Boolean(String(avatarSrc || "").trim());
 
-function formatDate(value) {
-  try {
-    if (!value) return "N/A";
-    return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  } catch (e) {
-    return "N/A";
-  }
+const completeness = profile.completeness || { complete: 0, total: 0, percent: 0 };
+const overviewRows = Array.isArray(profile.overviewRows) ? profile.overviewRows : [];
+const rolePanel = profile.rolePanel || {};
+const rolePanelItems = Array.isArray(rolePanel.items) ? rolePanel.items : [];
+const rolePanelChips = Array.isArray(rolePanel.chips) ? rolePanel.chips : [];
+const rolePanelList = Array.isArray(rolePanel.listItems) ? rolePanel.listItems : [];
+const quickStats = Array.isArray(profile.quickStats) ? profile.quickStats : [];
+const quickActions = Array.isArray(profile.quickActions) ? profile.quickActions : [];
+const classRows = Array.isArray(profile.classRows) ? profile.classRows : [];
+const recentReports = Array.isArray(profile.recentReports) ? profile.recentReports : [];
+const parentPaymentSummary = profile.parentPaymentSummary || {};
+const editable = profile.editable || {};
+const canManageAvatar = profile.canManageAvatar === true;
+const canUploadAvatar = profile.canUploadAvatar === true;
+
+const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+const errorMessages = [
+  ...(Array.isArray(messages?.error) ? messages.error : []),
+  ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+];
+
+function statToneClass(tone) {
+  if (tone === "success") return "stat-success";
+  if (tone === "warning") return "stat-warning";
+  if (tone === "critical") return "stat-critical";
+  return "stat-neutral";
 }
-
-const avatarSrc =
-  user?.profilePic ||
-  "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg";
-
-let dashboardPath = "/student/home";
-if (role === "admin") dashboardPath = "/admin/home";
-if (role === "teacher") dashboardPath = "/teacher/home";
-if (role === "parent") dashboardPath = "/parent/home";
-
-function roleLabel(r) {
-  const map = { admin: "Administrator", teacher: "Teacher", student: "Student", parent: "Parent" };
-  return map[r] || "User";
-}
-
-const joinedAt = formatDate(user?.createdAt);
-const dob = user?.DOB ? formatDate(user?.DOB) : "Not provided";
 %>
 
-<% if (role === "admin") { %>
-  <%- include("partials/adminHeader") %>
-<% } else if (role === "teacher") { %>
-  <%- include("partials/teacherHeader") %>
+<% if (isAdmin) { %>
+  <%- include('partials/adminShellStart', {
+    pageTitle: 'IlmQuest | Profile Center',
+    pageStyles: ['/css/pages/profile.css'],
+    activePage: 'dashboard',
+    user
+  }) %>
+<% } else if (isParent) { %>
+  <%- include('partials/parentShellStart', {
+    pageTitle: 'IlmQuest | Profile Center',
+    pageStyles: ['/css/pages/profile.css'],
+    activePage: 'account',
+    user
+  }) %>
+<% } else if (isTeacher) { %>
+  <%- include('partials/teacherHeader') %>
+  <link rel="stylesheet" href="/css/pages/profile.css" />
 <% } else { %>
-  <%- include("partials/inHeader") %>
+  <%- include('partials/inHeader') %>
+  <link rel="stylesheet" href="/css/pages/profile.css" />
 <% } %>
 
-<!-- If you use Helmet CSP, consider self-hosting lucide in /public and switching to /js/lucide.js -->
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<section class="profile-hub <%= usesShell ? 'profile-shell-mode' : 'profile-legacy-mode' %>">
+  <% if (isAdmin) { %>
+    <% const icon = typeof iconSvg === 'function' ? iconSvg : (() => ''); %>
+    <header class="admin-page-header profile-shell-header">
+      <button
+        type="button"
+        class="sidebar-toggle"
+        data-sidebar-toggle
+        aria-label="Toggle sidebar"
+        aria-expanded="false"
+        aria-controls="adminSidebar"
+      >
+        <%- icon('menu') %>
+      </button>
+      <div class="admin-page-title profile-title-wrap">
+        <h1>Profile Center</h1>
+        <p>Manage account identity, role context, and security settings.</p>
+      </div>
+      <div class="admin-top-actions">
+        <a class="admin-action-link" href="<%= dashboardPath %>">Dashboard</a>
+        <a class="admin-action-link" href="/logout">Logout</a>
+      </div>
+    </header>
+  <% } else if (isParent) { %>
+    <header class="parent-page-header profile-shell-header">
+      <button
+        type="button"
+        class="parent-sidebar-toggle"
+        data-parent-sidebar-toggle
+        aria-controls="parentSidebar"
+        aria-label="Toggle sidebar"
+        aria-expanded="true"
+      >
+        Hide Menu
+      </button>
+      <div class="parent-page-title profile-title-wrap">
+        <h1>Profile Center</h1>
+        <p>Manage your account profile, linked family context, and security actions.</p>
+      </div>
+      <div class="parent-top-actions">
+        <a class="parent-action-link" href="<%= dashboardPath %>">Dashboard</a>
+        <a class="parent-action-link" href="/logout">Logout</a>
+      </div>
+    </header>
+  <% } else { %>
+    <header class="profile-legacy-header">
+      <h1>Profile Center</h1>
+      <p>Manage account identity, role context, and security settings.</p>
+    </header>
+  <% } %>
 
-<link rel="stylesheet" href="/css/pages/profile.css">
+  <% if (successMessages.length > 0) { %>
+    <div class="profile-flash profile-flash-success"><%= successMessages.join(' ') %></div>
+  <% } %>
+  <% if (errorMessages.length > 0) { %>
+    <div class="profile-flash profile-flash-error"><%= errorMessages.join(' ') %></div>
+  <% } %>
 
-<div class="p-page p-wrap" data-role="<%= role %>">
-  <div class="p-container">
-    <section class="hero" aria-label="Profile overview">
-      <div class="hero-inner">
-        <div class="hero-top">
-          <div class="avatar" aria-hidden="true">
-            <img src="<%= avatarSrc %>" alt="Profile avatar" loading="lazy" />
+  <article class="profile-card profile-hero-card">
+    <div class="profile-hero-main">
+      <div class="profile-hero-avatar" aria-hidden="true">
+        <% if (hasAvatarImage) { %>
+          <img src="<%= avatarSrc %>" alt="<%= fullName %> avatar" loading="lazy" />
+        <% } else { %>
+          <span class="profile-hero-avatar-fallback"><%= avatarInitials %></span>
+        <% } %>
+      </div>
+      <div class="profile-hero-text">
+        <p class="profile-role-badge"><%= roleLabel %></p>
+        <h2><%= fullName %></h2>
+        <p class="profile-hero-sub">
+          <span>@<%= user?.userName || 'username' %></span>
+          <span>•</span>
+          <span><%= user?.email || 'No email' %></span>
+        </p>
+        <div class="profile-completeness">
+          <div class="profile-completeness-head">
+            <strong>Profile Completeness</strong>
+            <span><%= completeness.percent %>%</span>
           </div>
-
-          <div class="hero-meta">
-            <h1 class="hero-title"><%= fullName %></h1>
-
-            <p class="hero-sub">
-              <% if (username) { %>
-                <span class="handle">
-                  <i data-lucide="at-sign" class="icon-16"></i>
-                  <span>@<%= username %></span>
-                </span>
-              <% } %>
-
-              <span class="pill" title="Account role">
-                <i data-lucide="shield" class="icon-16"></i>
-                <span><%= roleLabel(role) %></span>
-              </span>
-            </p>
-          </div>
-
-          <div class="hero-actions" role="group" aria-label="Profile actions">
-            <!-- <button type="button" id="openAccountDialogBtn" class="btn btn-ghost">
-              <i data-lucide="user-cog" class="icon-pad-right"></i>
-              Manage Credentials
-            </button> -->
-
-            <!-- <a href="<%= dashboardPath %>" class="btn btn-solid">
-              <i data-lucide="layout-dashboard" class="icon-pad-right"></i>
-              Dashboard
-            </a> -->
-
-            <a href="/logout" class="btn btn-ghost profile-logout-btn">
-              <i data-lucide="log-out" class="icon-pad-right"></i>
-              Logout
-            </a>
-          </div>
+          <progress max="100" value="<%= completeness.percent %>"></progress>
+          <small><%= completeness.complete %> of <%= completeness.total %> core profile fields completed.</small>
         </div>
       </div>
+    </div>
+
+    <div class="profile-hero-tools">
+      <% if (canManageAvatar) { %>
+        <form action="/profile/avatar?_csrf=<%= encodeURIComponent(csrfToken || '') %>" method="POST" enctype="multipart/form-data" class="avatar-upload-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <label for="avatarUploadInput" class="avatar-upload-label">Profile Image</label>
+          <input
+            id="avatarUploadInput"
+            type="file"
+            name="avatar"
+            accept=".jpg,.jpeg,.png"
+            <%= canUploadAvatar ? '' : 'disabled' %>
+            required
+          />
+          <button type="submit" class="profile-btn profile-btn-primary" <%= canUploadAvatar ? '' : 'disabled' %>>
+            <%= hasAvatarImage ? 'Replace Image' : 'Upload Image' %>
+          </button>
+        </form>
+        <% if (hasAvatarImage) { %>
+          <form action="/profile/avatar/remove" method="POST" class="avatar-remove-form" onsubmit="return confirm('Remove your profile picture?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="profile-btn profile-btn-muted">Remove Image</button>
+          </form>
+        <% } %>
+        <% if (!canUploadAvatar) { %>
+          <p class="profile-note profile-note-warning">Cloudinary keys are missing. Add `CLOUD_NAME`, `API_KEY`, and `API_SECRET` in `.env` to enable avatar uploads.</p>
+        <% } else { %>
+          <p class="profile-note">Admin-only avatar management is active.</p>
+        <% } %>
+      <% } else { %>
+        <p class="profile-note">Profile pictures are managed by administrators.</p>
+      <% } %>
+      <a href="<%= dashboardPath %>" class="profile-btn profile-btn-outline">Back to Dashboard</a>
+    </div>
+  </article>
+
+  <% if (quickStats.length) { %>
+    <section class="profile-stats-grid" aria-label="Profile quick stats">
+      <% quickStats.forEach((stat) => { %>
+        <article class="profile-stat-card <%= statToneClass(stat.tone) %>">
+          <p class="stat-label"><%= stat.label %></p>
+          <p class="stat-value"><%= stat.value %></p>
+        </article>
+      <% }) %>
     </section>
+  <% } %>
 
-    <section class="grid" aria-label="Profile details">
-      <article class="card">
-        <div class="card-head">
-          <i data-lucide="user" class="icon-18"></i>
-          <h2>Personal Information</h2>
-        </div>
-        <div class="card-body">
-          <div class="kv">
-            <div class="row">
-              <div class="label">Email</div>
-              <div class="value"><%= email %></div>
-            </div>
-
-            <div class="row">
-              <div class="label">Date of Birth</div>
-              <div class="value"><%= dob %></div>
-            </div>
-
-            <div class="row">
-              <div class="label">Joined</div>
-              <div class="value"><%= joinedAt %></div>
-            </div>
-          </div>
+  <section class="profile-layout-grid">
+    <div class="profile-main-column">
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Account Overview</h3>
+          <p>Core account identity and membership details.</p>
+        </header>
+        <div class="profile-card-body">
+          <dl class="profile-overview-list">
+            <% overviewRows.forEach((row) => { %>
+              <div>
+                <dt><%= row.label %></dt>
+                <dd><%= row.value %></dd>
+              </div>
+            <% }) %>
+          </dl>
         </div>
       </article>
 
-      <article class="card">
-        <div class="card-head">
-          <i data-lucide="briefcase" class="icon-18"></i>
-          <h2>Role Details</h2>
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Contact & Personal Information</h3>
+          <p>Update your basic account details.</p>
+        </header>
+        <div class="profile-card-body">
+          <form action="/profile/update" method="POST" class="profile-edit-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+            <div class="profile-form-grid two-col">
+              <div>
+                <label for="profileFirstName" class="field-label">First Name</label>
+                <input id="profileFirstName" type="text" name="firstName" value="<%= editable.firstName || '' %>" required />
+              </div>
+              <div>
+                <label for="profileLastName" class="field-label">Last Name</label>
+                <input id="profileLastName" type="text" name="lastName" value="<%= editable.lastName || '' %>" required />
+              </div>
+            </div>
+
+            <div class="profile-form-grid two-col">
+              <div>
+                <label for="profileUserName" class="field-label">Username</label>
+                <input id="profileUserName" type="text" name="userName" value="<%= editable.userName || '' %>" required />
+              </div>
+              <div>
+                <label for="profileEmail" class="field-label">Email</label>
+                <input id="profileEmail" type="email" name="email" value="<%= editable.email || '' %>" required />
+              </div>
+            </div>
+
+            <div class="profile-form-grid two-col">
+              <div>
+                <label for="profileDob" class="field-label">Date of Birth</label>
+                <input id="profileDob" type="date" name="DOB" value="<%= editable.DOB || '' %>" />
+              </div>
+              <div>
+                <label for="profileGender" class="field-label">Gender</label>
+                <select id="profileGender" name="gender">
+                  <option value="">Prefer not to say</option>
+                  <option value="male" <%= editable.gender === 'male' ? 'selected' : '' %>>Male</option>
+                  <option value="female" <%= editable.gender === 'female' ? 'selected' : '' %>>Female</option>
+                  <option value="other" <%= editable.gender === 'other' ? 'selected' : '' %>>Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="profile-form-actions">
+              <button type="submit" class="profile-btn profile-btn-primary">Save Profile Changes</button>
+            </div>
+          </form>
         </div>
-        <div class="card-body">
-          <div class="role-box">
-            <% if (role === "teacher") { %>
-              <h3 class="role-title">Teacher Profile</h3>
+      </article>
 
-              <div class="kv">
-                <div class="row">
-                  <div class="label">Employee ID</div>
-                  <div class="value"><%= user?.teacherInfo?.employeeId || "N/A" %></div>
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Security & Account Actions</h3>
+          <p>Use existing secure account flows.</p>
+        </header>
+        <div class="profile-card-body">
+          <div class="profile-security-actions">
+            <a href="/reset-password" class="profile-btn profile-btn-outline">Change Password</a>
+            <a href="/forgot-password" class="profile-btn profile-btn-outline">Recovery Options</a>
+            <a href="/logout" class="profile-btn profile-btn-muted">Sign Out</a>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <aside class="profile-side-column">
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3><%= rolePanel.title || 'Role Details' %></h3>
+          <p><%= rolePanel.description || 'Context based on your role and assigned records.' %></p>
+        </header>
+        <div class="profile-card-body">
+          <% if (rolePanelItems.length > 0) { %>
+            <dl class="profile-overview-list">
+              <% rolePanelItems.forEach((row) => { %>
+                <div>
+                  <dt><%= row.label %></dt>
+                  <dd><%= row.value %></dd>
                 </div>
-              </div>
+              <% }) %>
+            </dl>
+          <% } %>
 
-              <div class="chips" aria-label="Subjects">
-                <% if (user?.teacherInfo?.subjects?.length) { %>
-                  <% user.teacherInfo.subjects.forEach(subject => { %>
-                    <span class="chip"><%= subject %></span>
-                  <% }) %>
-                <% } else { %>
-                  <span class="chip">No subjects assigned</span>
-                <% } %>
-              </div>
+          <% if (rolePanelChips.length > 0) { %>
+            <div class="profile-chip-list">
+              <% rolePanelChips.forEach((chip) => { %>
+                <span class="profile-chip"><%= chip %></span>
+              <% }) %>
+            </div>
+          <% } %>
 
-            <% } else if (role === "student") { %>
-              <h3 class="role-title">Student Profile</h3>
-
-              <div class="kv">
-                <div class="row">
-                  <div class="label">Grade Level</div>
-                  <div class="value"><%= user?.studentInfo?.gradeLevel || "N/A" %></div>
-                </div>
-                <div class="row">
-                  <div class="label">Student Number</div>
-                  <div class="value"><%= user?.studentInfo?.studentNumber || "N/A" %></div>
-                </div>
-                <div class="row">
-                  <div class="label">Program</div>
-                  <div class="value"><%= user?.studentInfo?.programType || "N/A" %></div>
-                </div>
-              </div>
-
-            <% } else if (role === "parent") { %>
-              <h3 class="role-title">Parent Profile</h3>
-              <p class="role-parent-text">
-                Guardian of <span class="role-parent-count"><%= user?.parentInfo?.children?.length || 0 %></span> student(s)
-              </p>
-
-              <div class="chips" aria-label="Children">
-                <% if (user?.parentInfo?.children?.length) { %>
-                  <% user.parentInfo.children.forEach(child => { %>
-                    <span class="chip"><%= child.childName %></span>
-                  <% }) %>
-                <% } else { %>
-                  <span class="chip">No linked children</span>
-                <% } %>
-              </div>
-
+          <div class="profile-context-list">
+            <h4><%= rolePanel.listTitle || 'Related Records' %></h4>
+            <% if (rolePanelList.length === 0) { %>
+              <p class="profile-empty"><%= rolePanel.emptyListText || 'No records available.' %></p>
             <% } else { %>
-              <h3 class="role-title">Administrator Profile</h3>
-              <div class="role-grid">
-                <div class="row">
-                  <div class="label">School Scope</div>
-                  <div class="value"><%= user?.schoolId || "N/A" %></div>
-                </div>
-                <div class="row">
-                  <div class="label">Privileges</div>
-                  <div class="value">Users, Classes, Communication, Reports</div>
-                </div>
-              </div>
-              <div class="chips" aria-label="Admin capabilities">
-                <span class="chip">Manage Users</span>
-                <span class="chip">Assign Classes</span>
-                <span class="chip">Track Performance</span>
-                <span class="chip">Audit Updates</span>
-              </div>
-              <p class="role-note">
-                Full school management access is enabled. Use this account for policy-safe updates, enrollment checks, and operational oversight.
-              </p>
+              <ul>
+                <% rolePanelList.forEach((entry) => { %>
+                  <li><%= entry %></li>
+                <% }) %>
+              </ul>
             <% } %>
           </div>
         </div>
       </article>
-<article class="card">
-  <div class="card-head">
-    <i data-lucide="shield-check" class="icon-18"></i>
-    <h2>Account Status</h2>
-  </div>
 
-  <div class="card-body">
-    <div class="kv">
-      <div class="row">
-        <div class="label">Sign-in Identifier</div>
-        <div class="value">
-          <% if (username) { %>
-            @<%= username %>
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Class Context</h3>
+          <p>Associated classes based on your role assignment.</p>
+        </header>
+        <div class="profile-card-body">
+          <% if (classRows.length === 0) { %>
+            <p class="profile-empty">No class records are linked to this account yet.</p>
           <% } else { %>
-            N/A
+            <div class="profile-table-shell">
+              <table class="profile-table">
+                <thead>
+                  <tr>
+                    <th>Class</th>
+                    <th>Code</th>
+                    <th>Students</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% classRows.forEach((row) => { %>
+                    <tr>
+                      <td><%= row.className %></td>
+                      <td><%= row.classCode %></td>
+                      <td><%= row.studentCount %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
           <% } %>
         </div>
-      </div>
+      </article>
 
-      <div class="row">
-        <div class="label">Helpful Links</div>
-        <div class="value inline-flex-wrap">
-          <a href="/account/change-username" class="btn btn-outline profile-link-btn">
-            <i data-lucide="at-sign" class="icon-18"></i>
-            Change Username
-          </a>
+      <% if (isParent) { %>
+        <article class="profile-card">
+          <header class="profile-card-head">
+            <h3>Payment Snapshot</h3>
+            <p>Family-level billing visibility.</p>
+          </header>
+          <div class="profile-card-body">
+            <dl class="profile-overview-list compact">
+              <div>
+                <dt>Outstanding</dt>
+                <dd>
+                  <%= new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: String(parentPaymentSummary.currency || 'USD').toUpperCase()
+                  }).format(Number(parentPaymentSummary.outstanding || 0)) %>
+                </dd>
+              </div>
+              <div>
+                <dt>Next Due Date</dt>
+                <dd><%= parentPaymentSummary.nextDueDate ? new Date(parentPaymentSummary.nextDueDate).toLocaleDateString('en-US') : 'No upcoming due date' %></dd>
+              </div>
+              <div>
+                <dt>Open Invoices</dt>
+                <dd><%= parentPaymentSummary.count || 0 %></dd>
+              </div>
+            </dl>
+          </div>
+        </article>
+      <% } %>
 
-          <a href="/reset-password" class="btn btn-outline profile-link-btn">
-            <i data-lucide="key-round" class="icon-18"></i>
-            Change Password
-          </a>
-
-          <a href="/forgot-password" class="btn btn-outline profile-link-btn">
-            <i data-lucide="life-buoy" class="icon-18"></i>
-            Recovery Options
-          </a>
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Recent Report Activity</h3>
+          <p>Latest report generation and visibility context.</p>
+        </header>
+        <div class="profile-card-body">
+          <% if (recentReports.length === 0) { %>
+            <p class="profile-empty">No recent report activity found for this account context.</p>
+          <% } else { %>
+            <ul class="profile-activity-list">
+              <% recentReports.forEach((report) => { %>
+                <li>
+                  <strong><%= report.title %></strong>
+                  <span><%= report.targetName %></span>
+                  <small><%= report.generatedAt %></small>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
         </div>
+      </article>
+    </aside>
+  </section>
+
+  <article class="profile-card">
+    <header class="profile-card-head">
+      <h3>Quick Actions</h3>
+      <p>Jump to role-relevant parts of IlmQuest.</p>
+    </header>
+    <div class="profile-card-body">
+      <div class="profile-action-grid">
+        <% quickActions.forEach((action) => { %>
+          <a href="<%= action.href %>" class="profile-btn profile-btn-outline"><%= action.label %></a>
+        <% }) %>
       </div>
     </div>
-  </div>
-</article>
-<article class="bottom-full">
-        <div class="row bottom">
-        <div class="label">What’s next</div>
-        <div class="value whats-next-text">
-          Coming soon: activity log, login alerts, and downloadable account report.
-        </div>
-      </div>
-</article>
-<article class="bottom-full">
-  <div class="card">
-    <div class="card-head">
-      <i data-lucide="sparkles" class="icon-18"></i>
-      <h2>Quick Guidance</h2>
-    </div>
-    <div class="card-body">
-      <ul class="quick-list">
-        <% if (role === "admin") { %>
-          <li>Review user enrollments weekly and resolve duplicate profile data early.</li>
-          <li>Keep class assignments balanced before publishing schedules.</li>
-          <li>Use password reset and username tools only for verified requests.</li>
-        <% } else if (role === "teacher") { %>
-          <li>Review attendance and grades before the end of each week.</li>
-          <li>Keep subject lists current so class dashboards stay accurate.</li>
-          <li>Use account recovery options only from trusted devices.</li>
-        <% } else if (role === "student") { %>
-          <li>Check your program and class details for accuracy each term.</li>
-          <li>Track progress weekly and ask teachers about missing scores quickly.</li>
-          <li>Update password regularly and keep it private.</li>
-        <% } else { %>
-          <li>Monitor student activity and communicate changes to school staff quickly.</li>
-          <li>Verify linked child profiles are correct.</li>
-          <li>Use account recovery tools if login details are lost.</li>
-        <% } %>
-      </ul>
-    </div>
-  </div>
-</article>
-    </section>
-  </div>
-</div>
+  </article>
+</section>
 
-<dialog id="accountActionDialog" class="dialog" aria-labelledby="accountActionDialogTitle">
-  <div class="dialog-card">
-    <div class="dialog-head">
-      <h3 id="accountActionDialogTitle">Update Account Credentials</h3>
-      <button type="button" id="closeAccountDialogBtn" class="close-btn" aria-label="Close">
-        <i data-lucide="x" class="icon-18"></i>
-      </button>
-    </div>
-
-    <p class="dialog-desc">
-      Choose what you want to update.
-    </p>
-
-    <div class="dialog-actions">
-      <a href="/reset-password?mode=password" class="btn btn-primary center-content">
-        <i data-lucide="lock" class="icon-18"></i>
-        Change Password
-      </a>
-
-      <a href="/reset-password?mode=username" class="btn btn-outline center-content">
-        <i data-lucide="at-sign" class="icon-18"></i>
-        Change Username
-      </a>
-
-      <form method="dialog" class="display-contents">
-        <button type="submit" class="btn btn-danger center-content">
-          Cancel
-        </button>
-      </form>
-    </div>
-  </div>
-</dialog>
-
-<script>
-  // ---------- Icons (graceful) ----------
-  try { if (window.lucide) lucide.createIcons(); } catch (e) {}
-
-  // ---------- Dialog (future-proof + fallback) ----------
-  const dialog = document.getElementById("accountActionDialog");
-  const openBtn1 = document.getElementById("openAccountDialogBtn");
-  const openBtn2 = document.getElementById("openAccountDialogBtn2");
-  const closeBtn = document.getElementById("closeAccountDialogBtn");
-
-  const supportsDialog = !!(dialog && dialog.showModal);
-
-  function openDialog() {
-    if (!dialog) return;
-    if (supportsDialog) {
-      if (!dialog.open) dialog.showModal();
-      return;
-    }
-    // Fallback: emulate modal if <dialog> unsupported (rare, but future-proof)
-    dialog.setAttribute("open", "");
-    dialog.style.display = "block";
-  }
-
-  function closeDialog() {
-    if (!dialog) return;
-    if (supportsDialog) return dialog.close();
-    dialog.removeAttribute("open");
-    dialog.style.display = "none";
-  }
-
-  openBtn1?.addEventListener("click", openDialog);
-  openBtn2?.addEventListener("click", openDialog);
-  closeBtn?.addEventListener("click", closeDialog);
-
-  // Close on outside click (only when supported, since fallback isn’t a true backdrop)
-  dialog?.addEventListener("click", (event) => {
-    if (!supportsDialog) return;
-    const rect = dialog.getBoundingClientRect();
-    const inDialog =
-      rect.top <= event.clientY &&
-      event.clientY <= rect.top + rect.height &&
-      rect.left <= event.clientX &&
-      event.clientX <= rect.left + rect.width;
-
-    if (!inDialog) closeDialog();
-  });
-
-  // ESC to close fallback mode
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    if (!dialog) return;
-    if (supportsDialog && dialog.open) return; // native handles ESC
-    if (dialog.hasAttribute("open")) closeDialog();
-  });
-</script>
-
-<% if (role === "admin") { %>
-  <%- include("partials/adminFooter") %>
-<% } else if (role === "teacher") { %>
-  <%- include("partials/teacherFooter") %>
+<% if (isAdmin) { %>
+  <%- include('partials/adminShellEnd') %>
+<% } else if (isParent) { %>
+  <%- include('partials/parentShellEnd') %>
+<% } else if (isTeacher) { %>
+  <%- include('partials/teacherFooter') %>
 <% } else { %>
-  <%- include("partials/inFooter") %>
+  <%- include('partials/inFooter') %>
 <% } %>

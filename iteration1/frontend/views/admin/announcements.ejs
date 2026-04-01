@@ -1,0 +1,403 @@
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Admin Announcements',
+  pageStyles: ['/css/pages/admin-announcements.css'],
+  activePage: activePage || 'announcements',
+  user
+}) %>
+
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const pageData = announcementsPage || {};
+  const activeItems = Array.isArray(pageData.activeItems) ? pageData.activeItems : [];
+  const expiredItems = Array.isArray(pageData.expiredItems) ? pageData.expiredItems : [];
+  const draftItems = Array.isArray(pageData.draftItems) ? pageData.draftItems : [];
+  const archivedItems = Array.isArray(pageData.archivedItems) ? pageData.archivedItems : [];
+  const filters = pageData.filters || {};
+  const pagination = pageData.pagination || {};
+  const editing = pageData.editingAnnouncement || null;
+
+  const audience = audienceOptions || {};
+  const classes = Array.isArray(audience.classes) ? audience.classes : [];
+  const students = Array.isArray(audience.students) ? audience.students : [];
+  const parents = Array.isArray(audience.parents) ? audience.parents : [];
+  const teachers = Array.isArray(audience.teachers) ? audience.teachers : [];
+
+  const priorities = Array.isArray(announcementMeta?.priorities) ? announcementMeta.priorities : ['info', 'warning', 'urgent'];
+  const roles = Array.isArray(announcementMeta?.roles) ? announcementMeta.roles : ['admin', 'teacher', 'student', 'parent'];
+
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+
+  function hasSelection(values, candidate) {
+    return Array.isArray(values) && values.map(String).includes(String(candidate));
+  }
+
+  function asDateTimeLocal(value) {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    const hour = String(parsed.getHours()).padStart(2, '0');
+    const minute = String(parsed.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  }
+
+  function excerptFor(item) {
+    const source = String(item?.summary || item?.content || '').trim();
+    if (source.length <= 320) return source;
+    return `${source.slice(0, 317)}...`;
+  }
+%>
+
+<header class="admin-page-header">
+  <button
+    type="button"
+    class="sidebar-toggle"
+    data-sidebar-toggle
+    aria-label="Toggle sidebar"
+    aria-expanded="false"
+    aria-controls="adminSidebar"
+  >
+    <%- icon('menu') %>
+  </button>
+  <div class="admin-page-title">
+    <h1>Announcements</h1>
+    <p><%= pageData.activeCount || activeItems.length %> active · <%= pageData.expiredCount || expiredItems.length %> expired</p>
+  </div>
+  <div class="admin-top-actions">
+    <a class="admin-action-link" href="/admin/home">Dashboard</a>
+    <a class="admin-action-link" href="/admin/users">User Administration</a>
+  </div>
+</header>
+
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="announcements-layout">
+  <article class="announcement-panel form-panel">
+    <header class="announcement-panel-header">
+      <h2><%= editing ? 'Edit Announcement' : 'New Announcement' %></h2>
+      <p><%= editing ? 'Update visibility, publishing, and audience scope safely.' : 'Create a global school update or scope it to specific audiences.' %></p>
+    </header>
+
+    <form
+      class="announcement-form"
+      action="<%= editing ? `/admin/announcements/${editing.id}/update` : '/admin/announcements' %>"
+      method="POST"
+    >
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+      <div class="field-grid">
+        <label>
+          <span class="required">Title</span>
+          <input type="text" name="title" maxlength="160" required value="<%= editing?.title || '' %>" />
+        </label>
+        <label>
+          <span>Summary</span>
+          <input type="text" name="summary" maxlength="320" value="<%= editing?.summary || '' %>" />
+        </label>
+      </div>
+
+      <label>
+        <span class="required">Content</span>
+        <textarea name="content" rows="5" maxlength="4000" required><%= editing?.content || '' %></textarea>
+      </label>
+
+      <div class="field-grid">
+        <label>
+          <span>Status</span>
+          <select name="status">
+            <option value="draft" <%= (editing?.status || 'draft') === 'draft' ? 'selected' : '' %>>Draft</option>
+            <option value="published" <%= editing?.status === 'published' ? 'selected' : '' %>>Published</option>
+          </select>
+        </label>
+        <label>
+          <span>Priority</span>
+          <select name="priority">
+            <% priorities.forEach((priority) => { %>
+              <option value="<%= priority %>" <%= (editing?.priority || 'info') === priority ? 'selected' : '' %>><%= priority %></option>
+            <% }) %>
+          </select>
+        </label>
+      </div>
+
+      <div class="field-grid">
+        <label>
+          <span>Publish At</span>
+          <input type="datetime-local" name="publishAt" value="<%= asDateTimeLocal(editing?.publishAt) %>" />
+        </label>
+        <label>
+          <span>Expires At</span>
+          <input type="datetime-local" name="expiresAt" value="<%= asDateTimeLocal(editing?.expiresAt) %>" />
+        </label>
+      </div>
+
+      <label class="inline-checkbox">
+        <input type="checkbox" name="isPinned" value="true" <%= editing?.isPinned ? 'checked' : '' %> />
+        <span>Pin announcement at the top of user feeds</span>
+      </label>
+
+      <fieldset class="scope-fieldset">
+        <legend>Audience Scope</legend>
+        <p class="scope-note">No scope selections means global school-wide visibility.</p>
+
+        <div class="scope-mode-row">
+          <label class="inline-radio">
+            <input type="radio" name="visibilityMode" value="global" <%= (editing?.visibilityMode || 'global') === 'global' ? 'checked' : '' %> />
+            <span>Global (default)</span>
+          </label>
+          <label class="inline-radio">
+            <input type="radio" name="visibilityMode" value="scoped" <%= editing?.visibilityMode === 'scoped' ? 'checked' : '' %> />
+            <span>Scoped audience</span>
+          </label>
+        </div>
+
+        <div class="scope-roles">
+          <p class="scope-subtitle">Target Roles</p>
+          <div class="role-chip-grid">
+            <% roles.forEach((role) => { %>
+              <label class="role-chip">
+                <input type="checkbox" name="targetRoles" value="<%= role %>" <%= hasSelection(editing?.targetRoles, role) ? 'checked' : '' %> />
+                <span><%= role %></span>
+              </label>
+            <% }) %>
+          </div>
+        </div>
+
+        <div class="scope-grid">
+          <label>
+            <span>Classes</span>
+            <input type="search" class="scope-search" data-scope-filter="announcementClassSelect" placeholder="Search classes" />
+            <select id="announcementClassSelect" name="targetClassIds" multiple size="5">
+              <% classes.forEach((classDoc) => { %>
+                <option value="<%= classDoc._id %>" <%= hasSelection(editing?.targetClassIds, classDoc._id) ? 'selected' : '' %>>
+                  <%= classDoc.className %><%= classDoc.classCode ? ` (${classDoc.classCode})` : '' %>
+                </option>
+              <% }) %>
+            </select>
+          </label>
+
+          <label>
+            <span>Teachers</span>
+            <input type="search" class="scope-search" data-scope-filter="announcementTeacherSelect" placeholder="Search teachers" />
+            <select id="announcementTeacherSelect" name="targetTeacherIds" multiple size="5">
+              <% teachers.forEach((teacher) => { %>
+                <option value="<%= teacher._id %>" <%= hasSelection(editing?.targetTeacherIds, teacher._id) ? 'selected' : '' %>>
+                  <%= teacher.name %>
+                </option>
+              <% }) %>
+            </select>
+          </label>
+
+          <label>
+            <span>Students</span>
+            <input type="search" class="scope-search" data-scope-filter="announcementStudentSelect" placeholder="Search students" />
+            <select id="announcementStudentSelect" name="targetStudentIds" multiple size="5">
+              <% students.forEach((student) => { %>
+                <option value="<%= student._id %>" <%= hasSelection(editing?.targetStudentIds, student._id) ? 'selected' : '' %>>
+                  <%= student.name %><%= student.className ? ` • ${student.className}` : '' %>
+                </option>
+              <% }) %>
+            </select>
+          </label>
+
+          <label>
+            <span>Parents</span>
+            <input type="search" class="scope-search" data-scope-filter="announcementParentSelect" placeholder="Search parents" />
+            <select id="announcementParentSelect" name="targetParentIds" multiple size="5">
+              <% parents.forEach((parent) => { %>
+                <option value="<%= parent._id %>" <%= hasSelection(editing?.targetParentIds, parent._id) ? 'selected' : '' %>>
+                  <%= parent.name %>
+                </option>
+              <% }) %>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="form-actions">
+        <button type="submit" class="primary-btn"><%= editing ? 'Save Changes' : 'Create Announcement' %></button>
+        <% if (editing) { %>
+          <a href="/admin/announcements" class="secondary-btn">Cancel Edit</a>
+        <% } %>
+      </div>
+    </form>
+  </article>
+
+  <article class="announcement-panel list-panel">
+    <header class="announcement-panel-header list-header">
+      <div>
+        <h2>Announcement Feed</h2>
+        <p>Pinned announcements appear first. Expired announcements remain auditable.</p>
+      </div>
+      <form class="feed-filter-form" method="GET" action="/admin/announcements">
+        <select name="status">
+          <option value="all" <%= (filters.status || 'all') === 'all' ? 'selected' : '' %>>All</option>
+          <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+          <option value="published" <%= filters.status === 'published' ? 'selected' : '' %>>Published</option>
+          <option value="expired" <%= filters.status === 'expired' ? 'selected' : '' %>>Expired</option>
+          <option value="draft" <%= filters.status === 'draft' ? 'selected' : '' %>>Draft</option>
+          <option value="archived" <%= filters.status === 'archived' ? 'selected' : '' %>>Archived</option>
+        </select>
+        <input type="search" name="q" value="<%= filters.q || '' %>" placeholder="Search announcements" />
+        <button type="submit" class="secondary-btn compact-btn">Filter</button>
+      </form>
+    </header>
+
+    <section class="announcement-group">
+      <h3>Active</h3>
+      <% if (activeItems.length === 0) { %>
+        <div class="empty-row">No active announcements.</div>
+      <% } %>
+      <% activeItems.forEach((item) => { %>
+        <article class="announcement-item tone-<%= item.tone || 'success' %>">
+          <div class="announcement-item-main">
+            <div class="announcement-item-title">
+              <span class="item-icon"><%- icon('announcements') %></span>
+              <h4><%= item.title %></h4>
+              <% if (item.isPinned) { %><span class="meta-chip pinned">Pinned</span><% } %>
+              <span class="meta-chip"><%= item.priority %></span>
+            </div>
+            <p class="announcement-item-content"><%= excerptFor(item) %></p>
+            <p class="announcement-item-meta">
+              <span>Posted <%= item.publishLabel %></span>
+              <span>•</span>
+              <span><%= item.audienceSummary %></span>
+              <% if (item.expiresLabel) { %>
+                <span>•</span>
+                <span>Expires <%= item.expiresLabel %></span>
+              <% } %>
+            </p>
+          </div>
+          <div class="announcement-item-actions">
+            <a href="/admin/announcements?edit=<%= item.id %>" class="compact-link">Edit</a>
+            <form action="/admin/announcements/<%= item.id %>/publish" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="publish" value="false" />
+              <button type="submit" class="link-btn">Unpublish</button>
+            </form>
+            <form action="/admin/announcements/<%= item.id %>/pin" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="pin" value="<%= item.isPinned ? 'false' : 'true' %>" />
+              <button type="submit" class="link-btn"><%= item.isPinned ? 'Unpin' : 'Pin' %></button>
+            </form>
+            <form action="/admin/announcements/<%= item.id %>/archive" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="link-btn danger">Archive</button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+
+    <section class="announcement-group">
+      <h3>Drafts</h3>
+      <% if (draftItems.length === 0) { %>
+        <div class="empty-row">No drafts.</div>
+      <% } %>
+      <% draftItems.forEach((item) => { %>
+        <article class="announcement-item tone-neutral">
+          <div class="announcement-item-main">
+            <div class="announcement-item-title">
+              <span class="item-icon"><%- icon('announcements') %></span>
+              <h4><%= item.title %></h4>
+              <span class="meta-chip">Draft</span>
+            </div>
+            <p class="announcement-item-content"><%= excerptFor(item) %></p>
+            <p class="announcement-item-meta"><span><%= item.audienceSummary %></span></p>
+          </div>
+          <div class="announcement-item-actions">
+            <a href="/admin/announcements?edit=<%= item.id %>" class="compact-link">Edit</a>
+            <form action="/admin/announcements/<%= item.id %>/publish" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="publish" value="true" />
+              <button type="submit" class="link-btn">Publish</button>
+            </form>
+            <form action="/admin/announcements/<%= item.id %>/archive" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="link-btn danger">Archive</button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+
+    <section class="announcement-group">
+      <h3>Expired</h3>
+      <% if (expiredItems.length === 0) { %>
+        <div class="empty-row">No expired announcements.</div>
+      <% } %>
+      <% expiredItems.forEach((item) => { %>
+        <article class="announcement-item tone-expired">
+          <div class="announcement-item-main">
+            <div class="announcement-item-title">
+              <span class="item-icon"><%- icon('announcements') %></span>
+              <h4><%= item.title %></h4>
+              <span class="meta-chip">Expired</span>
+            </div>
+            <p class="announcement-item-content"><%= excerptFor(item) %></p>
+            <p class="announcement-item-meta">
+              <span>Published <%= item.publishLabel %></span>
+              <% if (item.expiresLabel) { %><span>•</span><span>Expired <%= item.expiresLabel %></span><% } %>
+            </p>
+          </div>
+          <div class="announcement-item-actions">
+            <a href="/admin/announcements?edit=<%= item.id %>" class="compact-link">Edit</a>
+            <form action="/admin/announcements/<%= item.id %>/archive" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="link-btn danger">Archive</button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+
+    <% if (archivedItems.length > 0) { %>
+      <details class="archived-disclosure">
+        <summary>Archived (<%= archivedItems.length %>)</summary>
+        <div class="archived-list">
+          <% archivedItems.forEach((item) => { %>
+            <article class="announcement-item tone-expired">
+              <div class="announcement-item-main">
+                <div class="announcement-item-title">
+                  <span class="item-icon"><%- icon('announcements') %></span>
+                  <h4><%= item.title %></h4>
+                  <span class="meta-chip">Archived</span>
+                </div>
+                <p class="announcement-item-content"><%= excerptFor(item) %></p>
+              </div>
+              <div class="announcement-item-actions">
+                <a href="/admin/announcements?edit=<%= item.id %>" class="compact-link">Edit</a>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </details>
+    <% } %>
+
+    <footer class="announcement-pagination">
+      <span>Page <%= pagination.page || 1 %> of <%= pagination.totalPages || 1 %></span>
+      <div>
+        <% if (pagination.hasPrev) { %>
+          <a href="/admin/announcements?page=<%= (pagination.page || 1) - 1 %>&status=<%= filters.status || 'all' %>&q=<%= encodeURIComponent(filters.q || '') %>">Previous</a>
+        <% } %>
+        <% if (pagination.hasNext) { %>
+          <a href="/admin/announcements?page=<%= (pagination.page || 1) + 1 %>&status=<%= filters.status || 'all' %>&q=<%= encodeURIComponent(filters.q || '') %>">Next</a>
+        <% } %>
+      </div>
+    </footer>
+  </article>
+</section>
+
+<script src="/js/admin-announcements.js"></script>
+
+<%- include('../partials/adminShellEnd') %>

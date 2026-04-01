@@ -1,0 +1,573 @@
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Admin Finance',
+  pageStyles: ['/css/pages/admin-finance.css'],
+  activePage: activePage || 'finance',
+  user
+}) %>
+
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const payload = financePage || {};
+  const finance = payload.finance || {};
+  const summary = finance.summary || {};
+  const payments = finance.payments || {};
+  const entries = finance.entries || {};
+  const categories = finance.categories || {};
+  const bank = finance.bank || {};
+  const monthLabel = finance.monthLabel || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+  const parentsForForm = Array.isArray(payload.parentsForForm) ? payload.parentsForForm : [];
+  const studentsForForm = Array.isArray(payload.studentsForForm) ? payload.studentsForForm : [];
+  const classesForForm = Array.isArray(payload.classesForForm) ? payload.classesForForm : [];
+  const paymentRows = Array.isArray(payments.rows) ? payments.rows : [];
+  const entryRows = Array.isArray(entries.rows) ? entries.rows : [];
+  const unmatchedRows = Array.isArray(bank.unmatchedRows) ? bank.unmatchedRows : [];
+  const connections = Array.isArray(bank.connections) ? bank.connections : [];
+  const revenueBreakdown = Array.isArray(finance.revenueBreakdown) ? finance.revenueBreakdown : [];
+  const entryMatchOptions = Array.isArray(entries.matchOptions) ? entries.matchOptions : [];
+  const paymentMatchOptions = Array.isArray(finance.paymentMatchOptions) ? finance.paymentMatchOptions : [];
+
+  const providerSummary = providerStatus || {};
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+%>
+
+<header class="admin-page-header">
+  <button
+    type="button"
+    class="sidebar-toggle"
+    data-sidebar-toggle
+    aria-label="Toggle sidebar"
+    aria-expanded="false"
+    aria-controls="adminSidebar"
+  >
+    <%- icon('menu') %>
+  </button>
+  <div class="admin-page-title">
+    <h1>Finance Command Center</h1>
+    <p>Track payments, income, expenses, bank sync health, and reconciliation from one admin-only module.</p>
+  </div>
+  <div class="admin-top-actions">
+    <a class="admin-action-link" href="/admin/home">Dashboard</a>
+    <a class="admin-action-link" href="/admin/reports">Reports</a>
+  </div>
+</header>
+
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="finance-kpi-grid" data-finance-summary-root>
+  <article class="finance-kpi-card">
+    <p class="finance-kpi-label">Income (<%= monthLabel %>)</p>
+    <p class="finance-kpi-value" id="financeMonthlyIncomeValue"><%= summary.monthlyIncomeLabel || '$0.00' %></p>
+    <p class="finance-kpi-meta">Includes payments + manual income entries</p>
+  </article>
+  <article class="finance-kpi-card">
+    <p class="finance-kpi-label">Expenses (<%= monthLabel %>)</p>
+    <p class="finance-kpi-value" id="financeMonthlyExpenseValue"><%= summary.monthlyExpenseLabel || '$0.00' %></p>
+    <p class="finance-kpi-meta">Posted expense entries</p>
+  </article>
+  <article class="finance-kpi-card">
+    <p class="finance-kpi-label">Net Cash Flow</p>
+    <p class="finance-kpi-value <%= Number(summary.netCashFlow || 0) >= 0 ? 'is-positive' : 'is-negative' %>" id="financeNetCashFlowValue"><%= summary.netCashFlowLabel || '$0.00' %></p>
+    <p class="finance-kpi-meta">Month-to-date net</p>
+  </article>
+  <article class="finance-kpi-card">
+    <p class="finance-kpi-label">Outstanding Family Balance</p>
+    <p class="finance-kpi-value" id="financeOutstandingValue"><%= summary.outstandingLabel || '$0.00' %></p>
+    <p class="finance-kpi-meta"><span id="financeUnpaidFamiliesValue"><%= Number(summary.unpaidFamilies || 0) %></span> unpaid families</p>
+  </article>
+  <article class="finance-kpi-card">
+    <p class="finance-kpi-label">Reconciliation</p>
+    <p class="finance-kpi-value"><span id="financeUnmatchedCountValue"><%= Number(summary.unmatchedCount || 0) %></span> unmatched</p>
+    <p class="finance-kpi-meta"><span id="financeMatchedCountValue"><%= Number(summary.matchedCount || 0) %></span> matched</p>
+  </article>
+  <article class="finance-kpi-card">
+    <p class="finance-kpi-label">Last Bank Sync</p>
+    <p class="finance-kpi-value" id="financeLastSyncAtValue"><%= summary.lastSyncAtLabel || 'Never' %></p>
+    <p class="finance-kpi-meta" id="financeLastSyncStatusValue"><%= summary.lastSyncStatus || 'never' %></p>
+  </article>
+</section>
+
+<section class="finance-layout-grid" id="bank-sync">
+  <article class="finance-card bank-card">
+    <header class="finance-card-header">
+      <h2>Bank Sync</h2>
+      <p>Provider: Plaid (<%= providerSummary.env || 'sandbox' %>)</p>
+    </header>
+
+    <div class="bank-status-list">
+      <div class="bank-status-row">
+        <span>Provider Credentials</span>
+        <strong class="<%= providerSummary.configured ? 'ok' : 'warn' %>"><%= providerSummary.configured ? 'Configured' : 'Missing' %></strong>
+      </div>
+      <div class="bank-status-row">
+        <span>Token Encryption</span>
+        <strong class="<%= encryptionConfigured ? 'ok' : 'warn' %>"><%= encryptionConfigured ? 'Configured' : 'Missing FINANCE_ENCRYPTION_KEY' %></strong>
+      </div>
+      <div class="bank-status-row">
+        <span>Last Sync Message</span>
+        <strong id="financeLastSyncMessageValue"><%= summary.lastSyncMessage || 'No issues reported.' %></strong>
+      </div>
+    </div>
+
+    <form id="financeLinkTokenForm" class="finance-inline-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="submit-btn secondary">Create Link Token</button>
+      <input type="text" id="financeLinkTokenOutput" class="token-output" readonly placeholder="Link token appears here for Plaid Link integration" />
+    </form>
+
+    <form id="financeConnectForm" class="finance-inline-form" action="/admin/finance/bank/connect" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="text" name="institutionName" placeholder="Institution name (optional)" />
+      <input type="text" name="publicToken" required placeholder="Plaid public_token" />
+      <button type="submit" class="submit-btn">Connect Bank</button>
+    </form>
+
+    <form id="financeSyncForm" class="finance-inline-form" action="/admin/finance/bank/sync" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <select name="connectionId">
+        <option value="">Sync all connected accounts</option>
+        <% connections.forEach((connection) => { %>
+          <option value="<%= connection.id %>"><%= connection.institutionName %> · <%= connection.status %></option>
+        <% }) %>
+      </select>
+      <button type="submit" class="submit-btn">Sync Bank Now</button>
+    </form>
+
+    <p id="financeActionStatus" class="finance-action-status" aria-live="polite"></p>
+  </article>
+
+  <article class="finance-card" id="categories">
+    <header class="finance-card-header">
+      <h2>Categories</h2>
+      <p>Create and maintain income, expense, and payment categories.</p>
+    </header>
+    <form class="stacked-form" action="/admin/finance/categories" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="form-grid-two">
+        <label>
+          <span>Category Type</span>
+          <select name="entryType" required>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+            <option value="payment">Payment</option>
+          </select>
+        </label>
+        <label>
+          <span>Label</span>
+          <input type="text" name="label" maxlength="80" required placeholder="e.g. Transportation Reserve" />
+        </label>
+      </div>
+      <button type="submit" class="submit-btn">Save Category</button>
+    </form>
+    <div class="category-columns">
+      <div>
+        <h3>Income</h3>
+        <ul>
+          <% (categories.income || []).forEach((row) => { %>
+            <li><%= row.label %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <div>
+        <h3>Expenses</h3>
+        <ul>
+          <% (categories.expense || []).forEach((row) => { %>
+            <li><%= row.label %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <div>
+        <h3>Payments</h3>
+        <ul>
+          <% (categories.payment || []).forEach((row) => { %>
+            <li><%= row.label %></li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="finance-layout-grid" id="income-expenses">
+  <article class="finance-card">
+    <header class="finance-card-header">
+      <h2>Add Income / Expense Entry</h2>
+      <p>Manual ledger entry with tenant-safe linking and reconciliation-ready fields.</p>
+    </header>
+    <datalist id="financeIncomeCategories">
+      <% (categories.income || []).forEach((row) => { %>
+        <option value="<%= row.label %>"><%= row.label %></option>
+      <% }) %>
+    </datalist>
+    <datalist id="financeExpenseCategories">
+      <% (categories.expense || []).forEach((row) => { %>
+        <option value="<%= row.label %>"><%= row.label %></option>
+      <% }) %>
+    </datalist>
+    <form class="stacked-form" action="/admin/finance/entries" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="form-grid-three">
+        <label>
+          <span>Entry Type</span>
+          <select name="entryType" id="financeEntryType" required>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </label>
+        <label>
+          <span>Category Label</span>
+          <input type="text" name="categoryLabel" id="financeEntryCategory" list="financeIncomeCategories" required />
+        </label>
+        <label>
+          <span>Amount</span>
+          <input type="number" name="amount" min="0.01" step="0.01" required />
+        </label>
+      </div>
+      <div class="form-grid-three">
+        <label>
+          <span>Date</span>
+          <input type="date" name="occurredAt" required />
+        </label>
+        <label>
+          <span>Status</span>
+          <select name="status">
+            <option value="posted">Posted</option>
+            <option value="pending">Pending</option>
+            <option value="void">Void</option>
+          </select>
+        </label>
+        <label>
+          <span>Source</span>
+          <select name="source">
+            <option value="manual">Manual</option>
+            <option value="imported">Imported</option>
+            <option value="payment_processor">Payment Processor</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-grid-three">
+        <label>
+          <span>Payer / Vendor</span>
+          <input type="text" name="vendorOrPayer" maxlength="160" />
+        </label>
+        <label>
+          <span>Reference</span>
+          <input type="text" name="reference" maxlength="160" />
+        </label>
+        <label>
+          <span>Currency</span>
+          <input type="text" name="currency" value="USD" maxlength="8" />
+        </label>
+      </div>
+      <div class="form-grid-three">
+        <label>
+          <span>Linked Parent</span>
+          <select name="linkedParentId">
+            <option value="">None</option>
+            <% parentsForForm.forEach((parent) => { %>
+              <option value="<%= parent.id %>"><%= parent.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          <span>Linked Student</span>
+          <select name="linkedStudentId">
+            <option value="">None</option>
+            <% studentsForForm.forEach((student) => { %>
+              <option value="<%= student.id %>"><%= student.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          <span>Linked Class</span>
+          <select name="linkedClassId">
+            <option value="">None</option>
+            <% classesForForm.forEach((classDoc) => { %>
+              <option value="<%= classDoc.id %>"><%= classDoc.name %></option>
+            <% }) %>
+          </select>
+        </label>
+      </div>
+      <label>
+        <span>Memo</span>
+        <textarea name="memo" rows="2" maxlength="500"></textarea>
+      </label>
+      <button type="submit" class="submit-btn">Create Entry</button>
+    </form>
+  </article>
+
+  <article class="finance-card" id="payments">
+    <header class="finance-card-header">
+      <h2>Create Manual Payment Record</h2>
+      <p>Admin-only payment tracking for family ledger visibility and outstanding balance management.</p>
+    </header>
+    <form class="stacked-form" action="/admin/finance/payments" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="form-grid-three">
+        <label>
+          <span>Parent</span>
+          <select name="parentId" required>
+            <option value="">Select Parent</option>
+            <% parentsForForm.forEach((parent) => { %>
+              <option value="<%= parent.id %>"><%= parent.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          <span>Student (Optional)</span>
+          <select name="studentId">
+            <option value="">Family-level</option>
+            <% studentsForForm.forEach((student) => { %>
+              <option value="<%= student.id %>"><%= student.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          <span>Class (Optional)</span>
+          <select name="classId">
+            <option value="">None</option>
+            <% classesForForm.forEach((classDoc) => { %>
+              <option value="<%= classDoc.id %>"><%= classDoc.name %></option>
+            <% }) %>
+          </select>
+        </label>
+      </div>
+      <div class="form-grid-three">
+        <label>
+          <span>Title</span>
+          <input type="text" name="title" value="Manual Payment" />
+        </label>
+        <label>
+          <span>Category</span>
+          <select name="category">
+            <% (categories.payment || []).forEach((row) => { %>
+              <option value="<%= row.label %>"><%= row.label %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          <span>Status</span>
+          <select name="status">
+            <option value="">Auto based on balance</option>
+            <option value="Due">Due</option>
+            <option value="Partial">Partial</option>
+            <option value="Paid">Paid</option>
+            <option value="PendingProcessor">PendingProcessor</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-grid-three">
+        <label>
+          <span>Expected Amount</span>
+          <input type="number" name="expectedAmount" min="0.01" step="0.01" required />
+        </label>
+        <label>
+          <span>Paid Amount</span>
+          <input type="number" name="paidAmount" min="0" step="0.01" value="0" />
+        </label>
+        <label>
+          <span>Due Date</span>
+          <input type="date" name="dueDate" required />
+        </label>
+      </div>
+      <div class="form-grid-three">
+        <label>
+          <span>Paid At</span>
+          <input type="date" name="paidAt" />
+        </label>
+        <label>
+          <span>Method</span>
+          <input type="text" name="method" placeholder="cash, ach, card..." />
+        </label>
+        <label>
+          <span>Currency</span>
+          <input type="text" name="currency" value="USD" maxlength="8" />
+        </label>
+      </div>
+      <label>
+        <span>Notes</span>
+        <textarea name="notes" rows="2"></textarea>
+      </label>
+      <button type="submit" class="submit-btn">Create Payment</button>
+    </form>
+  </article>
+</section>
+
+<section class="finance-layout-grid" id="ledger">
+  <article class="finance-card ledger-card">
+    <header class="finance-card-header">
+      <h2>Payment Ledger</h2>
+      <p>Grouped by family with due/paid rollups and status tracking.</p>
+    </header>
+    <div class="table-shell">
+      <table class="finance-table">
+        <thead>
+          <tr>
+            <th>Parent</th>
+            <th>Students</th>
+            <th>Due</th>
+            <th>Paid</th>
+            <th>Status</th>
+            <th>Last Payment</th>
+          </tr>
+        </thead>
+        <tbody id="financePaymentsBody">
+          <% if (!paymentRows.length) { %>
+            <tr><td colspan="6" class="empty-row">No payment records found.</td></tr>
+          <% } %>
+          <% paymentRows.forEach((row) => { %>
+            <tr class="<%= row.overdue ? 'row-overdue' : '' %>">
+              <td class="strong-cell"><%= row.parent %></td>
+              <td><%= row.students || 'Family' %></td>
+              <td class="mono-cell"><%= row.dueLabel %></td>
+              <td class="mono-cell"><%= row.paidLabel %></td>
+              <td><span class="status-chip status-<%= String(row.status || '').toLowerCase() %>"><%= row.status %></span></td>
+              <td><%= row.lastPayment %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="finance-card ledger-card">
+    <header class="finance-card-header">
+      <h2>Income &amp; Expense Ledger</h2>
+      <p>Manual and imported entries with category and source tags.</p>
+    </header>
+    <div class="table-shell">
+      <table class="finance-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Memo</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="financeEntriesBody">
+          <% if (!entryRows.length) { %>
+            <tr><td colspan="8" class="empty-row">No finance entries found.</td></tr>
+          <% } %>
+          <% entryRows.forEach((row) => { %>
+            <tr>
+              <td><span class="status-chip status-<%= row.entryType === 'income' ? 'paid' : 'due' %>"><%= row.entryTypeLabel %></span></td>
+              <td><%= row.categoryLabel %></td>
+              <td class="mono-cell"><%= row.amountLabel %></td>
+              <td><%= row.dateLabel %></td>
+              <td><%= row.source %></td>
+              <td><%= row.status %></td>
+              <td><%= row.memo || row.reference || '—' %></td>
+              <td>
+                <form action="/admin/finance/entries/<%= row.id %>/archive" method="POST">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="table-action">Archive</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="finance-layout-grid" id="reconciliation">
+  <article class="finance-card">
+    <header class="finance-card-header">
+      <h2>Unmatched Bank Transactions</h2>
+      <p>Manual reconciliation links bank feed records to finance entries or payment records.</p>
+    </header>
+    <datalist id="financeEntryMatchList">
+      <% entryMatchOptions.forEach((option) => { %>
+        <option value="<%= option.id %>"><%= option.label %></option>
+      <% }) %>
+    </datalist>
+    <datalist id="financePaymentMatchList">
+      <% paymentMatchOptions.forEach((option) => { %>
+        <option value="<%= option.id %>"><%= option.label %></option>
+      <% }) %>
+    </datalist>
+    <div class="table-shell">
+      <table class="finance-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Account</th>
+            <th>Direction</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Reconcile</th>
+          </tr>
+        </thead>
+        <tbody id="financeUnmatchedBody">
+          <% if (!unmatchedRows.length) { %>
+            <tr><td colspan="7" class="empty-row">No unmatched bank transactions.</td></tr>
+          <% } %>
+          <% unmatchedRows.forEach((row) => { %>
+            <tr>
+              <td><%= row.dateLabel %></td>
+              <td class="strong-cell"><%= row.description %></td>
+              <td><%= row.accountName %></td>
+              <td><%= row.direction %></td>
+              <td class="mono-cell"><%= row.amountLabel %></td>
+              <td><%= row.category %></td>
+              <td>
+                <form class="reconcile-form" action="/admin/finance/reconcile" method="POST">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="bankTransactionId" value="<%= row.id %>" />
+                  <select name="action" required>
+                    <option value="ignore">Ignore</option>
+                    <option value="match_entry">Match Entry</option>
+                    <option value="match_payment">Match Payment</option>
+                  </select>
+                  <input type="text" name="targetId" placeholder="Optional match id" />
+                  <button type="submit" class="table-action">Apply</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="finance-card">
+    <header class="finance-card-header">
+      <h2>Revenue Breakdown (<%= monthLabel %>)</h2>
+      <p>Category-level incoming flow composition.</p>
+    </header>
+    <% if (!revenueBreakdown.length) { %>
+      <div class="empty-callout">No revenue category totals yet for this month.</div>
+    <% } else { %>
+      <div class="breakdown-list">
+        <% revenueBreakdown.forEach((row) => { %>
+          <div class="breakdown-row">
+            <div>
+              <p class="breakdown-label"><%= row.label %></p>
+              <p class="breakdown-meta"><%= row.percent %>%</p>
+            </div>
+            <strong><%= row.amountLabel %></strong>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </article>
+</section>
+
+<script src="/js/admin-finance.js"></script>
+<%- include('../partials/adminShellEnd') %>

@@ -99,7 +99,9 @@
       sharedState,
       mapServerData,
       onDelete,
-      deleteLabel = "User"
+      deleteLabel = "User",
+      extraViewActionsHtml = "",
+      onViewActionsRendered = null
     } = config;
 
     let mode = "view";
@@ -148,6 +150,7 @@
             <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
             <span>Edit</span>
           </button>
+          ${extraViewActionsHtml || ""}
           ${hasDeleteAction ? `
             <button class="action-btn delete-btn js-delete-trigger" type="button" aria-label="Delete ${esc(type)}" title="Delete ${esc(type)}">
               <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
@@ -164,6 +167,9 @@
       deleteBtn?.addEventListener("click", async () => {
         await onDelete?.({ userId, rowEl, type, deleteLabel });
       });
+      if (typeof onViewActionsRendered === "function") {
+        onViewActionsRendered(actionCell, rowEl);
+      }
       editButtonRef = editBtn;
     }
 

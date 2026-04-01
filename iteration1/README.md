@@ -7,6 +7,7 @@ Iteration 1 is the canonical engineering baseline for IlmQuest. It consolidates 
 - Frontend: EJS templates + external CSS + vanilla JS helpers.
 - Backend: Express + Mongoose with tenant-aware middleware.
 - Auth/session: Passport local strategy + sessions + CSRF protection.
+- Recovery: Forgot-password flow with expiring email reset links.
 - Data: MongoDB with tenant-scoped uniqueness indexes for sensitive identifiers.
 
 ## Folder Structure
@@ -53,7 +54,9 @@ QA target widths:
 npm install
 ```
 2. Configure environment (`.env`) with Mongo/session/auth values.
-3. Start dev server:
+3. Configure SMTP values (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) for password reset emails.
+4. Set `APP_BASE_URL` so reset links point to your deployed app URL.
+5. Start dev server:
 ```bash
 npm run start
 ```
