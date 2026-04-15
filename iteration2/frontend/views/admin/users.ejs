@@ -1,0 +1,637 @@
+<%# Admin users view: account creation workflows, assignment controls, and role-specific data tables. %>
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Admin Users',
+  pageStyles: ['/css/pages/admin-users.css'],
+  activePage: activePage || 'students',
+  user
+}) %>
+
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+  const allStudents = Array.isArray(students) ? students : [];
+  const allTeachers = Array.isArray(teachers) ? teachers : [];
+  const allParents = Array.isArray(parents) ? parents : [];
+  const totalAccounts = allStudents.length + allTeachers.length + allParents.length;
+
+  const studentCatalog = allStudents.map((student) => {
+    const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.userName || 'Unknown Student';
+    return {
+      id: String(student._id),
+      fullName,
+      gradeLevel: student.studentInfo?.gradeLevel || '',
+      programType: student.studentInfo?.programType || ''
+    };
+  });
+%>
+
+<header class="admin-page-header">
+  <button
+    type="button"
+    class="sidebar-toggle"
+    data-sidebar-toggle
+    aria-label="Toggle sidebar"
+    aria-expanded="false"
+    aria-controls="adminSidebar"
+  >
+    <%- icon('menu') %>
+  </button>
+  <div class="admin-page-title">
+    <p class="admin-breadcrumbs">Admin / Operations / Users</p>
+    <h1>User Administration</h1>
+    <p>Create and manage teacher, student, and parent accounts with controlled assignment workflows.</p>
+  </div>
+  <div class="admin-icon-actions" aria-hidden="true">
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('activity') %></button>
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('bell') %></button>
+  </div>
+  <div class="admin-top-actions">
+    <a class="admin-action-link" href="/admin/classes">Class Management</a>
+    <a class="admin-action-link" href="/admin/reports">Reports</a>
+  </div>
+</header>
+
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="users-stats admin-stat-grid" aria-label="User summary">
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Total Accounts</p>
+    <p class="admin-stat-value"><%= totalAccounts %></p>
+    <p class="admin-stat-meta">All admin-managed users</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Students</p>
+    <p class="admin-stat-value"><%= allStudents.length %></p>
+    <p class="admin-stat-meta">Enrollment accounts</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Teachers</p>
+    <p class="admin-stat-value"><%= allTeachers.length %></p>
+    <p class="admin-stat-meta">Instruction accounts</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Parents</p>
+    <p class="admin-stat-value"><%= allParents.length %></p>
+    <p class="admin-stat-meta">Guardian oversight access</p>
+  </article>
+</section>
+
+<section class="users-page" data-csrf-token="<%= csrfToken %>">
+  <div class="users-layout admin-page-grid">
+    <div class="admin-main-column">
+      <section class="form-grid">
+        <article class="card" id="teacherForm">
+          <div class="card-header">
+            <h2>Create Teacher Account</h2>
+            <p>Set up teacher credentials and profile details.</p>
+          </div>
+          <form action="/admin/teachers/add" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="field-row">
+              <div>
+                <label class="required">First Name</label>
+                <input type="text" name="firstName" placeholder="John" required />
+              </div>
+              <div>
+                <label class="required">Last Name</label>
+                <input type="text" name="lastName" placeholder="Doe" required />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Email Address</label>
+                <input type="email" name="email" placeholder="teacher@school.com" required />
+              </div>
+              <div>
+                <label class="required">Gender</label>
+                <select name="gender" required>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Username</label>
+                <input type="text" name="userName" placeholder="teacher_username" required />
+              </div>
+              <div>
+                <label class="required">Password</label>
+                <input type="password" name="password" placeholder="••••••••" required />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Subjects</label>
+                <input type="text" name="subjects" placeholder="Islamic Studies, Quran, Arabic" />
+              </div>
+              <div>
+                <label class="required">Date of Birth</label>
+                <input type="date" name="DOB" required />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label>Employee ID</label>
+                <input type="text" value="Auto-generated (e.g., ABC-123)" disabled />
+              </div>
+              <div>
+                <label class="required">Hire Date</label>
+                <input type="date" name="hireDate" required />
+              </div>
+            </div>
+            <input type="hidden" name="role" value="teacher" />
+            <button class="submit-btn" type="submit">Create Teacher</button>
+          </form>
+        </article>
+
+        <article class="card" id="studentForm">
+          <div class="card-header">
+            <h2>Create Student Account</h2>
+            <p>Capture student details and enrollment information.</p>
+          </div>
+          <form action="/admin/students/add" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="field-row">
+              <div>
+                <label class="required">First Name</label>
+                <input type="text" name="firstName" placeholder="John" required />
+              </div>
+              <div>
+                <label class="required">Last Name</label>
+                <input type="text" name="lastName" placeholder="Doe" required />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Email Address</label>
+                <input type="email" name="email" placeholder="student@school.com" required />
+              </div>
+              <div>
+                <label class="required">Gender</label>
+                <select name="gender" required>
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Username</label>
+                <input type="text" name="userName" placeholder="student_username" required />
+              </div>
+              <div>
+                <label class="required">Password</label>
+                <input type="password" name="password" placeholder="••••••••" required />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Date of Birth</label>
+                <input type="date" name="DOB" required />
+              </div>
+              <div>
+                <label class="required">Grade Level</label>
+                <select name="gradeLevel" required>
+                  <option value="">Select grade level</option>
+                  <option value="Prep 1">Prep 1</option>
+                  <option value="Prep 2">Prep 2</option>
+                  <option value="Grade 1">Grade 1</option>
+                  <option value="Grade 2">Grade 2</option>
+                  <option value="Grade 3">Grade 3</option>
+                  <option value="Grade 4">Grade 4</option>
+                  <option value="Grade 5">Grade 5</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Program Type</label>
+                <select name="programType" required>
+                  <option value="">Select program type</option>
+                  <option value="Tahfiidth">Tahfiidth</option>
+                  <option value="Khatm">Khatm</option>
+                </select>
+              </div>
+              <div>
+                <label class="required">Date of Enrollment</label>
+                <input type="date" name="enrollmentDate" required />
+              </div>
+            </div>
+
+            <input type="hidden" name="role" value="student" />
+            <button class="submit-btn" type="submit">Create Student</button>
+          </form>
+        </article>
+
+        <article class="card" id="parentForm">
+          <div class="card-header">
+            <h2>Create Parent Account</h2>
+            <p>Create the parent login and assign one or more children immediately.</p>
+          </div>
+          <form action="/admin/parents/add" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="field-row">
+              <div>
+                <label class="required">First Name</label>
+                <input type="text" name="firstName" placeholder="Amina" required />
+              </div>
+              <div>
+                <label class="required">Last Name</label>
+                <input type="text" name="lastName" placeholder="Noor" required />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Email Address</label>
+                <input type="email" name="email" placeholder="parent@school.com" required />
+              </div>
+              <div>
+                <label class="required">Username</label>
+                <input type="text" name="userName" placeholder="parent_username" required />
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label class="required">Password</label>
+                <input type="password" name="password" placeholder="••••••••" required />
+              </div>
+              <div>
+                <label>Relationship Label</label>
+                <select name="relationship">
+                  <option value="Guardian">Guardian</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Father">Father</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div>
+                <label>Date of Birth</label>
+                <input type="date" name="DOB" />
+              </div>
+            </div>
+
+            <div class="student-picker" data-student-picker>
+              <label>Assign Children</label>
+              <input
+                type="search"
+                class="student-picker-search"
+                data-student-search
+                placeholder="Search by student name, grade, or program"
+              />
+              <div class="student-picker-list" data-student-list>
+                <% if (allStudents.length === 0) { %>
+                  <p class="picker-empty">No students available for assignment.</p>
+                <% } %>
+                <% allStudents.forEach((student) => { %>
+                  <% const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.userName || 'Unknown Student'; %>
+                  <% const meta = `${student.studentInfo?.gradeLevel || 'N/A'} · ${student.studentInfo?.programType || 'N/A'}`; %>
+                  <label class="student-option" data-student-text="<%= `${fullName} ${meta}`.toLowerCase() %>">
+                    <input type="checkbox" name="children" value="<%= student._id %>" />
+                    <span class="student-option-main"><%= fullName %></span>
+                    <span class="student-option-meta"><%= meta %></span>
+                  </label>
+                <% }) %>
+              </div>
+            </div>
+
+            <button class="submit-btn" type="submit">Create Parent</button>
+          </form>
+        </article>
+      </section>
+    </div>
+
+    <aside class="admin-side-column admin-utility-rail">
+      <article class="card users-utility-card">
+        <div class="card-header">
+          <h3>Role Balance</h3>
+          <p>Current account mix in this workspace.</p>
+        </div>
+        <div class="users-role-bars">
+          <div class="users-role-row">
+            <span>Students</span>
+            <strong><%= allStudents.length %></strong>
+          </div>
+          <div class="users-role-row">
+            <span>Teachers</span>
+            <strong><%= allTeachers.length %></strong>
+          </div>
+          <div class="users-role-row">
+            <span>Parents</span>
+            <strong><%= allParents.length %></strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="card users-utility-card">
+        <div class="card-header">
+          <h3>Workflow Tips</h3>
+          <p>Recommended order for clean onboarding.</p>
+        </div>
+        <ol class="users-tips-list">
+          <li>Create teacher records first.</li>
+          <li>Add students and complete grade/program info.</li>
+          <li>Create parents and assign children in one step.</li>
+          <li>Review and edit in the User Management table.</li>
+        </ol>
+      </article>
+    </aside>
+  </div>
+
+  <section class="panel users-table-panel">
+    <div class="panel-header">
+      <h2>User Management</h2>
+      <div class="tabs">
+        <button id="studentButton" class="tab-btn active" data-target="studentTable">Students</button>
+        <button id="teacherButton" class="tab-btn" data-target="teacherTable">Teachers</button>
+        <button id="parentButton" class="tab-btn" data-target="parentTable">Parents</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="studentTable">
+        <thead>
+          <tr>
+            <th>Student Number</th>
+            <th>Student Name</th>
+            <th>Age</th>
+            <th>Program</th>
+            <th>Grade Level</th>
+            <th>Current Rank</th>
+            <th>Total XP</th>
+            <th>Next Rank</th>
+            <th>Progress</th>
+            <th>Parents/Guardians</th>
+            <th>Enrollment Date</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% allStudents.forEach((student) => { %>
+            <% const studentAge = getAge(student.DOB); %>
+            <% const rankSummary = student.rankSummary || {}; %>
+            <% const enrollmentValue = student.studentInfo?.enrollmentDate
+              ? new Date(student.studentInfo.enrollmentDate).toISOString().slice(0, 10)
+              : ""; %>
+            <% const rankProgressWidth = Math.max(0, Math.min(100, Number(rankSummary.progressPercent || 0))); %>
+            <tr
+              class="student-row"
+              data-id="<%= student._id %>"
+              data-type="student"
+              data-first-name="<%= student.firstName || '' %>"
+              data-last-name="<%= student.lastName || '' %>"
+              data-age="<%= studentAge === 'N/A' ? '' : studentAge %>"
+              data-program-type="<%= student.studentInfo?.programType || '' %>"
+              data-grade-level="<%= student.studentInfo?.gradeLevel || '' %>"
+              data-enrollment-date="<%= enrollmentValue %>"
+              data-user-name="<%= student.userName || '' %>"
+              data-email="<%= student.email || '' %>"
+              data-rank="<%= rankSummary.displayRankKey || student.rank || 'F' %>"
+              data-xp="<%= Number(rankSummary.xp || student.xp || student.points || 0) %>"
+              data-next-rank="<%= rankSummary.nextRankKey || '' %>"
+              data-rank-source="<%= rankSummary.isManualOverride ? 'manual' : 'auto' %>"
+              data-profile-image="<%= student.profileImage || '' %>"
+            >
+              <td class="cell-number"><%= student.studentInfo?.studentNumber || "N/A" %></td>
+              <td class="cell-name"><%= student.firstName || student.userName %> <%= student.lastName || "" %></td>
+              <td class="cell-age"><%= studentAge %></td>
+              <td class="cell-program"><%= student.studentInfo?.programType || "N/A" %></td>
+              <td class="cell-grade"><%= student.studentInfo?.gradeLevel || "N/A" %></td>
+              <td class="cell-rank">
+                <span class="student-rank-chip <%= rankSummary.isManualOverride ? 'manual' : 'auto' %>">
+                  <%= rankSummary.displayRankLabel || `${student.rank || 'F'} Rank` %>
+                </span>
+              </td>
+              <td class="cell-xp"><%= Number(rankSummary.xp || student.xp || student.points || 0).toLocaleString() %></td>
+              <td class="cell-next-rank"><%= rankSummary.nextRankLabel || "Max Rank" %></td>
+              <td class="cell-rank-progress">
+                <div class="student-rank-progress">
+                  <div class="student-rank-progress-head">
+                    <span><%= rankSummary.progressLabel || "0 / 0 XP" %></span>
+                    <span><%= rankProgressWidth %>%</span>
+                  </div>
+                  <div class="student-rank-progress-track">
+                    <span style="width: <%= rankProgressWidth %>%;"></span>
+                  </div>
+                  <% if (rankSummary.isManualOverride) { %>
+                    <small>Manual override active</small>
+                  <% } else if (rankSummary.nextRankLabel) { %>
+                    <small><%= Number(rankSummary.xpToNextRank || 0).toLocaleString() %> XP to <%= rankSummary.nextRankLabel %></small>
+                  <% } else { %>
+                    <small>Maximum rank reached</small>
+                  <% } %>
+                </div>
+              </td>
+              <td class="cell-parents">
+                <% if (student.studentInfo?.parents?.length > 0) { %>
+                  <%= student.studentInfo.parents.map((p) => `${p.parentName || ''}${p.relationship ? ` (${p.relationship})` : ''}`).join(", ") %>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td class="cell-enrollment">
+                <%= student.studentInfo?.enrollmentDate ? student.studentInfo.enrollmentDate.toLocaleDateString('en-US') : "N/A" %>
+              </td>
+              <td class="cell-username"><%= student.userName %></td>
+              <td class="cell-email"><%= student.email %></td>
+              <td class="cell-actions">
+                <div class="action-cell" data-actions>
+                  <button class="action-btn js-edit-trigger" type="button" aria-label="Edit user" title="Edit user">
+                    <span>Edit</span>
+                  </button>
+                  <% if (user.role === "admin") { %>
+                    <button class="action-btn delete-btn js-delete-trigger" type="button" aria-label="Delete user" title="Delete user">
+                      <span>Delete</span>
+                    </button>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <table id="teacherTable" class="hidden">
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Teacher Name</th>
+            <th>Subjects</th>
+            <th>Classes Assigned</th>
+            <th>Hire Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% allTeachers.forEach((teacher) => { %>
+            <% const teacherHireDateValue = teacher.teacherInfo?.hireDate
+              ? new Date(teacher.teacherInfo.hireDate).toISOString().slice(0, 10)
+              : ""; %>
+            <tr
+              class="teacher-row"
+              data-id="<%= teacher._id %>"
+              data-type="teacher"
+              data-first-name="<%= teacher.firstName || '' %>"
+              data-last-name="<%= teacher.lastName || '' %>"
+              data-user-name="<%= teacher.userName || '' %>"
+              data-email="<%= teacher.email || '' %>"
+              data-subjects="<%= teacher.teacherInfo?.subjects?.join(', ') || '' %>"
+              data-hire-date="<%= teacherHireDateValue %>"
+              data-profile-image="<%= teacher.profileImage || '' %>"
+            >
+              <td class="t-cell-emp"><%= teacher.teacherInfo?.employeeId || "N/A" %></td>
+              <td class="t-cell-name"><%= teacher.firstName || teacher.userName %> <%= teacher.lastName || "" %></td>
+              <td class="t-cell-subjects"><%= teacher.teacherInfo?.subjects?.length ? teacher.teacherInfo.subjects.join(", ") : "N/A" %></td>
+              <td class="t-cell-classes"><%= teacher.teacherInfo?.classes?.length || 0 %></td>
+              <td class="t-cell-hire"><%= teacher.teacherInfo?.hireDate ? teacher.teacherInfo.hireDate.toLocaleDateString('en-US') : "N/A" %></td>
+              <td class="t-cell-status">Active</td>
+              <td class="cell-actions">
+                <div class="action-cell" data-actions>
+                  <button class="action-btn js-edit-trigger" type="button" aria-label="Edit teacher" title="Edit teacher">
+                    <span>Edit</span>
+                  </button>
+                  <% if (user.role === "admin") { %>
+                    <button class="action-btn delete-btn js-delete-trigger" type="button" aria-label="Delete user" title="Delete user">
+                      <span>Delete</span>
+                    </button>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <table id="parentTable" class="hidden">
+        <thead>
+          <tr>
+            <th>Parent Name</th>
+            <th>Children</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% allParents.forEach((parent) => { %>
+            <% const linkedChildren = Array.isArray(parent.parentInfo?.children) ? parent.parentInfo.children : []; %>
+            <% const childItems = linkedChildren.map((entry) => {
+              const childId = entry?.childID?._id || entry?.childID;
+              const childName = entry?.childName
+                || `${entry?.childID?.firstName || ''} ${entry?.childID?.lastName || ''}`.trim()
+                || entry?.childID?.userName
+                || 'Unknown Student';
+              return {
+                id: childId ? String(childId) : '',
+                name: childName,
+                relationship: entry?.relationship || 'Guardian'
+              };
+            }).filter((item) => item.id); %>
+            <% const childIds = childItems.map((item) => item.id).join(','); %>
+            <% const childrenDisplay = childItems.length
+              ? childItems.map((item) => `${item.name} (${item.relationship})`).join(', ')
+              : 'N/A'; %>
+            <tr
+              class="parent-row"
+              data-id="<%= parent._id %>"
+              data-type="parent"
+              data-first-name="<%= parent.firstName || '' %>"
+              data-last-name="<%= parent.lastName || '' %>"
+              data-user-name="<%= parent.userName || '' %>"
+              data-email="<%= parent.email || '' %>"
+              data-child-ids="<%= childIds %>"
+              data-profile-image="<%= parent.profileImage || '' %>"
+            >
+              <td class="p-cell-name"><%= parent.firstName || parent.userName %> <%= parent.lastName || '' %></td>
+              <td class="p-cell-children"><%= childrenDisplay %></td>
+              <td class="p-cell-username"><%= parent.userName %></td>
+              <td class="p-cell-email"><%= parent.email %></td>
+              <td class="cell-actions">
+                <div class="action-cell" data-actions>
+                  <button class="action-btn js-edit-trigger" type="button" aria-label="Edit parent" title="Edit parent">
+                    <span>Edit</span>
+                  </button>
+                  <button class="action-btn js-manage-children-trigger" type="button" aria-label="Manage children" title="Manage children">
+                    <span>Children</span>
+                  </button>
+                  <% if (user.role === 'admin') { %>
+                    <button class="action-btn delete-btn js-delete-trigger" type="button" aria-label="Delete parent" title="Delete parent">
+                      <span>Delete</span>
+                    </button>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+<dialog id="deleteUserDialog" class="dialog" aria-labelledby="deleteUserDialogTitle">
+  <div class="dialog-card">
+    <h3 id="deleteUserDialogTitle" data-dialog-title>Confirm Delete</h3>
+    <p data-dialog-message>Are you sure?</p>
+    <div class="dialog-actions">
+      <button class="action-btn cancel-btn" type="button" data-dialog-cancel>Cancel</button>
+      <button class="action-btn delete-btn" type="button" data-dialog-confirm>Delete</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="parentChildrenDialog" class="dialog" aria-labelledby="parentChildrenDialogTitle">
+  <div class="dialog-card parent-children-dialog">
+    <h3 id="parentChildrenDialogTitle">Manage Linked Children</h3>
+    <p class="dialog-copy">Assign or unassign children for this parent account.</p>
+    <label class="dialog-label">Default Relationship</label>
+    <select id="parentChildrenRelationship">
+      <option value="Guardian">Guardian</option>
+      <option value="Mother">Mother</option>
+      <option value="Father">Father</option>
+      <option value="Other">Other</option>
+    </select>
+    <label class="dialog-label">Search Students</label>
+    <input id="parentChildrenSearch" type="search" placeholder="Search by name, grade, or program" />
+    <div id="parentChildrenList" class="student-picker-list"></div>
+    <div class="dialog-actions">
+      <button class="action-btn cancel-btn" type="button" id="parentChildrenCancel">Cancel</button>
+      <button class="action-btn" type="button" id="parentChildrenSave">Save Children</button>
+    </div>
+    <p id="parentChildrenError" class="inline-error"></p>
+  </div>
+</dialog>
+
+<script id="studentCatalogData" type="application/json"><%- JSON.stringify(studentCatalog).replace(/</g, '\\u003c') %></script>
+<script src="/js/adminViewEdit.js"></script>
+<script src="/js/admin-users.js"></script>
+
+<%- include('../partials/adminShellEnd') %>

@@ -1,0 +1,134 @@
+/*
+ * ============================================================
+ *  cards.css
+ *  IlmQuest - Card Surfaces and Content Grouping Patterns
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+:root {
+  --card-padding: var(--space-4);
+}
+
+/* 2. Base */
+.card,
+.panel,
+.page-card,
+.auth-panel,
+.dialog-card,
+.modal,
+/* .stat-card, */
+.section-card,
+.finance-card,
+.announcement-panel,
+.reports-panel,
+.reports-last-generated,
+.reports-activity,
+.reports-note,
+.profile-card,
+.parent-card,
+.dashboard-card {
+  background: var(--color-surface-panel);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 3. Layout */
+.card,
+.panel,
+.page-card,
+.section-card,
+.finance-card,
+.profile-card,
+.parent-card,
+.dashboard-card {
+  min-width: 0;
+}
+
+.card-header,
+.panel-header,
+.section-card-header,
+.finance-card-header,
+.announcement-panel-header,
+.reports-panel-header,
+.profile-card-head {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.card-body,
+.panel-body,
+.section-card-body,
+.profile-card-body {
+  padding: var(--card-padding);
+}
+
+/* 4. Components */
+/* Glass is intentionally subtle so numeric and tabular information stays legible. */
+.card,
+.section-card,
+.parent-card,
+.profile-card,
+.dashboard-card {
+  background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), var(--glass-bg);
+  border-color: color-mix(in srgb, var(--color-border-soft) 70%, var(--glass-border));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.kpi-card,
+.admin-stat-card,
+.finance-kpi-card,
+.profile-stat-card,
+.intro-metrics article,
+.child-card,
+.parent-announcement-item,
+.mini-announcement-item,
+.legend-row,
+.breakdown-row,
+.users-role-row,
+.class-quick-row {
+  background: var(--color-surface-panel);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+/* 5. States */
+.card:hover,
+.panel:hover,
+.section-card:hover,
+.parent-card:hover,
+.profile-card:hover,
+.dashboard-card:hover {
+  border-color: color-mix(in srgb, var(--color-brand-700) 24%, var(--color-border-soft));
+}
+
+/* 6. Responsive */
+@media (max-width: 768px) {
+  .card-header,
+  .panel-header,
+  .section-card-header,
+  .finance-card-header,
+  .announcement-panel-header,
+  .reports-panel-header,
+  .profile-card-head {
+    padding: var(--space-3);
+  }
+
+  .card-body,
+  .panel-body,
+  .section-card-body,
+  .profile-card-body {
+    padding: var(--space-3);
+  }
+}

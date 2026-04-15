@@ -1,0 +1,618 @@
+/*
+ * ============================================================
+ *  teacherGrades.css
+ *  IlmQuest - Teacher Gradebook and Grade Modal
+ *
+ *  Sections:
+ *    1. Layout
+ *    2. Gradebook Components
+ *    3. Accordions and Grade Items
+ *    4. Grade Modal
+ *    5. Utilities
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Layout */
+.teacher-grades-page {
+  display: grid;
+  gap: 18px;
+}
+
+.page-card {
+  display: grid;
+  gap: 14px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: clamp(1.5rem, 1.24rem + 0.82vw, 2rem);
+  color: #142f23;
+}
+
+.page-header p {
+  margin: 8px 0 0;
+}
+
+.badge {
+  width: fit-content;
+  margin-left: auto;
+  text-transform: capitalize;
+  border: 1px solid #d3e3d9;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3f5e4f;
+  background: #f3f8f5;
+}
+
+.class-block {
+  display: none;
+}
+
+.class-block.active {
+  display: block;
+}
+
+/* 2. Gradebook Components */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.info-tile {
+  border: 1px solid #dce8e0;
+  border-radius: 12px;
+  background: #f8fbf9;
+  padding: 12px;
+  text-align: center;
+}
+
+.info-tile .label {
+  display: block;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #587166;
+}
+
+.info-tile .value {
+  display: block;
+  margin-top: 6px;
+  color: #0f3d2e;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.schedule-section,
+.rank-roster-section {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #dce8e0;
+  padding-top: 16px;
+}
+
+.schedule-heading {
+  margin: 0;
+  font-size: 1.03rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f3d2e;
+}
+
+.schedule-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.schedule-item {
+  border: 1px solid #dce8e0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-item .day {
+  font-weight: 700;
+  color: #12261b;
+}
+
+.schedule-item .time {
+  color: #385647;
+  font-weight: 600;
+}
+
+.schedule-empty {
+  font-size: 0.9rem;
+  color: #60766a;
+  margin: 0;
+}
+
+.rank-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+}
+
+.rank-student-card {
+  border: 1px solid #dbe8e0;
+  border-radius: 12px;
+  background: #f9fcfa;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.rank-student-card.is-manual {
+  border-color: #ddd4ad;
+  background: #fffdf2;
+}
+
+.rank-student-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.rank-student-head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #13281d;
+}
+
+.rank-source {
+  margin: 4px 0 0;
+  color: #5e756a;
+  font-size: 0.76rem;
+}
+
+.rank-pill {
+  border: 1px solid #b7d7c5;
+  border-radius: 999px;
+  background: #eaf6ef;
+  color: #1d5f40;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.rank-student-card.is-manual .rank-pill {
+  border-color: #e5d28b;
+  background: #fff6d8;
+  color: #8a6213;
+}
+
+.rank-xp-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: #3f5a4d;
+  font-size: 0.8rem;
+}
+
+.rank-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #dbe8e0;
+  overflow: hidden;
+}
+
+.rank-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f8a5f, #4db17f);
+}
+
+.rank-progress-copy {
+  margin: 0;
+  color: #5c7468;
+  font-size: 0.76rem;
+}
+
+.rank-override-form {
+  display: grid;
+  gap: 6px;
+}
+
+.rank-override-form label {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5d7569;
+}
+
+.rank-override-form select,
+.rank-override-form input[type="text"] {
+  min-height: 34px;
+  border: 1px solid #ceddd4;
+  border-radius: 9px;
+  background: #fff;
+  color: #173628;
+  padding: 0 10px;
+  font-size: 0.82rem;
+}
+
+.rank-apply-btn,
+.rank-progress-link {
+  min-height: 34px;
+  width: 100%;
+}
+
+.subjects-wrapper {
+  display: grid;
+  gap: 12px;
+}
+
+.subject-block {
+  border: 1px solid #dce8e0;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 61, 46, 0.06);
+}
+
+.subject-block > header {
+  background: linear-gradient(130deg, #145239, #1a6845);
+  color: #ecf7f1;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.subject-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.03rem;
+  font-weight: 700;
+}
+
+.subject-title-row .weight {
+  font-size: 0.75rem;
+  color: #cde6d7;
+}
+
+.subject-block .students {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #f8fbf9;
+}
+
+/* 3. Accordions and Grade Items */
+.student-accordion,
+.quarter-accordion,
+.category-accordion {
+  border: 1px solid #dce8e0;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.student-summary,
+.quarter-summary,
+.category-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  color: #13281d;
+}
+
+.student-summary::-webkit-details-marker,
+.quarter-summary::-webkit-details-marker,
+.category-summary::-webkit-details-marker {
+  display: none;
+}
+
+.student-summary {
+  font-size: 0.97rem;
+}
+
+.quarter-summary,
+.category-summary {
+  font-size: 0.9rem;
+}
+
+.category-summary {
+  background: #f4faf6;
+}
+
+.category-summary .weight {
+  margin-left: 8px;
+  font-size: 0.75rem;
+  color: #4f6c5d;
+}
+
+.student-title-row,
+.quarter-summary .label,
+.category-summary .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+details[open] > summary .chevron,
+details[open] .student-summary .chevron {
+  transform: rotate(180deg);
+}
+
+.student-body {
+  padding: 14px;
+  border-top: 1px solid #e3ece6;
+  background: #fcfefd;
+  display: grid;
+  gap: 12px;
+}
+
+.subject-average {
+  margin: 0;
+}
+
+.average-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cae0d2;
+  border-radius: 999px;
+  background: #f4faf6;
+  color: #1c5a3d;
+  padding: 9px 13px;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.average-badge .value {
+  color: #0f3d2e;
+}
+
+.semester-header {
+  margin: 4px 0;
+  padding: 9px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #103f2f;
+}
+
+.quarter-content,
+.category-content {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #e3ece6;
+}
+
+.grade-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid #d9e8df;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.grade-item .name {
+  font-weight: 700;
+  color: #102318;
+}
+
+.grade-item .feedback {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #5f786b;
+}
+
+.grade-item .points {
+  color: #0f3d2e;
+  font-size: 1.06rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.grade-item .max {
+  color: #6b8075;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.grade-item .meta {
+  margin-top: 4px;
+  color: #6f8378;
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.no-grades {
+  margin: 0;
+  color: #628074;
+  font-style: italic;
+  font-size: 0.86rem;
+}
+
+/* 4. Grade Modal */
+#gradeModal {
+  border: 0;
+  width: min(1000px, calc(100vw - 24px));
+  max-height: calc(100vh - 22px);
+  padding: 0;
+  background: transparent;
+}
+
+#gradeModal::backdrop {
+  background: rgba(7, 22, 15, 0.56);
+  backdrop-filter: blur(3px);
+}
+
+#gradeModal .modal-box {
+  border-radius: 18px;
+  border: 1px solid #cce1d4;
+  background: #ffffff;
+  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+}
+
+#gradeModal .modal-header {
+  padding: 16px 20px;
+  background: linear-gradient(130deg, #145239, #1c6b48);
+  color: #ffffff;
+}
+
+#gradeModal .modal-header h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.24rem;
+}
+
+#gradeModal .modal-body {
+  padding: 18px;
+  overflow: auto;
+  background: #f8fbf9;
+}
+
+#gradeModal form {
+  display: grid;
+  gap: 14px;
+}
+
+#gradeModal label {
+  margin-bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.modal-actions {
+  margin-top: 4px;
+  border-top: 1px solid #dce8e0;
+  padding-top: 14px;
+}
+
+.btn-save,
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+/* 5. Utilities */
+.w-5,
+.h-5 {
+  width: 18px;
+  height: 18px;
+}
+
+.w-8,
+.h-8 {
+  width: 26px;
+  height: 26px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* 6. Responsive */
+@media (max-width: 960px) {
+  .page-header {
+    align-items: stretch;
+  }
+
+  .badge {
+    margin-left: 0;
+  }
+
+  .subject-block > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .open-grade-modal-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grade-item {
+    flex-direction: column;
+  }
+
+  .grade-item .points,
+  .grade-item .meta {
+    text-align: left;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions > button {
+    width: 100%;
+  }
+
+  #gradeModal {
+    width: calc(100vw - 12px);
+  }
+
+  #gradeModal .modal-header,
+  #gradeModal .modal-body {
+    padding: 14px;
+  }
+}

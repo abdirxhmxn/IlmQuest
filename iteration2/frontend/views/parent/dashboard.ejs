@@ -1,0 +1,302 @@
+<%- include('../partials/parentShellStart', {
+  pageTitle: 'IlmQuest Parent Portal',
+  pageStyles: ['/css/pages/parent-dashboard.css'],
+  activePage: activePage || 'dashboard',
+  user
+}) %>
+
+<%
+  const summary = portal || {};
+  const children = Array.isArray(summary.childSummaries) ? summary.childSummaries : [];
+  const selectedChild = summary.selectedChild || null;
+  const selectedChildId = summary.selectedChildId || "";
+  const gradesSummary = summary.selectedGradesSummary || {};
+  const attendanceSummary = summary.selectedAttendanceSummary || {};
+  const missionsSummary = summary.selectedMissionsSummary || {};
+  const familySnapshot = summary.familySnapshot || {};
+  const reports = Array.isArray(summary.recentReports) ? summary.recentReports : [];
+  const announcements = Array.isArray(summary.announcements) ? summary.announcements : [];
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+%>
+
+<section class="parent-page-shell parent-dashboard-page">
+  <header class="parent-page-header">
+    <button
+      type="button"
+      class="parent-sidebar-toggle"
+      data-parent-sidebar-toggle
+      aria-controls="parentSidebar"
+      aria-label="Toggle sidebar"
+      aria-expanded="true"
+    >
+      Hide Menu
+    </button>
+    <div class="parent-page-title">
+      <h1>Family Dashboard</h1>
+      <p>Track grades, attendance, missions, and report activity across your child accounts.</p>
+    </div>
+    <div class="parent-top-actions">
+      <a class="parent-action-link" href="/parent/home#grades">View Grades</a>
+      <a class="parent-action-link" href="/parent/home#missions">View Missions</a>
+      <% if (selectedChildId) { %>
+        <a class="parent-action-link" href="/parent/child/<%= selectedChildId %>">Open Child Progress</a>
+      <% } %>
+      <% if (selectedChildId) { %>
+        <a class="parent-action-link" href="/parent/reports/<%= selectedChildId %>/download">Download Report</a>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (successMessages.length > 0) { %>
+    <div class="parent-flash parent-flash-success"><%= successMessages.join(' ') %></div>
+  <% } %>
+  <% if (errorMessages.length > 0) { %>
+    <div class="parent-flash parent-flash-error"><%= errorMessages.join(' ') %></div>
+  <% } %>
+
+  <section class="parent-card intro-card">
+    <div class="intro-headline">
+      <p class="intro-kicker">Parent Overview</p>
+      <h2>Welcome back, <%= user?.firstName || 'Parent' %></h2>
+      <p>You currently have <strong><%= children.length %></strong> linked child account(s).</p>
+    </div>
+    <div class="intro-metrics">
+      <article>
+        <p class="metric-label">Family Avg Grade</p>
+        <p class="metric-value"><%= Number.isFinite(Number(familySnapshot.averageGrade)) ? `${Number(familySnapshot.averageGrade).toFixed(1)}%` : 'N/A' %></p>
+      </article>
+      <article>
+        <p class="metric-label">Family Avg Attendance</p>
+        <p class="metric-value"><%= Number.isFinite(Number(familySnapshot.averageAttendance)) ? `${Number(familySnapshot.averageAttendance).toFixed(1)}%` : 'N/A' %></p>
+      </article>
+      <article>
+        <p class="metric-label">Missions Assigned</p>
+        <p class="metric-value"><%= Number(familySnapshot.missionAssigned || 0) %></p>
+      </article>
+      <article>
+        <p class="metric-label">Missions Completed</p>
+        <p class="metric-value"><%= Number(familySnapshot.missionCompleted || 0) %></p>
+      </article>
+    </div>
+  </section>
+
+  <section class="parent-shell-grid-2 parent-overview-grid">
+    <section class="parent-card section-card">
+      <header class="section-head">
+        <h3>Announcements</h3>
+        <p>Pinned and recent updates relevant to your family.</p>
+      </header>
+      <% if (!announcements.length) { %>
+        <div class="parent-empty-state">No announcements are available right now.</div>
+      <% } else { %>
+        <div class="parent-announcement-list">
+          <% announcements.forEach((item) => { %>
+            <article class="parent-announcement-item">
+              <div class="parent-announcement-head">
+                <h4><%= item.title %></h4>
+                <% if (item.isPinned) { %><span class="status-chip status-success">Pinned</span><% } %>
+              </div>
+              <p><%= item.summary || item.content || '' %></p>
+              <small>Published <%= item.publishLabel || item.createdAtLabel %></small>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <section id="children" class="parent-card child-switcher-card">
+      <header class="section-head">
+        <h3>Children</h3>
+        <p>Switch child context to view detailed read-only progress.</p>
+      </header>
+      <% if (children.length === 0) { %>
+        <div class="parent-empty-state">No children are linked to this parent account yet. Please contact your school admin.</div>
+      <% } else { %>
+        <div class="child-card-grid">
+          <% children.forEach((child) => { %>
+            <a href="/parent/home?childId=<%= child.childId %>" class="child-card <%= child.childId === selectedChildId ? 'active' : '' %>">
+              <div class="child-card-top">
+                <h4><%= child.fullName %></h4>
+                <span class="status-chip status-<%= child.statusChip?.tone || 'neutral' %>"><%= child.statusChip?.label || 'In Progress' %></span>
+              </div>
+              <p><strong>Class:</strong> <%= child.className %></p>
+              <p><strong>Program:</strong> <%= child.programType %> · <%= child.gradeLevel %></p>
+              <div class="child-card-metrics">
+                <span>Grade <strong><%= child.overallAverageLabel %></strong></span>
+                <span>Attendance <strong><%= child.attendanceRateLabel %></strong></span>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+  </section>
+
+  <section class="parent-shell-grid-2 parent-summary-grid">
+    <article class="parent-card summary-card">
+      <header class="section-head">
+        <h3>Academic Summary</h3>
+        <p><%= selectedChild ? selectedChild.fullName : 'No child selected' %></p>
+      </header>
+      <% if (!selectedChild) { %>
+        <div class="parent-empty-state">Select a child to view academic details.</div>
+      <% } else { %>
+        <dl class="summary-list">
+          <div><dt>Overall Grade</dt><dd><%= selectedChild.overallAverageLabel %></dd></div>
+          <div><dt>Class</dt><dd><%= selectedChild.className %></dd></div>
+          <div><dt>Teacher</dt><dd><%= selectedChild.teacherNames %></dd></div>
+          <div><dt>Attendance</dt><dd><%= selectedChild.attendanceRateLabel %></dd></div>
+        </dl>
+      <% } %>
+    </article>
+
+    <article class="parent-card summary-card">
+      <header class="section-head">
+        <h3>Mission Snapshot</h3>
+        <p><%= selectedChild ? selectedChild.fullName : 'No child selected' %></p>
+      </header>
+      <% if (!selectedChild) { %>
+        <div class="parent-empty-state">Select a child to view mission progress.</div>
+      <% } else { %>
+        <dl class="summary-list">
+          <div><dt>Total Missions</dt><dd><%= Number(missionsSummary.total || 0) %></dd></div>
+          <div><dt>Completed</dt><dd><%= Number(missionsSummary.completed || 0) %></dd></div>
+          <div><dt>Started</dt><dd><%= Number(missionsSummary.started || 0) %></dd></div>
+          <div><dt>Assigned</dt><dd><%= Number(missionsSummary.assigned || 0) %></dd></div>
+          <div><dt>Completion Rate</dt><dd><%= missionsSummary.completionRateLabel || 'N/A' %></dd></div>
+        </dl>
+      <% } %>
+    </article>
+  </section>
+
+  <section id="grades" class="parent-card section-card">
+    <header class="section-head">
+      <h3>Grades</h3>
+      <p>Subject-level performance and latest teacher feedback.</p>
+    </header>
+    <% if (!selectedChild || !Array.isArray(gradesSummary.subjectRows) || gradesSummary.subjectRows.length === 0) { %>
+      <div class="parent-empty-state">No grades are available for the selected child yet.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="portal-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Average</th>
+              <th>Teacher Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% gradesSummary.subjectRows.forEach((row) => { %>
+              <tr>
+                <td><%= row.subject %></td>
+                <td><strong><%= row.averageLabel %></strong></td>
+                <td><%= row.teacherComment || '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="parent-shell-grid-2 parent-detail-grid">
+    <section id="attendance" class="parent-card section-card">
+      <header class="section-head">
+        <h3>Attendance</h3>
+        <p>Absence, excused, and late-arrival breakdown.</p>
+      </header>
+      <% if (!selectedChild) { %>
+        <div class="parent-empty-state">Select a child to view attendance details.</div>
+      <% } else { %>
+        <div class="attendance-summary-grid">
+          <article>
+            <p class="metric-label">Attendance Rate</p>
+            <p class="metric-value"><%= Number.isFinite(Number(attendanceSummary.attendanceRate)) ? `${Number(attendanceSummary.attendanceRate).toFixed(1)}%` : 'N/A' %></p>
+          </article>
+          <article>
+            <p class="metric-label">Absences</p>
+            <p class="metric-value"><%= attendanceSummary.absences || 0 %></p>
+          </article>
+          <article>
+            <p class="metric-label">Excused</p>
+            <p class="metric-value"><%= attendanceSummary.excused || 0 %></p>
+          </article>
+          <article>
+            <p class="metric-label">Late Arrivals</p>
+            <p class="metric-value"><%= attendanceSummary.late || 0 %></p>
+          </article>
+        </div>
+      <% } %>
+    </section>
+
+    <section id="reports" class="parent-card section-card">
+      <header class="section-head">
+        <h3>Reports</h3>
+        <p>Download child reports and review recent report activity.</p>
+      </header>
+      <% if (selectedChildId) { %>
+        <a class="parent-action-link report-download-link" href="/parent/reports/<%= selectedChildId %>/download">
+          Download Latest Report for Selected Child
+        </a>
+      <% } %>
+      <% if (reports.length === 0) { %>
+        <div class="parent-empty-state">No report activity is available yet.</div>
+      <% } else { %>
+        <ul class="report-list">
+          <% reports.forEach((entry) => { %>
+            <li>
+              <span><strong><%= entry.studentName %></strong></span>
+              <span><%= entry.generatedAtLabel %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </section>
+
+  <section id="missions" class="parent-card section-card">
+    <header class="section-head">
+      <h3>Missions</h3>
+      <p>Read-only mission progress for the selected child.</p>
+    </header>
+    <% if (!selectedChild || !Array.isArray(missionsSummary.rows) || missionsSummary.rows.length === 0) { %>
+      <div class="parent-empty-state">No mission records are available for the selected child yet.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="portal-table">
+          <thead>
+            <tr>
+              <th>Mission</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>XP</th>
+              <th>Due</th>
+              <th>Status</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% missionsSummary.rows.forEach((row) => { %>
+              <tr>
+                <td><%= row.title %></td>
+                <td><%= row.type %></td>
+                <td><%= row.category %></td>
+                <td><%= Number(row.pointsXP || 0) %></td>
+                <td><%= row.dueDateLabel %></td>
+                <td><span class="status-chip status-<%= String(row.status || '').toLowerCase() %>"><%= row.status %></span></td>
+                <td><%= row.updatedAtLabel %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</section>
+
+<%- include('../partials/parentShellEnd') %>

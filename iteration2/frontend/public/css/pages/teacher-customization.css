@@ -1,0 +1,309 @@
+/*
+ * ============================================================
+ *  teacher-customization.css
+ *  IlmQuest - Teacher Class Customization Workspace
+ *
+ *  Sections:
+ *    1. Layout
+ *    2. Feedback and Selectors
+ *    3. Settings Card and Forms
+ *    4. Dynamic Rows and States
+ *    5. Responsive
+ * ============================================================
+ */
+
+/* 1. Layout */
+.teacher-customization-page {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-header h1 {
+  margin: 0;
+  color: #173327;
+  font-size: clamp(1.48rem, 1.2rem + 0.84vw, 2rem);
+}
+
+.settings-header p {
+  margin-top: 8px;
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 1.24rem;
+}
+
+.empty-state p {
+  margin-top: 8px;
+}
+
+/* 2. Feedback and Selectors */
+.class-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.class-pill {
+  display: grid;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.class-pill-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.class-pill-meta {
+  font-size: 0.82rem;
+  color: #647a6f;
+}
+
+/* 3. Settings Card and Forms */
+.settings-card {
+  display: grid;
+  gap: 14px;
+}
+
+.card-header {
+  display: grid;
+  gap: 12px;
+  border-bottom: 1px solid #dce8e0;
+  padding-bottom: 14px;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: clamp(1.24rem, 1.08rem + 0.42vw, 1.5rem);
+}
+
+.card-header p {
+  margin-top: 7px;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.meta-grid > div {
+  border: 1px solid #dce8e0;
+  border-radius: 12px;
+  background: #f8fbf9;
+  padding: 10px;
+}
+
+.meta-label {
+  display: block;
+  color: #5f7569;
+  font-size: 0.78rem;
+}
+
+.meta-value {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #113726;
+}
+
+.history-warning {
+  border: 1px solid #ead0a7;
+  border-radius: 12px;
+  background: #fff9ef;
+  color: #6c521f;
+  padding: 11px 12px;
+  line-height: 1.45;
+}
+
+#customizationForm {
+  display: grid;
+  gap: 14px;
+}
+
+.form-section {
+  border: 1px solid #dce8e0;
+  border-radius: 14px;
+  background: #fbfdfc;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.form-section h3 {
+  margin: 0;
+  font-size: 1.04rem;
+}
+
+.section-head p {
+  margin-top: 6px;
+  font-size: 0.9rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+/* 4. Dynamic Rows and States */
+.list-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.list-row {
+  border: 1px solid #dce8e0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(190px, 1.7fr) repeat(3, minmax(96px, 0.72fr)) minmax(102px, 0.85fr);
+  align-items: end;
+}
+
+.section-row {
+  grid-template-columns: minmax(220px, 1.7fr) repeat(2, minmax(110px, 0.85fr));
+}
+
+.row-main,
+.row-small,
+.row-actions {
+  display: grid;
+  gap: 6px;
+}
+
+.row-meta {
+  color: #687f72;
+  font-size: 0.78rem;
+}
+
+.row-actions {
+  justify-items: stretch;
+}
+
+.status-badge {
+  padding: 4px 9px;
+  font-size: 0.73rem;
+  font-weight: 800;
+  border: 1px solid #dce8e0;
+  border-radius: 999px;
+}
+
+.status-badge.active {
+  border-color: #a9d2b9;
+  color: #1f6542;
+  background: #eef8f2;
+}
+
+.status-badge.inactive {
+  border-color: #d5dfd9;
+  color: #50655a;
+  background: #f6f8f7;
+}
+
+.status-badge.archived {
+  border-color: #edc5bf;
+  color: #8a2f24;
+  background: #fff4f3;
+}
+
+.btn-danger {
+  min-height: 38px;
+}
+
+.add-row {
+  width: fit-content;
+}
+
+.weight-summary {
+  border: 1px solid #dce8e0;
+  border-radius: 10px;
+  background: #f7faf8;
+  color: #214435;
+  padding: 9px 11px;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.weight-summary.error {
+  border-color: #efc8c2;
+  background: #fff4f3;
+  color: #a6352b;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions .btn-primary {
+  min-width: 210px;
+}
+
+/* 5. Responsive */
+@media (max-width: 1000px) {
+  .meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .list-row,
+  .section-row {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+
+  .row-main {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-header {
+    align-items: stretch;
+  }
+
+  .meta-grid,
+  .field-grid,
+  .class-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .list-row,
+  .section-row {
+    grid-template-columns: 1fr;
+  }
+
+  .row-actions {
+    justify-items: start;
+  }
+
+  .add-row,
+  .form-actions .btn-primary,
+  .settings-header .btn-secondary {
+    width: 100%;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+}

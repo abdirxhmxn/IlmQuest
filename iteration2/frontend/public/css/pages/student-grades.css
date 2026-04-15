@@ -1,0 +1,327 @@
+/*
+ * ============================================================
+ *  student-grades.css
+ *  IlmQuest - Student Grades Experience
+ * ============================================================
+ */
+
+.student-grades-page main {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.student-grades-page .class-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.student-grades-empty {
+  padding: 16px;
+}
+
+.student-grades-empty h2 {
+  margin: 0;
+  color: #184a36;
+  font-size: 1.08rem;
+}
+
+.student-grades-empty p {
+  margin: 6px 0 0;
+  color: #5e766a;
+  font-size: 0.9rem;
+}
+
+.student-grades-page .class-btn {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #b8d8c8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #19533e;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.student-grades-page .class-btn:hover {
+  border-color: #8ebba5;
+  background: #f5faf7;
+}
+
+.student-grades-page .class-btn.active {
+  border-color: #1f7852;
+  background: #e8f6ee;
+  color: #1a5b41;
+}
+
+.student-grades-page .class-block {
+  display: none;
+  border: 1px solid #d6ded8;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(9, 39, 28, 0.08);
+  padding: 14px;
+}
+
+.student-grades-page .class-block.active {
+  display: block;
+}
+
+.student-grades-page .schedule-section {
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #e2ebe5;
+}
+
+.student-grades-page .schedule-heading {
+  margin: 0 0 10px;
+  color: #1b5a42;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-grades-page .schedule-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.student-grades-page .schedule-item {
+  border: 1px solid #d2e6da;
+  border-radius: 10px;
+  background: #f7fbf8;
+  padding: 9px 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.student-grades-page .schedule-item .day {
+  color: #174634;
+  font-weight: 700;
+}
+
+.student-grades-page .schedule-item .time {
+  color: #2f6750;
+  font-weight: 600;
+}
+
+.student-grades-page .schedule-empty {
+  margin: 0;
+  color: #61786e;
+  font-size: 0.86rem;
+}
+
+.student-grades-page .subjects-wrapper {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.student-grades-page .subject-block {
+  border: 1px solid #d6e4db;
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.student-grades-page .subject-block > header {
+  margin: 0;
+  padding: 11px 12px;
+  background: #16563f;
+  color: #eff9f4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.student-grades-page .subject-block .weight {
+  font-size: 0.72rem;
+  color: #c5e8d7;
+}
+
+.student-grades-page .students {
+  padding: 12px;
+  background: #f8fcf9;
+}
+
+.student-grades-page .student-content {
+  border: 1px solid #d5e5dd;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.student-grades-page .subject-average {
+  margin-bottom: 14px;
+}
+
+.student-grades-page .average-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #b9dbc8;
+  border-radius: 999px;
+  background: #edf8f1;
+  color: #1c6446;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 7px 11px;
+}
+
+.student-grades-page .semester-section {
+  margin-bottom: 16px;
+}
+
+.student-grades-page .semester-header {
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #d9e8de;
+  color: #1f6749;
+  font-size: 0.96rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-grades-page .semester-content {
+  display: grid;
+  gap: 10px;
+}
+
+.student-grades-page .quarter-summary,
+.student-grades-page .category-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.student-grades-page .quarter-summary {
+  border: 1px solid #d4e2da;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #20583f;
+  padding: 9px 11px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.student-grades-page .quarter-summary:hover {
+  background: #f5faf7;
+}
+
+.student-grades-page .quarter-summary .label,
+.student-grades-page .category-summary .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.student-grades-page .quarter-content {
+  margin-top: 8px;
+  padding-left: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.student-grades-page .category-summary {
+  border-radius: 10px;
+  background: #edf8f1;
+  color: #1f6445;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.student-grades-page .category-summary:hover {
+  background: #e4f3ea;
+}
+
+.student-grades-page .category-content {
+  margin-top: 6px;
+  padding-left: 10px;
+  display: grid;
+  gap: 7px;
+}
+
+.student-grades-page .grade-item {
+  border: 1px solid #d3e5da;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 9px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.student-grades-page .grade-item .name {
+  color: #123d2d;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.student-grades-page .grade-item .feedback {
+  color: #4a6859;
+  font-size: 0.78rem;
+}
+
+.student-grades-page .grade-item .score {
+  text-align: right;
+}
+
+.student-grades-page .grade-item .points {
+  font-size: 0.97rem;
+  color: #174f39;
+  font-weight: 800;
+}
+
+.student-grades-page .grade-item .max,
+.student-grades-page .grade-item .meta,
+.student-grades-page .no-grades {
+  color: #668073;
+  font-size: 0.76rem;
+}
+
+.student-grades-page details summary::-webkit-details-marker {
+  display: none;
+}
+
+.student-grades-page details[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.student-grades-page .chevron {
+  transition: transform 0.2s ease;
+}
+
+@media (max-width: 1100px) {
+  .student-grades-page .subjects-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .student-grades-page .schedule-list {
+    grid-template-columns: 1fr;
+  }
+
+  .student-grades-page .grade-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .student-grades-page .grade-item .score {
+    text-align: left;
+  }
+}

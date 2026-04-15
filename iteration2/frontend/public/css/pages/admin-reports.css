@@ -1,0 +1,288 @@
+/*
+ * ============================================================
+ *  admin-reports.css
+ *  IlmQuest - Page Styles
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+.reports-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reports-kpi {
+  padding: 14px 16px;
+}
+
+.reports-kpi-label {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: #8491a7;
+  text-transform: uppercase;
+}
+
+.reports-kpi-value {
+  margin: 7px 0 0;
+  font-size: 1.95rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #111827;
+}
+
+.reports-kpi-meta {
+  margin: 6px 0 0;
+  color: #69788f;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reports-last-generated,
+.reports-activity {
+  padding: 14px 16px;
+}
+
+.reports-last-generated h2,
+.reports-activity h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.reports-last-generated p {
+  margin: 8px 0 0;
+  color: #516178;
+  font-size: 0.9rem;
+}
+
+.reports-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.reports-panel-header {
+  border-bottom: 1px solid #dbe1ea;
+  padding: 14px 16px;
+}
+
+.reports-panel-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.reports-panel-header p {
+  margin: 5px 0 0;
+  color: #66758d;
+  font-size: 0.92rem;
+}
+
+.reports-form {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #dbe1ea;
+}
+
+.reports-form label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.reports-form select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #cfd8e5;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 10px;
+  font: inherit;
+  color: #0f172a;
+}
+
+.reports-form select:focus {
+  border-color: #9db3d2;
+  box-shadow: 0 0 0 3px rgba(83, 121, 180, 0.12);
+  outline: none;
+}
+
+.reports-submit {
+  border: 1px solid #0f172a;
+  border-radius: 10px;
+  min-height: 40px;
+  background: #0f172a;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reports-submit:hover {
+  background: #1b2942;
+}
+
+.reports-list-wrap {
+  padding: 0 16px 14px;
+  overflow-x: auto;
+}
+
+.reports-table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+.reports-table th,
+.reports-table td {
+  border-bottom: 1px solid #dbe1ea;
+  padding: 10px 10px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.92rem;
+}
+
+.reports-table th {
+  color: #7d8aa0;
+  font-size: 0.74rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.reports-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.reports-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  min-height: 30px;
+  padding: 0 10px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #25364f;
+}
+
+.reports-link:hover {
+  border-color: #9db3d2;
+  color: #0f172a;
+}
+
+.reports-empty {
+  color: #65758d;
+  font-style: italic;
+}
+
+.report-activity-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.report-activity-item {
+  border: 1px solid #dbe1ea;
+  border-radius: 9px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.report-activity-time {
+  color: #71839d;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.report-activity-empty {
+  color: #65758d;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.reports-note {
+  padding: 14px 16px;
+}
+
+.reports-note h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.reports-note p {
+  margin: 8px 0 0;
+  color: #5f6f86;
+  font-size: 0.92rem;
+}
+
+.reports-note code {
+  background: #eef2f7;
+  border-radius: 6px;
+  padding: 1px 5px;
+  color: #27354a;
+}
+
+.reports-action-status {
+  min-height: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.reports-action-status.is-info {
+  color: #365a9c;
+}
+
+.reports-action-status.is-success {
+  color: #1f6a45;
+}
+
+.reports-action-status.is-error {
+  color: #b42318;
+}
+
+@media (max-width: 1320px) {
+  .reports-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .reports-grid,
+  .reports-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

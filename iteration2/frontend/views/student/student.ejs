@@ -1,0 +1,118 @@
+<%- include('../partials/studentShellStart', {
+  pageTitle: 'IlmQuest Student Dashboard',
+  pageStyles: ['/css/main.css'],
+  activePage: 'home',
+  user
+}) %>
+
+<%
+  const announcements = Array.isArray(studentAnnouncements) ? studentAnnouncements : [];
+  const summary = dashboardSummary || {};
+  const classCount = Number(summary.classCount || 0);
+  const gradeCount = Number(summary.gradeCount || 0);
+  const missionCount = Number(summary.missionCount || 0);
+  const missionInProgress = Number(summary.missionInProgress || 0);
+  const missionCompleted = Number(summary.missionCompleted || 0);
+  const totalXp = Number(summary.totalXp || 0);
+  const currentRankLabel = String(summary.currentRankLabel || `${String(user?.rank || "F").toUpperCase()} Rank`);
+  const gradeAverage = Number.isFinite(Number(summary.gradeAverage)) ? `${Number(summary.gradeAverage).toFixed(1)}%` : "No grades yet";
+  const attendanceRate = Number.isFinite(Number(summary.attendanceRate)) ? `${Number(summary.attendanceRate).toFixed(1)}%` : "No attendance yet";
+  const attendanceDetail = Number(summary.attendanceTotal || 0) > 0
+    ? `${Number(summary.attendancePresent || 0)} of ${Number(summary.attendanceTotal || 0)} marked present`
+    : "Attendance records will appear once teachers publish attendance.";
+%>
+
+<section class="student-page-shell student-dashboard-page">
+  <header class="student-page-header">
+    <div class="student-page-title">
+      <h1>Student Dashboard</h1>
+      <p>Track your learning journey, mission streak, and classroom updates in one place.</p>
+    </div>
+    <div class="student-top-actions">
+      <a class="student-header-link" href="/student/missions">Open Missions</a>
+      <a class="student-header-link" href="/student/grades">View Grades</a>
+    </div>
+  </header>
+
+  <main class="student-page">
+    <section class="grid-top">
+      <article class="card student-summary-card">
+        <p class="summary-kicker">Current Rank</p>
+        <h2 class="summary-value"><%= currentRankLabel %></h2>
+        <p class="summary-note"><%= totalXp.toLocaleString() %> XP earned</p>
+      </article>
+
+      <article class="card student-summary-card">
+        <p class="summary-kicker">Missions</p>
+        <h2 class="summary-value"><%= missionCount %></h2>
+        <p class="summary-note"><%= missionInProgress %> in progress • <%= missionCompleted %> completed</p>
+      </article>
+
+      <article class="card student-summary-card">
+        <p class="summary-kicker">Grades</p>
+        <h2 class="summary-value"><%= gradeAverage %></h2>
+        <p class="summary-note"><%= gradeCount %> graded assignment<%= gradeCount === 1 ? '' : 's' %> published</p>
+      </article>
+
+      <article class="card student-summary-card">
+        <p class="summary-kicker">Attendance</p>
+        <h2 class="summary-value"><%= attendanceRate %></h2>
+        <p class="summary-note"><%= attendanceDetail %></p>
+      </article>
+    </section>
+
+    <% if (!classCount) { %>
+      <section class="card student-empty-inline">
+        <h3>No Class Enrollment Yet</h3>
+        <p>Your dashboard is active, but you are not currently enrolled in a class. Once enrollment is completed, grades, missions, attendance, and library updates will appear automatically.</p>
+      </section>
+    <% } %>
+
+    <section class="grid-bottom">
+      <div class="card">
+        <h3>Verse of the Day</h3>
+        <% if (verses?.arabic || verses?.translation) { %>
+          <p class="ayah"><%= verses?.arabic || '' %></p>
+          <p class="translation"><%= verses?.translation || '' %></p>
+          <small class="meta"><%= verses?.surah || '' %> — <%= verses?.reference || '' %></small>
+        <% } else { %>
+          <p class="translation">No verse is available right now. Check back soon for daily inspiration.</p>
+        <% } %>
+      </div>
+      <div class="card">
+        <h3>Reminder of the Day</h3>
+        <% if (reflections?.arabic || reflections?.translation) { %>
+          <p class="ayah"><%= reflections?.arabic || '' %></p>
+          <p class="translation"><%= reflections?.translation || '' %></p>
+          <small class="meta"><%= reflections?.reference || '' %> — <%= reflections?.hadithNumber || '' %></small>
+        <% } else { %>
+          <p class="translation">No reminder is available right now. Check back soon for daily reflection.</p>
+        <% } %>
+      </div>
+    </section>
+
+    <aside class="updates">
+      <h2>Community Updates</h2>
+      <div class="panel">
+        <% if (!announcements.length) { %>
+          <p class="updates-empty">No announcements posted yet.</p>
+        <% } else { %>
+          <ul class="updates-list">
+            <% announcements.forEach((announcement) => { %>
+              <li class="update-item">
+                <div class="update-head">
+                  <strong><%= announcement.title %></strong>
+                  <% if (announcement.isPinned) { %><span class="update-chip">Pinned</span><% } %>
+                </div>
+                <p><%= announcement.summary || announcement.content || '' %></p>
+                <small>Published <%= announcement.publishLabel || announcement.createdAtLabel %></small>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+    </aside>
+  </main>
+</section>
+
+<%- include('../partials/studentShellEnd') %>

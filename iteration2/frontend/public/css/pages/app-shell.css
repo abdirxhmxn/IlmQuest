@@ -1,0 +1,536 @@
+/*
+ * ============================================================
+ *  app-shell.css
+ *  IlmQuest - Unified Role Shell (Teacher / Parent / Admin / Student)
+ * ============================================================
+ */
+
+:root {
+  --shell-canvas: #e7dfd3;
+  --shell-panel: #efe8dc;
+  --shell-main-text: #13231a;
+  --shell-main-muted: #5b7066;
+  --shell-border: #d6ded8;
+
+  --shell-sidebar-bg-start: #0b3f33;
+  --shell-sidebar-bg-end: #0f4f40;
+  --shell-sidebar-border: rgba(130, 188, 164, 0.31);
+  --shell-sidebar-text: #e5f4ec;
+  --shell-sidebar-muted: #9ec4b3;
+  --shell-sidebar-active-bg: rgba(82, 206, 150, 0.2);
+  --shell-sidebar-active-border: rgba(111, 225, 174, 0.42);
+  --shell-sidebar-active-text: #b8f6da;
+
+  --shell-header-border: rgba(125, 183, 160, 0.34);
+  --shell-header-bg: linear-gradient(180deg, rgba(11, 63, 51, 0.96) 0%, rgba(15, 79, 64, 0.94) 100%);
+  --shell-header-text: #e8f4ee;
+  --shell-header-muted: #b3d4c6;
+
+  --shell-radius-lg: 12px;
+  --shell-shadow-sm: 0 10px 24px rgba(9, 39, 28, 0.12);
+  --shell-shadow-md: 0 22px 42px rgba(4, 20, 15, 0.26);
+
+  --shell-sidebar-width: 286px;
+  --shell-sidebar-collapsed-width: 92px;
+  --shell-main-pad-x: clamp(12px, 1.5vw, 24px);
+  --shell-main-pad-y: clamp(12px, 1.5vw, 22px);
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--shell-canvas);
+  color: var(--shell-main-text);
+}
+
+.role-app-shell.teacher-app-shell,
+.role-app-shell.parent-app-shell,
+.role-app-shell.admin-app-shell,
+.role-app-shell.student-app-shell {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: var(--shell-panel);
+  display: grid;
+  grid-template-columns: var(--shell-sidebar-width) minmax(0, 1fr);
+  transition: grid-template-columns 0.24s ease;
+}
+
+.role-app-shell.is-sidebar-collapsed {
+  grid-template-columns: var(--shell-sidebar-collapsed-width) minmax(0, 1fr);
+}
+
+.role-sidebar.teacher-sidebar,
+.role-sidebar.parent-sidebar,
+.role-sidebar.admin-sidebar,
+.role-sidebar.student-sidebar {
+  min-height: 0;
+  background: linear-gradient(180deg, var(--shell-sidebar-bg-start) 0%, var(--shell-sidebar-bg-end) 45%, var(--shell-sidebar-bg-end) 100%);
+  color: var(--shell-sidebar-text);
+  border-right: 1px solid var(--shell-sidebar-border);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px 10px;
+  cursor: pointer;
+}
+
+.role-sidebar-brand {
+  width: 100%;
+  min-height: 68px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--shell-sidebar-border);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.role-sidebar-brand:hover {
+  background: rgba(120, 178, 154, 0.14);
+  border-color: rgba(132, 188, 164, 0.26);
+}
+
+.role-brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #f0fdff;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.role-brand-meta {
+  min-width: 0;
+}
+
+.role-brand-name {
+  margin: 0;
+  color: #f6fcf9;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.role-brand-role {
+  margin: 3px 0 0;
+  color: var(--shell-sidebar-muted);
+  font-size: 0.67rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.role-sidebar-nav {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 4px 2px;
+}
+
+.role-sidebar-link {
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  text-decoration: none;
+  color: var(--shell-sidebar-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.role-sidebar-link:hover {
+  background: rgba(146, 171, 188, 0.12);
+}
+
+.role-sidebar-link.active {
+  background: var(--shell-sidebar-active-bg);
+  border-color: var(--shell-sidebar-active-border);
+  color: var(--shell-sidebar-active-text);
+}
+
+.role-sidebar-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-sidebar-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.role-sidebar-profile {
+  border-top: 1px solid var(--shell-sidebar-border);
+  border-radius: 10px;
+  padding: 10px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.role-sidebar-profile:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.role-profile-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #2f8169;
+  background: #195f4e;
+  color: #cdf5e4;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.role-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.role-profile-meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.role-profile-name {
+  margin: 0;
+  color: #f4fbf8;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-profile-role {
+  margin: 0;
+  color: #95c3b0;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-main-shell.parent-main,
+.role-main-shell.admin-main,
+.role-main-shell.student-main {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 var(--shell-main-pad-x) var(--shell-main-pad-y);
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  background: var(--shell-panel);
+}
+
+.role-main-shell.teacher-main-shell {
+  background: var(--shell-panel);
+}
+
+.role-main-content {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+/*
+ * Keep shell headers docked to the sidebar edge (full main width), while
+ * constraining only the body sections for readable line lengths.
+ */
+.role-main-shell > .profile-hub.profile-shell-mode,
+.role-main-shell .parent-page-shell,
+.role-main-shell .student-page-shell {
+  width: 100%;
+  margin: 0;
+}
+
+.role-main-shell .profile-hub.profile-shell-mode > :not(.admin-page-header):not(.parent-page-header):not(.student-page-header):not(.teacher-page-header),
+.role-main-shell .parent-page-shell > :not(.parent-page-header),
+.role-main-shell .student-page-shell > :not(.student-page-header) {
+  width: min(1460px, 100%);
+  margin-inline: auto;
+}
+
+.teacher-page-header,
+.parent-page-header,
+.admin-page-header,
+.student-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin: 0 calc(-1 * var(--shell-main-pad-x));
+  min-height: 82px;
+  padding: 12px var(--shell-main-pad-x);
+  border: 0;
+  border-bottom: 1px solid var(--shell-header-border);
+  border-radius: 0;
+  background: var(--shell-header-bg);
+  color: var(--shell-header-text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.teacher-page-header {
+  margin: 0;
+  padding: 12px 18px;
+}
+
+.student-page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.student-page-title {
+  min-width: 220px;
+}
+
+.teacher-page-title h2,
+.parent-page-title h1,
+.admin-page-title h1,
+.student-page-title h1 {
+  color: #f5fcf8;
+}
+
+.teacher-page-title p,
+.parent-page-title p,
+.admin-page-title p,
+.student-page-title p,
+.teacher-page-kicker,
+.admin-page-kicker,
+.admin-breadcrumbs {
+  color: var(--shell-header-muted);
+}
+
+.admin-page-header .admin-top-actions .admin-action-link,
+.parent-page-header .parent-action-link,
+.student-page-header .student-header-link,
+.role-header-user,
+.teacher-header-user,
+.admin-header-user,
+.parent-header-user {
+  min-height: 36px;
+  border: 1px solid rgba(132, 188, 164, 0.44);
+  border-radius: 10px;
+  background: rgba(4, 31, 25, 0.4);
+  color: #e8f4ef;
+}
+
+.role-header-user,
+.teacher-header-user,
+.admin-header-user,
+.parent-header-user {
+  margin-left: auto;
+  text-decoration: none;
+  padding: 6px 10px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.role-header-user-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.role-header-user-role {
+  font-size: 0.65rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b0d0c2;
+}
+
+.admin-page-header .admin-icon-btn {
+  border-color: rgba(132, 188, 164, 0.44);
+  background: rgba(4, 31, 25, 0.4);
+  color: #dbeee6;
+}
+
+.student-top-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.student-header-link {
+  text-decoration: none;
+  padding: 0 11px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+[data-sidebar-toggle],
+[data-parent-sidebar-toggle],
+.sidebar-toggle,
+.parent-sidebar-toggle {
+  display: none !important;
+}
+
+.role-sidebar-scrim {
+  display: none;
+}
+
+.role-app-shell.is-sidebar-collapsed .role-sidebar-brand,
+.role-app-shell.is-sidebar-collapsed .role-sidebar-link,
+.role-app-shell.is-sidebar-collapsed .role-sidebar-profile {
+  justify-content: center;
+}
+
+.role-app-shell.is-sidebar-collapsed .role-brand-meta,
+.role-app-shell.is-sidebar-collapsed .role-sidebar-label,
+.role-app-shell.is-sidebar-collapsed .role-profile-meta,
+.role-app-shell.is-sidebar-collapsed .sidebar-nav-label,
+.role-app-shell.is-sidebar-collapsed .sidebar-search-shell {
+  display: none;
+}
+
+.role-app-shell.is-sidebar-collapsed .role-sidebar-link {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Student surfaces inside the shared shell */
+.student-page-shell {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.student-card {
+  border: 1px solid var(--shell-border);
+  border-radius: var(--shell-radius-lg);
+  background: #ffffff;
+  box-shadow: var(--shell-shadow-sm);
+}
+
+.student-library-empty {
+  padding: 16px;
+}
+
+@media (max-width: 1024px) {
+  .role-app-shell.teacher-app-shell,
+  .role-app-shell.parent-app-shell,
+  .role-app-shell.admin-app-shell,
+  .role-app-shell.student-app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .role-sidebar.teacher-sidebar,
+  .role-sidebar.parent-sidebar,
+  .role-sidebar.admin-sidebar,
+  .role-sidebar.student-sidebar {
+    position: fixed;
+    inset: 10px auto 10px 10px;
+    width: min(304px, calc(100% - 20px));
+    border-radius: 14px;
+    border: 1px solid var(--shell-sidebar-border);
+    transform: translateX(calc(-100% + 58px));
+    transition: transform 0.22s ease;
+    box-shadow: var(--shell-shadow-md);
+    z-index: 55;
+  }
+
+  .role-app-shell.is-sidebar-open .role-sidebar.teacher-sidebar,
+  .role-app-shell.is-sidebar-open .role-sidebar.parent-sidebar,
+  .role-app-shell.is-sidebar-open .role-sidebar.admin-sidebar,
+  .role-app-shell.is-sidebar-open .role-sidebar.student-sidebar {
+    transform: translateX(0);
+  }
+
+  .role-sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: rgba(4, 16, 13, 0.58);
+    z-index: 45;
+  }
+
+  .role-app-shell.is-sidebar-open .role-sidebar-scrim {
+    display: block;
+  }
+
+  .role-main-shell.parent-main,
+  .role-main-shell.admin-main,
+  .role-main-shell.student-main {
+    --shell-main-pad-x: 10px;
+    --shell-main-pad-y: 10px;
+  }
+}
+
+@media (max-width: 760px) {
+  .teacher-page-header,
+  .parent-page-header,
+  .admin-page-header,
+  .student-page-header {
+    min-height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    gap: 8px;
+  }
+}

@@ -1,0 +1,469 @@
+<%
+const role = (user && user.role) ? String(user.role) : "guest";
+const isAdmin = role === "admin";
+const isTeacher = role === "teacher";
+const isStudent = role === "student";
+const isParent = role === "parent";
+const usesShell = isAdmin || isParent || isStudent;
+
+const profile = profileModel || {};
+const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Profile";
+const schoolName = String(profile.schoolName || "").trim() || "Unknown School";
+const usernameDisplay = String(user?.userName || "").trim()
+  || `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
+  || (String(user?.email || "").split("@")[0] || "user");
+const roleLabel = profile.roleLabel || ({ admin: "Administrator", teacher: "Teacher", student: "Student", parent: "Parent" }[role] || "User");
+const dashboardPath = profile.dashboardPath || (isAdmin ? "/admin/home" : isTeacher ? "/teacher/home" : isParent ? "/parent/home" : "/student/home");
+const avatarSrc = profile.avatarUrl || user?.profileImage || user?.profilePic || "";
+const avatarInitials = `${(user?.firstName || "I").charAt(0)}${(user?.lastName || user?.userName || "Q").charAt(0)}`.toUpperCase();
+const hasAvatarImage = Boolean(String(avatarSrc || "").trim());
+
+const completeness = profile.completeness || { complete: 0, total: 0, percent: 0 };
+const overviewRows = Array.isArray(profile.overviewRows) ? profile.overviewRows : [];
+const rolePanel = profile.rolePanel || {};
+const rolePanelItems = Array.isArray(rolePanel.items) ? rolePanel.items : [];
+const rolePanelChips = Array.isArray(rolePanel.chips) ? rolePanel.chips : [];
+const rolePanelList = Array.isArray(rolePanel.listItems) ? rolePanel.listItems : [];
+const quickStats = Array.isArray(profile.quickStats) ? profile.quickStats : [];
+const quickActions = Array.isArray(profile.quickActions) ? profile.quickActions : [];
+const classRows = Array.isArray(profile.classRows) ? profile.classRows : [];
+const recentReports = Array.isArray(profile.recentReports) ? profile.recentReports : [];
+const editable = profile.editable || {};
+const canManageAvatar = profile.canManageAvatar === true;
+const canUploadAvatar = profile.canUploadAvatar === true;
+
+const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+const errorMessages = [
+  ...(Array.isArray(messages?.error) ? messages.error : []),
+  ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+];
+
+function statToneClass(tone) {
+  if (tone === "success") return "stat-success";
+  if (tone === "warning") return "stat-warning";
+  if (tone === "critical") return "stat-critical";
+  return "stat-neutral";
+}
+%>
+
+<% if (isAdmin) { %>
+  <%- include('partials/adminShellStart', {
+    pageTitle: 'IlmQuest | Profile Center',
+    pageStyles: ['/css/pages/profile.css'],
+    activePage: 'dashboard',
+    user
+  }) %>
+<% } else if (isParent) { %>
+  <%- include('partials/parentShellStart', {
+    pageTitle: 'IlmQuest | Profile Center',
+    pageStyles: ['/css/pages/profile.css'],
+    activePage: 'account',
+    user
+  }) %>
+<% } else if (isTeacher) { %>
+  <%- include('partials/teacherHeader') %>
+  <link rel="stylesheet" href="/css/pages/profile.css" />
+<% } else if (isStudent) { %>
+  <%- include('partials/studentShellStart', {
+    pageTitle: 'IlmQuest | Profile Center',
+    pageStyles: ['/css/pages/profile.css'],
+    activePage: 'profile',
+    user
+  }) %>
+<% } else { %>
+  <%- include('partials/inHeader') %>
+  <link rel="stylesheet" href="/css/pages/profile.css" />
+<% } %>
+
+<section class="profile-hub <%= usesShell ? 'profile-shell-mode' : 'profile-legacy-mode' %>">
+  <% if (isAdmin) { %>
+    <% const icon = typeof iconSvg === 'function' ? iconSvg : (() => ''); %>
+    <header class="admin-page-header profile-shell-header">
+      <button
+        type="button"
+        class="sidebar-toggle"
+        data-sidebar-toggle
+        aria-label="Toggle sidebar"
+        aria-expanded="false"
+        aria-controls="adminSidebar"
+      >
+        <%- icon('menu') %>
+      </button>
+      <div class="admin-page-title profile-title-wrap">
+        <h1>Profile Center</h1>
+        <p>Manage account identity, role context, and security settings.</p>
+      </div>
+      <div class="admin-top-actions">
+        <a class="admin-action-link" href="<%= dashboardPath %>">Dashboard</a>
+        <a class="admin-action-link" href="/logout">Logout</a>
+      </div>
+    </header>
+  <% } else if (isParent) { %>
+    <header class="parent-page-header profile-shell-header">
+      <button
+        type="button"
+        class="parent-sidebar-toggle"
+        data-parent-sidebar-toggle
+        aria-controls="parentSidebar"
+        aria-label="Toggle sidebar"
+        aria-expanded="true"
+      >
+        Hide Menu
+      </button>
+      <div class="parent-page-title profile-title-wrap">
+        <h1>Profile Center</h1>
+        <p>Manage your account profile, linked family context, and security actions.</p>
+      </div>
+      <div class="parent-top-actions">
+        <a class="parent-action-link" href="<%= dashboardPath %>">Dashboard</a>
+        <a class="parent-action-link" href="/logout">Logout</a>
+      </div>
+    </header>
+  <% } else if (isStudent) { %>
+    <header class="student-page-header profile-shell-header">
+      <div class="student-page-title profile-title-wrap">
+        <h1>Profile Center</h1>
+        <p>Manage your account profile, personal learning identity, and security settings.</p>
+      </div>
+      <div class="student-top-actions">
+        <a class="student-header-link" href="<%= dashboardPath %>">Dashboard</a>
+        <a class="student-header-link" href="/logout">Logout</a>
+      </div>
+    </header>
+  <% } else { %>
+    <header class="profile-legacy-header">
+      <h1>Profile Center</h1>
+      <p>Manage account identity, role context, and security settings.</p>
+    </header>
+  <% } %>
+
+  <% if (successMessages.length > 0) { %>
+    <div class="profile-flash profile-flash-success"><%= successMessages.join(' ') %></div>
+  <% } %>
+  <% if (errorMessages.length > 0) { %>
+    <div class="profile-flash profile-flash-error"><%= errorMessages.join(' ') %></div>
+  <% } %>
+
+  <article class="profile-card profile-hero-card">
+    <div class="profile-hero-main">
+      <div class="profile-hero-avatar" aria-hidden="true">
+        <% if (hasAvatarImage) { %>
+          <img src="<%= avatarSrc %>" alt="<%= fullName %> avatar" loading="lazy" />
+        <% } else { %>
+          <span class="profile-hero-avatar-fallback"><%= avatarInitials %></span>
+        <% } %>
+      </div>
+      <div class="profile-hero-text">
+        <p class="profile-role-badge"><%= roleLabel %></p>
+        <h2><%= fullName %></h2>
+        <p class="profile-hero-sub">
+          <span>@<%= usernameDisplay %></span>
+          <span>•</span>
+          <span><%= schoolName %></span>
+        </p>
+        <div class="profile-completeness">
+          <div class="profile-completeness-head">
+            <strong>Profile Completeness</strong>
+            <span><%= completeness.percent %>%</span>
+          </div>
+          <progress max="100" value="<%= completeness.percent %>"></progress>
+          <small><%= completeness.complete %> of <%= completeness.total %> core profile fields completed.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-hero-tools">
+      <% if (canManageAvatar) { %>
+        <form action="/profile/avatar?_csrf=<%= encodeURIComponent(csrfToken || '') %>" method="POST" enctype="multipart/form-data" class="avatar-upload-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <label for="avatarUploadInput" class="avatar-upload-label">Profile Image</label>
+          <input
+            id="avatarUploadInput"
+            type="file"
+            name="avatar"
+            accept=".jpg,.jpeg,.png"
+            <%= canUploadAvatar ? '' : 'disabled' %>
+            required
+          />
+          <button type="submit" class="profile-btn profile-btn-primary" <%= canUploadAvatar ? '' : 'disabled' %>>
+            <%= hasAvatarImage ? 'Replace Image' : 'Upload Image' %>
+          </button>
+        </form>
+        <% if (hasAvatarImage) { %>
+          <form action="/profile/avatar/remove" method="POST" class="avatar-remove-form" onsubmit="return confirm('Remove your profile picture?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="profile-btn profile-btn-muted">Remove Image</button>
+          </form>
+        <% } %>
+        <% if (!canUploadAvatar) { %>
+          <p class="profile-note profile-note-warning">Cloudinary keys are missing. Add `CLOUD_NAME`, `API_KEY`, and `API_SECRET` in `.env` to enable avatar uploads.</p>
+        <% } else { %>
+          <p class="profile-note">Admin-only avatar management is active.</p>
+        <% } %>
+      <% } else { %>
+        <p class="profile-note">Profile pictures are managed by administrators.</p>
+      <% } %>
+      <a href="<%= dashboardPath %>" class="profile-btn profile-btn-outline">Back to Dashboard</a>
+    </div>
+  </article>
+
+  <% if (quickStats.length) { %>
+    <section class="profile-stats-grid" aria-label="Profile quick stats">
+      <% quickStats.forEach((stat) => { %>
+        <article class="profile-stat-card <%= statToneClass(stat.tone) %>">
+          <p class="stat-label"><%= stat.label %></p>
+          <p class="stat-value"><%= stat.value %></p>
+        </article>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <section class="profile-layout-grid">
+    <div class="profile-main-column">
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Account Overview</h3>
+          <p>Core account identity and membership details.</p>
+        </header>
+        <div class="profile-card-body">
+          <dl class="profile-overview-list">
+            <% overviewRows.forEach((row) => { %>
+              <div>
+                <dt><%= row.label %></dt>
+                <dd><%= row.value %></dd>
+              </div>
+            <% }) %>
+          </dl>
+        </div>
+      </article>
+
+      <article class="profile-card" data-profile-edit-card>
+        <header class="profile-card-head profile-card-head-with-action">
+          <div>
+            <h3>Contact & Personal Information</h3>
+            <p>View your details, then switch to edit mode when you need to make updates.</p>
+          </div>
+          <button type="button" class="profile-btn profile-btn-outline profile-edit-toggle-btn" data-profile-edit-toggle>
+            Edit Profile
+          </button>
+        </header>
+        <div class="profile-card-body">
+          <div class="profile-contact-view" data-profile-contact-view>
+            <dl class="profile-overview-list">
+              <div>
+                <dt>First Name</dt>
+                <dd><%= editable.firstName || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Last Name</dt>
+                <dd><%= editable.lastName || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Username</dt>
+                <dd>@<%= editable.userName || usernameDisplay %></dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd><%= editable.email || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Date of Birth</dt>
+                <dd><%= editable.DOB || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Gender</dt>
+                <dd><%= editable.gender ? editable.gender.charAt(0).toUpperCase() + editable.gender.slice(1) : "Not provided" %></dd>
+              </div>
+            </dl>
+          </div>
+
+          <form action="/profile/update" method="POST" class="profile-edit-form" data-profile-edit-form hidden>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+            <div class="profile-form-grid two-col">
+              <div>
+                <label for="profileFirstName" class="field-label">First Name</label>
+                <input id="profileFirstName" type="text" name="firstName" value="<%= editable.firstName || '' %>" required />
+              </div>
+              <div>
+                <label for="profileLastName" class="field-label">Last Name</label>
+                <input id="profileLastName" type="text" name="lastName" value="<%= editable.lastName || '' %>" required />
+              </div>
+            </div>
+
+            <div class="profile-form-grid two-col">
+              <div>
+                <label for="profileUserName" class="field-label">Username</label>
+                <input id="profileUserName" type="text" name="userName" value="<%= editable.userName || '' %>" required />
+              </div>
+              <div>
+                <label for="profileEmail" class="field-label">Email</label>
+                <input id="profileEmail" type="email" name="email" value="<%= editable.email || '' %>" required />
+              </div>
+            </div>
+
+            <div class="profile-form-grid two-col">
+              <div>
+                <label for="profileDob" class="field-label">Date of Birth</label>
+                <input id="profileDob" type="date" name="DOB" value="<%= editable.DOB || '' %>" />
+              </div>
+              <div>
+                <label for="profileGender" class="field-label">Gender</label>
+                <select id="profileGender" name="gender">
+                  <option value="">Prefer not to say</option>
+                  <option value="male" <%= editable.gender === 'male' ? 'selected' : '' %>>Male</option>
+                  <option value="female" <%= editable.gender === 'female' ? 'selected' : '' %>>Female</option>
+                  <option value="other" <%= editable.gender === 'other' ? 'selected' : '' %>>Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="profile-form-actions">
+              <button type="button" class="profile-btn profile-btn-muted" data-profile-edit-cancel>Cancel</button>
+              <button type="submit" class="profile-btn profile-btn-primary">Save Profile Changes</button>
+            </div>
+          </form>
+        </div>
+      </article>
+
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Security & Account Actions</h3>
+          <p>Use existing secure account flows.</p>
+        </header>
+        <div class="profile-card-body">
+          <div class="profile-security-actions">
+            <a href="/reset-password" class="profile-btn profile-btn-outline">Change Password</a>
+            <a href="/forgot-password" class="profile-btn profile-btn-outline">Recovery Options</a>
+            <a href="/logout" class="profile-btn profile-btn-muted">Sign Out</a>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <aside class="profile-side-column">
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3><%= rolePanel.title || 'Role Details' %></h3>
+          <p><%= rolePanel.description || 'Context based on your role and assigned records.' %></p>
+        </header>
+        <div class="profile-card-body">
+          <% if (rolePanelItems.length > 0) { %>
+            <dl class="profile-overview-list">
+              <% rolePanelItems.forEach((row) => { %>
+                <div>
+                  <dt><%= row.label %></dt>
+                  <dd><%= row.value %></dd>
+                </div>
+              <% }) %>
+            </dl>
+          <% } %>
+
+          <% if (rolePanelChips.length > 0) { %>
+            <div class="profile-chip-list">
+              <% rolePanelChips.forEach((chip) => { %>
+                <span class="profile-chip"><%= chip %></span>
+              <% }) %>
+            </div>
+          <% } %>
+
+          <div class="profile-context-list">
+            <h4><%= rolePanel.listTitle || 'Related Records' %></h4>
+            <% if (rolePanelList.length === 0) { %>
+              <p class="profile-empty"><%= rolePanel.emptyListText || 'No records available.' %></p>
+            <% } else { %>
+              <ul>
+                <% rolePanelList.forEach((entry) => { %>
+                  <li><%= entry %></li>
+                <% }) %>
+              </ul>
+            <% } %>
+          </div>
+        </div>
+      </article>
+
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Class Context</h3>
+          <p>Associated classes based on your role assignment.</p>
+        </header>
+        <div class="profile-card-body">
+          <% if (classRows.length === 0) { %>
+            <p class="profile-empty">No class records are linked to this account yet.</p>
+          <% } else { %>
+            <div class="profile-table-shell">
+              <table class="profile-table">
+                <thead>
+                  <tr>
+                    <th>Class</th>
+                    <th>Code</th>
+                    <th>Students</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% classRows.forEach((row) => { %>
+                    <tr>
+                      <td><%= row.className %></td>
+                      <td><%= row.classCode %></td>
+                      <td><%= row.studentCount %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </article>
+
+      <article class="profile-card">
+        <header class="profile-card-head">
+          <h3>Recent Report Activity</h3>
+          <p>Latest report generation and visibility context.</p>
+        </header>
+        <div class="profile-card-body">
+          <% if (recentReports.length === 0) { %>
+            <p class="profile-empty">No recent report activity found for this account context.</p>
+          <% } else { %>
+            <ul class="profile-activity-list">
+              <% recentReports.forEach((report) => { %>
+                <li>
+                  <strong><%= report.title %></strong>
+                  <span><%= report.targetName %></span>
+                  <small><%= report.generatedAt %></small>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </div>
+      </article>
+    </aside>
+  </section>
+
+  <article class="profile-card">
+    <header class="profile-card-head">
+      <h3>Quick Actions</h3>
+      <p>Jump to role-relevant parts of IlmQuest.</p>
+    </header>
+    <div class="profile-card-body">
+      <div class="profile-action-grid">
+        <% quickActions.forEach((action) => { %>
+          <a href="<%= action.href %>" class="profile-btn profile-btn-outline"><%= action.label %></a>
+        <% }) %>
+      </div>
+    </div>
+  </article>
+</section>
+
+<script src="/js/profile.js"></script>
+
+<% if (isAdmin) { %>
+  <%- include('partials/adminShellEnd') %>
+<% } else if (isParent) { %>
+  <%- include('partials/parentShellEnd') %>
+<% } else if (isTeacher) { %>
+  <%- include('partials/teacherFooter') %>
+<% } else if (isStudent) { %>
+  <%- include('partials/studentShellEnd') %>
+<% } else { %>
+  <%- include('partials/inFooter') %>
+<% } %>

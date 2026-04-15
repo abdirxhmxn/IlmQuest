@@ -1,0 +1,317 @@
+<%- include('../partials/studentShellStart', {
+  pageTitle: 'IlmQuest Student Grades',
+  pageStyles: ['/css/pages/student-grades.css'],
+  activePage: 'grades',
+  user
+}) %>
+<% const safeClasses = Array.isArray(classes) ? classes : []; %>
+<% const gradeSummary = gradesSummary || {}; %>
+<% const publishedGradeCount = Number(gradeSummary.gradeCount || (Array.isArray(grades) ? grades.length : 0)); %>
+
+<section class="student-page-shell student-grades-page">
+  <header class="student-page-header">
+    <div class="student-page-title">
+      <h1>My Grades</h1>
+      <p>Review class schedules, subject performance, and assignment feedback by class.</p>
+    </div>
+    <div class="student-top-actions">
+      <a class="student-header-link" href="/student/home">Dashboard</a>
+      <a class="student-header-link" href="/student/missions">Missions</a>
+    </div>
+  </header>
+
+  <main>
+    <% if (!safeClasses.length) { %>
+      <section class="student-card student-grades-empty">
+        <h2>No Classes Assigned Yet</h2>
+        <p>Your grades will appear here once you are enrolled in a class with published assessments.</p>
+      </section>
+    <% } %>
+
+    <% if (safeClasses.length && !publishedGradeCount) { %>
+      <section class="student-card student-grades-empty">
+        <h2>No Published Grades Yet</h2>
+        <p>You are enrolled in class, but no graded assessments are published yet. Your teacher may still be setting up the grading categories or finalizing marks.</p>
+      </section>
+    <% } %>
+
+    <% if (safeClasses.length) { %>
+      <!-- Class Filter Buttons -->
+      <div class="class-filters">
+        <% safeClasses.forEach((cls, index) => { %>
+          <button class="class-btn <%= index === 0 ? 'active' : '' %>" data-class-index="<%= index %>">
+            <%= cls.className %>
+          </button>
+        <% }) %>
+      </div>
+
+      <!-- Class Blocks -->
+      <% safeClasses.forEach((cls, classIndex) => { %>
+        <div class="class-block <%= classIndex === 0 ? 'active' : '' %>" data-class-index="<%= classIndex %>">
+                <!-- Class Schedule Section -->
+                <div class="schedule-section">
+                    <h3 class="schedule-heading">
+                        <i data-lucide="clock"></i>
+                        <%= cls.className %> Class Schedule
+                    </h3>
+                    <% if (cls.schedule && cls.schedule.length > 0) { %>
+                        <div class="schedule-list">
+                            <% cls.schedule.forEach(time => { %>
+                                <div class="schedule-item">
+                                    <span class="day">
+                                        <%= time.day %>:
+                                    </span>
+                                    <span class="time">
+                                        <%= time.startTime %> – <%= time.endTime %>
+                                    </span>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <p class="schedule-empty">No schedule assigned yet</p>
+                    <% } %>
+                </div>
+
+                <% const quarterKey = { 'Quarter 1': 'Q1', 'Quarter 2': 'Q2', 'Quarter 3': 'Q3', 'Quarter 4': 'Q4' }; %>
+
+                <!-- Subjects & Students -->
+                <div class="subjects-wrapper">
+                    <% if (!cls.displaySubjects || cls.displaySubjects.length === 0) { %>
+                        <div class="subject-block">
+                            <header><i data-lucide="book-open"></i>No Active Subjects</header>
+                            <div class="students">
+                                <div class="student-content">
+                                    <p class="no-grades">Your teacher has not enabled subjects for this class yet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+                    <% (cls.displaySubjects || []).forEach(subject => { %>
+                        <div class="subject-block">
+                            <!-- Subject Header -->
+                            <header>
+                                <i data-lucide="book-open"></i>
+                                <%= subject.label || subject.name %>
+                                <% if (subject.isArchived || subject.isHistorical) { %>
+                                    <span class="weight">(Historical)</span>
+                                <% } else if (!subject.active) { %>
+                                    <span class="weight">(Hidden)</span>
+                                <% } %>
+                            </header>
+
+                            <!-- Student Grades -->
+                            <div class="students">
+                                <div class="student-content">
+
+                                    <!-- Subject Average -->
+                                    <% const subjectAvg = getSubjectAverage ? getSubjectAverage(grades, user._id, subject.key, { classId: cls._id, settings: cls.teacherSettings, weightMap: cls.categoryWeightMap }) : "100.00"; %>
+                                    <div class="subject-average">
+                                        <div class="average-badge">
+                                            <i data-lucide="activity"></i>
+                                            Subject Average: <span class="value"><%= subjectAvg %>%</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Semester 1 -->
+                                    <div class="semester-section">
+                                        <div class="semester-header">
+                                            <i data-lucide="calendar-days"></i>
+                                            Semester 1
+                                        </div>
+                                        <div class="semester-content">
+                                            <% ['Quarter 1', 'Quarter 2'].forEach(quarter => { %>
+                                                <details class="quarter-accordion">
+                                                    <summary class="quarter-summary">
+                                                        <span class="label">
+                                                            <i data-lucide="calendar-check"></i>
+                                                            <%= quarter %>
+                                                        </span>
+                                                        <i data-lucide="chevron-down" class="chevron"></i>
+                                                    </summary>
+
+                                                    <div class="quarter-content">
+                                                        <% if (!cls.displayCategories || cls.displayCategories.length === 0) { %>
+                                                            <div class="no-grades">No grading categories configured.</div>
+                                                        <% } %>
+                                                        <% (cls.displayCategories || []).forEach(category => { %>
+                                                            <% const matchingGrades = grades.filter(g => {
+                                                                return g.quarter === quarterKey[quarter] && 
+                                                                       getGradeSubjectKey(g) === subject.key && 
+                                                                       getGradeCategoryKey(g) === category.key &&
+                                                                       g.classInfo.some(c => c._id.toString() === cls._id.toString());
+                                                            }); %>
+
+                                                            <details class="category-accordion">
+                                                                <summary class="category-summary">
+                                                                    <span class="label">
+                                                                        <i data-lucide="folder-open"></i>
+                                                                        <%= category.label || category.name %>
+                                                                        <span class="weight">(Weight: <%= category.weight %>%)</span>
+                                                                    </span>
+                                                                    <i data-lucide="chevron-down" class="chevron"></i>
+                                                                </summary>
+
+                                                                <div class="category-content">
+                                                                    <% if (matchingGrades.length === 0) { %>
+                                                                        <div class="no-grades">No grades yet.</div>
+                                                                    <% } else { %>
+                                                                        <% matchingGrades.forEach(g => { %>
+                                                                            <div class="grade-item">
+                                                                                <div class="info">
+                                                                                    <div class="name"><%= g.Assignment.name %></div>
+                                                                                    <div class="feedback">
+                                                                                        Feedback:
+                                                                                        <% if (typeof g.feedback === 'object' && g.feedback !== null) { %>
+                                                                                            <%= g.feedback.content || '—' %>
+                                                                                            <% if (g.feedback.teacher && g.feedback.teacher.name) { %>
+                                                                                                - <%= g.feedback.teacher.name %>
+                                                                                            <% } %>
+                                                                                        <% } else { %>
+                                                                                            <%= g.feedback || '—' %>
+                                                                                        <% } %>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="score">
+                                                                                    <div class="points">
+                                                                                        <%= g.Assignment.grade %>
+                                                                                        <span class="max">/ <%= g.Assignment.maxScore || 100 %></span>
+                                                                                    </div>
+                                                                                    <div class="meta">
+                                                                                        <%= category.label || category.name %> • <%= g.quarter %>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        <% }) %>
+                                                                    <% } %>
+                                                                </div>
+                                                            </details>
+                                                        <% }) %>
+                                                    </div>
+                                                </details>
+                                            <% }) %>
+                                        </div>
+                                    </div>
+
+                                    <!-- Semester 2 -->
+                                    <div class="semester-section">
+                                        <div class="semester-header">
+                                            <i data-lucide="calendar-days"></i>
+                                            Semester 2
+                                        </div>
+                                        <div class="semester-content">
+                                            <% ['Quarter 3', 'Quarter 4'].forEach(quarter => { %>
+                                                <details class="quarter-accordion">
+                                                    <summary class="quarter-summary">
+                                                        <span class="label">
+                                                            <i data-lucide="calendar-check"></i>
+                                                            <%= quarter %>
+                                                        </span>
+                                                        <i data-lucide="chevron-down" class="chevron"></i>
+                                                    </summary>
+
+                                                    <div class="quarter-content">
+                                                        <% if (!cls.displayCategories || cls.displayCategories.length === 0) { %>
+                                                            <div class="no-grades">No grading categories configured.</div>
+                                                        <% } %>
+                                                        <% (cls.displayCategories || []).forEach(category => { %>
+                                                            <% const matchingGrades = grades.filter(g => {
+                                                                return g.quarter === quarterKey[quarter] && 
+                                                                       getGradeSubjectKey(g) === subject.key && 
+                                                                       getGradeCategoryKey(g) === category.key &&
+                                                                       g.classInfo.some(c => c._id.toString() === cls._id.toString());
+                                                            }); %>
+
+                                                            <details class="category-accordion">
+                                                                <summary class="category-summary">
+                                                                    <span class="label">
+                                                                        <i data-lucide="folder-open"></i>
+                                                                        <%= category.label || category.name %>
+                                                                        <span class="weight">(Weight: <%= category.weight %>%)</span>
+                                                                    </span>
+                                                                    <i data-lucide="chevron-down" class="chevron"></i>
+                                                                </summary>
+
+                                                                <div class="category-content">
+                                                                    <% if (matchingGrades.length === 0) { %>
+                                                                        <div class="no-grades">No grades yet.</div>
+                                                                    <% } else { %>
+                                                                        <% matchingGrades.forEach(g => { %>
+                                                                            <div class="grade-item">
+                                                                                <div class="info">
+                                                                                    <div class="name"><%= g.Assignment.name %></div>
+                                                                                    <div class="feedback">
+                                                                                        Feedback:
+                                                                                        <% if (typeof g.feedback === 'object' && g.feedback !== null) { %>
+                                                                                            <%= g.feedback.content || '—' %>
+                                                                                            <% if (g.feedback.teacher && g.feedback.teacher.name) { %>
+                                                                                                - <%= g.feedback.teacher.name %>
+                                                                                            <% } %>
+                                                                                        <% } else { %>
+                                                                                            <%= g.feedback || '—' %>
+                                                                                        <% } %>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="score">
+                                                                                    <div class="points">
+                                                                                        <%= g.Assignment.grade %>
+                                                                                        <span class="max">/ <%= g.Assignment.maxScore || 100 %></span>
+                                                                                    </div>
+                                                                                    <div class="meta">
+                                                                                        <%= category.label || category.name %> • <%= g.quarter %>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        <% }) %>
+                                                                    <% } %>
+                                                                </div>
+                                                            </details>
+                                                        <% }) %>
+                                                    </div>
+                                                </details>
+                                            <% }) %>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+        </div>
+      <% }) %>
+    <% } %>
+
+  </main>
+</section>
+
+<script>
+  // Class filter functionality
+  const classButtons = document.querySelectorAll('.class-btn');
+  const classBlocks = document.querySelectorAll('.class-block');
+
+  if (!classButtons.length || !classBlocks.length) {
+    // Keep empty-state pages render-safe when there are no class records.
+  } else {
+    classButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetIndex = button.getAttribute('data-class-index');
+
+        // Remove active class from all buttons
+        classButtons.forEach(btn => btn.classList.remove('active'));
+
+        // Add active class to clicked button
+        button.classList.add('active');
+
+        // Hide all class blocks
+        classBlocks.forEach(block => block.classList.remove('active'));
+
+        // Show the selected class block
+        const targetBlock = document.querySelector(`.class-block[data-class-index="${targetIndex}"]`);
+        if (targetBlock) {
+          targetBlock.classList.add('active');
+        }
+      });
+    });
+  }
+</script>
+<%- include('../partials/studentShellEnd') -%>

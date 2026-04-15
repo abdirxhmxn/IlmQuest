@@ -1,0 +1,635 @@
+/*
+ * ============================================================
+ *  teacherAttendance.css
+ *  IlmQuest - Teacher Attendance Workspace
+ *
+ *  Sections:
+ *    1. Page Shell
+ *    2. Left Rail (Calendar + Info)
+ *    3. Attendance Board
+ *    4. Attendance Table
+ *    5. Status States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Page Shell */
+.teacher-attendance-page {
+  display: grid;
+  gap: 18px;
+}
+
+.attendance-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.attendance-page-heading {
+  display: grid;
+  gap: 8px;
+}
+
+.attendance-page-heading h1 {
+  margin: 0;
+  color: #15271d;
+  font-size: clamp(1.58rem, 1.26rem + 1vw, 2rem);
+  letter-spacing: -0.02em;
+}
+
+.attendance-page-heading p {
+  margin: 0;
+  color: #5d7267;
+  font-size: 0.95rem;
+}
+
+.attendance-class-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.attendance-class-tabs .class-btn {
+  min-height: 38px;
+  border-radius: 10px;
+  border-color: #d2ddd6;
+  background: #ffffff;
+  color: #173828;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.attendance-class-tabs .class-btn.active {
+  border-color: #9fc7b0;
+  background: #e8f4ec;
+  color: #1b6947;
+}
+
+.attendance-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.attendance-rail {
+  display: grid;
+  gap: 16px;
+}
+
+.attendance-calendar-card,
+.attendance-info-card,
+.attendance-board-card {
+  border: 1px solid #d5dfd8;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(13, 52, 38, 0.08);
+}
+
+/* 2. Left Rail (Calendar + Info) */
+.attendance-calendar-card {
+  padding: 14px;
+}
+
+.attendance-calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.attendance-calendar-head h2 {
+  margin: 0;
+  font-size: 1.03rem;
+  font-weight: 800;
+  color: #1a3428;
+}
+
+.calendar-nav-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d0ddd5;
+  border-radius: 9px;
+  background: #f6faf7;
+  color: #254537;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.calendar-nav-btn:hover {
+  border-color: #9ec8b2;
+  background: #e8f5ee;
+}
+
+.attendance-calendar-weekdays,
+.attendance-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.attendance-calendar-weekdays {
+  margin-bottom: 8px;
+}
+
+.attendance-calendar-weekdays span {
+  text-align: center;
+  color: #7d8f85;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.attendance-calendar-grid {
+  gap: 6px;
+}
+
+.calendar-empty,
+.calendar-day {
+  min-height: 34px;
+}
+
+.calendar-empty {
+  border-radius: 8px;
+}
+
+.calendar-day {
+  position: relative;
+  border: 1px solid #e3ebe6;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #1f352a;
+  font-size: 0.79rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-day:hover {
+  border-color: #9ec9b3;
+  background: #eef8f2;
+}
+
+.calendar-day.has-mark {
+  border-color: #b9dcca;
+}
+
+.calendar-day.is-selected {
+  border-color: #2e855f;
+  background: #e5f3eb;
+  color: #155139;
+  box-shadow: inset 0 0 0 1px rgba(46, 133, 95, 0.18);
+}
+
+.calendar-dot {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: transparent;
+  transform: translateX(-50%);
+}
+
+.calendar-day.has-mark .calendar-dot {
+  background: #3f9c70;
+}
+
+.month-buttons.attendance-month-buttons {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.attendance-month-buttons .months {
+  min-height: 32px;
+  min-width: 0;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+}
+
+.attendance-month-buttons .months.active-month {
+  border-color: #96c3aa;
+  background: #e9f5ee;
+  color: #1b6947;
+}
+
+.attendance-info-card {
+  padding: 16px;
+}
+
+.attendance-info-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #294437;
+}
+
+.attendance-info-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.attendance-info-item {
+  border-radius: 10px;
+  border: 1px solid #dce7df;
+  background: #f8fcf9;
+  padding: 9px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.attendance-info-item .label {
+  font-size: 0.7rem;
+  color: #6f8478;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.attendance-info-item strong {
+  font-size: 0.92rem;
+  color: #152f23;
+  line-height: 1.2;
+}
+
+/* 3. Attendance Board */
+.attendance-board-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.attendance-board-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e2ebe6;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(180deg, #ffffff, #f9fcfa);
+}
+
+.attendance-board-header h2 {
+  margin: 0;
+  color: #1a3428;
+  font-size: clamp(1.38rem, 1.12rem + 0.55vw, 1.74rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.attendance-board-header p {
+  margin: 6px 0 0;
+  color: #6a7f73;
+  font-size: 0.9rem;
+}
+
+.attendance-board-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.attendance-status-chip {
+  min-height: 30px;
+  border-radius: 999px;
+  border: 1px solid #f1d38d;
+  background: #fff5df;
+  color: #b07b14;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.attendance-download-btn {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid #acd0ba;
+  background: #eff8f3;
+  color: #245b42;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.attendance-download-btn:hover {
+  border-color: #8fbba3;
+  background: #e3f3ea;
+}
+
+.attendance-save-btn {
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid #2f8d5f;
+  background: #3b9f6e;
+  color: #f7fffb;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.attendance-save-btn:hover {
+  background: #2e855c;
+}
+
+.filter-bar.attendance-controls {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid #e4ece7;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 14px 16px;
+  background: #fbfdfc;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.attendance-controls .field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.attendance-controls .field label {
+  margin: 0;
+  font-size: 0.73rem;
+  color: #6b8073;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.attendance-controls .field select,
+.attendance-controls .field input[type="date"] {
+  min-height: 38px;
+  border: 1px solid #d3e0d8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #163629;
+  font-size: 0.86rem;
+}
+
+.attendance-controls .save-btn.attendance-inline-save {
+  display: none;
+  grid-column: 1 / -1;
+  min-width: 150px;
+  min-height: 39px;
+  border-radius: 10px;
+  justify-self: stretch;
+  align-self: end;
+  box-shadow: none;
+}
+
+.class-card.month-card {
+  margin: 14px 16px 16px;
+  border: 1px solid #dbe6df;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: none;
+  padding: 0;
+}
+
+.class-card.month-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2ebe6;
+  background: #f8fbf9;
+}
+
+.class-card.month-card > header h2 {
+  margin: 0;
+  color: #1d382b;
+  font-size: 0.98rem;
+}
+
+.class-card.month-card > header .meta {
+  margin: 0;
+  color: #6d8175;
+  font-size: 0.82rem;
+}
+
+/* 4. Attendance Table */
+.sheet-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.attendance-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.attendance-table th,
+.attendance-table td {
+  border-bottom: 1px solid #e8efea;
+  border-right: 1px solid #edf3ef;
+  padding: 8px 7px;
+  text-align: center;
+  white-space: nowrap;
+  min-width: 40px;
+  font-size: 0.76rem;
+}
+
+.attendance-table th {
+  background: #f2f7f3;
+  color: #6f8478;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.attendance-table td {
+  color: #385045;
+  background: #ffffff;
+}
+
+.attendance-table tbody tr:nth-child(even) td {
+  background: #fbfdfc;
+}
+
+.attendance-table tbody tr:hover td {
+  background: #f1f8f3;
+}
+
+.attendance-table th:last-child,
+.attendance-table td:last-child {
+  border-right: 0;
+}
+
+.student-id-cell {
+  min-width: 118px;
+  max-width: 118px;
+  text-align: left;
+  font-weight: 700;
+  color: #5f756a;
+  background: #f8fbf9;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.student-cell {
+  min-width: 185px;
+  max-width: 185px;
+  text-align: left;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #1e3b2d;
+  background: #f8fbf9;
+  position: sticky;
+  left: 118px;
+  z-index: 2;
+  box-shadow: 1px 0 0 #dfe9e3;
+}
+
+.attendance-table tbody tr:nth-child(even) .student-id-cell,
+.attendance-table tbody tr:nth-child(even) .student-cell {
+  background: #f4f9f6;
+}
+
+.attendance-table tbody tr:hover .student-id-cell,
+.attendance-table tbody tr:hover .student-cell {
+  background: #ecf6f0;
+}
+
+.status-cell {
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+}
+
+/* 5. Status States */
+.status-cell.present {
+  background: #ebf8ef;
+  color: #236746;
+}
+
+.status-cell.absent {
+  background: #fff2f1;
+  color: #a43c30;
+}
+
+.status-cell.late {
+  background: #fff6e6;
+  color: #986516;
+}
+
+.status-cell.excused {
+  background: #eff5ff;
+  color: #2b5ca0;
+}
+
+.status-cell.holiday,
+.status-cell.weather {
+  background: #f4f5f7;
+  color: #59626d;
+}
+
+/* 6. Responsive */
+@media (max-width: 1400px) {
+  .filter-bar.attendance-controls {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 1120px) {
+  .attendance-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 860px) {
+  .attendance-board-header {
+    flex-wrap: wrap;
+  }
+
+  .attendance-board-actions {
+    justify-content: flex-start;
+  }
+
+  .attendance-save-btn {
+    display: none;
+  }
+
+  .filter-bar.attendance-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .attendance-controls .save-btn.attendance-inline-save {
+    display: inline-flex;
+    width: 100%;
+  }
+
+  .month-buttons.attendance-month-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .attendance-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-calendar-card,
+  .attendance-info-card {
+    padding: 12px;
+  }
+
+  .attendance-board-header {
+    padding: 12px;
+  }
+
+  .filter-bar.attendance-controls {
+    padding: 12px;
+    grid-template-columns: 1fr;
+  }
+
+  .class-card.month-card {
+    margin: 12px;
+  }
+
+  .class-card.month-card > header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .attendance-table {
+    min-width: 860px;
+  }
+
+  .student-id-cell {
+    min-width: 102px;
+    max-width: 102px;
+  }
+
+  .student-cell {
+    min-width: 165px;
+    max-width: 165px;
+    left: 102px;
+  }
+}

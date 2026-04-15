@@ -1,0 +1,131 @@
+<%- include('../partials/studentShellStart', {
+  pageTitle: 'IlmQuest Student Library',
+  pageStyles: ['/css/pages/student-library.css'],
+  activePage: 'library',
+  user
+}) %>
+
+<%
+  const classRows = Array.isArray(classes) ? classes : [];
+  const updates = Array.isArray(studentAnnouncements) ? studentAnnouncements : [];
+  const resources = Array.isArray(studentLibraryResources) ? studentLibraryResources : [];
+  const summary = librarySummary || {};
+  const classCount = Number(summary.classCount || classRows.length || 0);
+  const teacherCount = Number(summary.teacherCount || 0);
+  const updateCount = Number(summary.updateCount || resources.length || 0);
+%>
+
+<section class="student-page-shell student-library-page">
+  <header class="student-page-header">
+    <div class="student-page-title">
+      <h1>My Library</h1>
+      <p>Access class reading, audio resources, and teacher-shared learning materials in one place.</p>
+    </div>
+    <div class="student-top-actions">
+      <a class="student-header-link" href="/student/home">Dashboard</a>
+      <a class="student-header-link" href="/student/missions">Missions</a>
+    </div>
+  </header>
+
+  <section class="student-library-grid">
+    <article class="student-card library-summary-card">
+      <p class="library-kicker">Enrollment</p>
+      <h2><%= classCount %> Class<%= classCount === 1 ? '' : 'es' %></h2>
+      <p><%= teacherCount %> teacher<%= teacherCount === 1 ? '' : 's' %> linked to your classes.</p>
+    </article>
+
+    <article class="student-card library-summary-card">
+      <p class="library-kicker">Updates</p>
+      <h2><%= updateCount %> Published</h2>
+      <p>Teacher-shared learning resources currently available for your classes.</p>
+    </article>
+  </section>
+
+  <% if (!classRows.length) { %>
+    <section class="student-card student-library-empty">
+      <h3>No Classes Linked Yet</h3>
+      <p>Your library unlocks after class enrollment. Once your class is assigned, teacher materials and reading resources will appear here automatically.</p>
+    </section>
+  <% } else if (!resources.length) { %>
+    <section class="student-card student-library-empty">
+      <h3>No Shared Materials Yet</h3>
+      <p>Your classes are active, but no library resources have been published yet. Check back soon or ask your teacher when resources will be posted.</p>
+    </section>
+  <% } else { %>
+    <section class="student-card student-library-empty">
+      <h3>Shared Materials Available</h3>
+      <p>Your classes have published updates and learning resources. Review the latest materials below.</p>
+    </section>
+  <% } %>
+
+  <% if (resources.length) { %>
+    <section class="student-card library-resources-card">
+      <h3>Class Library Resources</h3>
+      <ul class="library-resource-list">
+        <% resources.forEach((resource) => { %>
+          <li class="library-resource-item <%= resource.imageUrl ? 'has-media' : 'no-media' %>">
+            <% if (resource.imageUrl) { %>
+              <div class="library-resource-media">
+                <img src="<%= resource.imageUrl %>" alt="<%= resource.title %>" loading="lazy">
+              </div>
+            <% } %>
+            <div class="library-resource-content">
+              <strong><%= resource.title %></strong>
+              <p><%= resource.content || resource.summary || "" %></p>
+              <div class="library-resource-meta">
+                <span>By <%= resource.createdByName || "Teacher" %></span>
+                <% if (resource.classNames?.length) { %>
+                  <span>Class: <%= resource.classNames.join(", ") %></span>
+                <% } %>
+                <span>Published <%= resource.publishLabel || resource.createdAtLabel %></span>
+              </div>
+              <% if (resource.externalUrl) { %>
+                <a href="<%= resource.externalUrl %>" target="_blank" rel="noopener noreferrer">Open Resource Link</a>
+              <% } %>
+            </div>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  <% } %>
+
+  <% if (updates.length) { %>
+    <section class="student-card library-updates-card">
+      <h3>Recent School Updates</h3>
+      <ul class="library-update-list">
+        <% updates.slice(0, 4).forEach((update) => { %>
+          <li>
+            <strong><%= update.title %></strong>
+            <p><%= update.summary || update.content || '' %></p>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  <% } %>
+
+  <% if (classRows.length) { %>
+    <section class="student-card library-classes-card">
+      <h3>My Classes</h3>
+      <ul class="library-class-list">
+        <% classRows.forEach((classRow) => { %>
+          <li>
+            <div>
+              <strong><%= classRow.className %></strong>
+              <% if (classRow.classCode) { %>
+                <p>Class Code: <%= classRow.classCode %></p>
+              <% } %>
+            </div>
+            <p>
+              <%= classRow.teacherNames && classRow.teacherNames.length
+                ? `Teacher: ${classRow.teacherNames.join(', ')}`
+                : 'Teacher assignment pending'
+              %>
+            </p>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  <% } %>
+</section>
+
+<%- include('../partials/studentShellEnd') %>

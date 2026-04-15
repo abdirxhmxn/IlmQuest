@@ -1,0 +1,131 @@
+<%
+  const teacherActivePage = 'progress';
+  const teacherPageTitle = 'Student Progress Directory';
+  const teacherPageSubtitle = 'Browse students by class and open individual progress dashboards.';
+%>
+<%- include('../partials/teacherHeader') %>
+
+<link rel="stylesheet" href="/css/pages/teacher-student-directory.css">
+
+<%
+  const directoryData = directory || {};
+  const classGroups = Array.isArray(directoryData.classGroups) ? directoryData.classGroups : [];
+  const totalClasses = Number(directoryData.totalClasses || 0);
+  const totalStudents = Number(directoryData.totalStudents || 0);
+
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+%>
+
+<main class="teacher-main teacher-student-directory-page">
+  <section class="teacher-page-shell student-directory-shell">
+    <% if (successMessages.length > 0) { %>
+      <div class="flash-message success"><%= successMessages.join(' ') %></div>
+    <% } %>
+    <% if (errorMessages.length > 0) { %>
+      <div class="flash-message error"><%= errorMessages.join(' ') %></div>
+    <% } %>
+
+    <header class="teacher-page-hero directory-hero">
+      <div>
+        <h1>Student Progress Directory</h1>
+        <p>Classes and students are organized alphabetically for quick navigation and monitoring.</p>
+      </div>
+      <div class="directory-hero-metrics" aria-label="Directory summary">
+        <article>
+          <p class="metric-label">Classes</p>
+          <p class="metric-value"><%= totalClasses %></p>
+        </article>
+        <article>
+          <p class="metric-label">Students</p>
+          <p class="metric-value"><%= totalStudents %></p>
+        </article>
+      </div>
+    </header>
+
+    <% if (!classGroups.length) { %>
+      <section class="empty-state directory-empty-state">
+        <h2>No Students Found</h2>
+        <p>No students are currently assigned to your classes. This directory will populate automatically once students are enrolled.</p>
+      </section>
+    <% } else { %>
+      <% classGroups.forEach((group) => { %>
+        <section class="page-card directory-class-group" aria-label="<%= group.className %>">
+          <header class="directory-class-header">
+            <div>
+              <h2><%= group.className %></h2>
+              <p>
+                <% if (group.classCode) { %>
+                  Class code: <strong><%= group.classCode %></strong>
+                <% } else { %>
+                  Class group overview
+                <% } %>
+              </p>
+            </div>
+            <span class="directory-class-count"><%= Number(group.studentCount || 0) %> student<%= Number(group.studentCount || 0) === 1 ? '' : 's' %></span>
+          </header>
+
+          <% if (!Array.isArray(group.students) || group.students.length === 0) { %>
+            <div class="directory-class-empty">No students are currently listed in this class group.</div>
+          <% } else { %>
+            <div class="directory-student-grid">
+              <% group.students.forEach((student) => { %>
+                <article class="directory-student-card">
+                  <header class="directory-student-head">
+                    <div>
+                      <h3><%= student.fullName %></h3>
+                      <p><%= student.gradeLevel %> · <%= student.programType %></p>
+                    </div>
+                    <span class="status-chip status-<%= student.statusChip?.tone || 'neutral' %>"><%= student.statusChip?.label || 'In Progress' %></span>
+                  </header>
+
+                  <ul class="directory-student-metrics">
+                    <li>
+                      <span>Rank</span>
+                      <strong><%= student.rankLabel || 'F Rank' %></strong>
+                    </li>
+                    <li>
+                      <span>Total XP</span>
+                      <strong><%= Number(student.totalXP || 0).toLocaleString() %></strong>
+                    </li>
+                    <li>
+                      <span>Grade Avg</span>
+                      <strong><%= student.gradeAverageLabel || 'N/A' %></strong>
+                    </li>
+                    <li>
+                      <span>Attendance</span>
+                      <strong><%= student.attendanceRateLabel || 'N/A' %></strong>
+                    </li>
+                  </ul>
+
+                  <div class="directory-rank-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= Number(student.rankProgressPercent || 0) %>">
+                    <span style="width: <%= Math.max(0, Math.min(100, Number(student.rankProgressPercent || 0))) %>%;"></span>
+                  </div>
+                  <p class="directory-rank-copy">
+                    <%= student.rankProgressLabel || '0 / 0 XP' %>
+                    <% if (student.nextRankLabel) { %>
+                      · Next: <%= student.nextRankLabel %>
+                    <% } %>
+                  </p>
+
+                  <div class="directory-mission-row">
+                    <span class="status-chip status-assigned">Assigned <strong><%= Number(student.missions?.assigned || 0) %></strong></span>
+                    <span class="status-chip status-started">Active <strong><%= Number(student.missions?.active || 0) %></strong></span>
+                    <span class="status-chip status-completed">Completed <strong><%= Number(student.missions?.completed || 0) %></strong></span>
+                  </div>
+
+                  <a class="btn-outline directory-view-link" href="<%= student.detailHref %>">View Student</a>
+                </article>
+              <% }) %>
+            </div>
+          <% } %>
+        </section>
+      <% }) %>
+    <% } %>
+  </section>
+</main>
+
+<%- include('../partials/teacherFooter') %>

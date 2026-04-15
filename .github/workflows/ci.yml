@@ -1,22 +1,43 @@
-name: CI
+name: IlmQuest CI
 
 on:
   push:
-    branches: [main]
+    branches-ignore:
+      - main
   pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ilmquest-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  quality-gate:
+    name: quality-gate
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: iteration1
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
       NODE_ENV: test
       PORT: '8880'
-      SECURITY_TEST_BASE_URL: http://localhost:8880
-      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-      DB_STRING: ${{ secrets.DB_STRING_TEST }}
+      SECURITY_TEST_BASE_URL: http://127.0.0.1:8880
+      SESSION_SECRET: ci-session-secret
+      DB_STRING: mongodb://127.0.0.1:27017/ilmquest_ci?directConnection=true
+      ALLOW_TENANT_ADMIN_SCHOOL_CREATION: 'false'
+      CLOUDINARY_DEBUG: 'false'
 
     steps:
       - name: Checkout
@@ -32,6 +53,50 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Wait for MongoDB
+        run: |
+          node -e "const { MongoClient } = require('mongodb'); const uri = process.env.DB_STRING; const maxAttempts = 30; (async () => { for (let i = 1; i <= maxAttempts; i += 1) { try { const client = new MongoClient(uri); await client.connect(); await client.db().command({ ping: 1 }); await client.close(); console.log('MongoDB is reachable'); return; } catch (err) { if (i === maxAttempts) { console.error('MongoDB did not become reachable in time'); process.exit(1); } await new Promise((resolve) => setTimeout(resolve, 1000)); } } })();"
+
+      - name: Validate script syntax
+        run: |
+          node --check backend/server.js
+          node --check backend/routes/main.js
+          node --check backend/routes/posts.js
+          node --check backend/controllers/auth.js
+          node --check backend/controllers/home.js
+          node --check backend/controllers/posts.js
+          node --check backend/controllers/finance.js
+
+      - name: Run tenant helper checks
+        run: npm run test:tenant-helpers
+
+      - name: Run tenant query guard
+        run: npm run test:tenant-query-guard
+
+      - name: Run role authorization test
+        run: npm run test:role-authorization
+
+      - name: Run admin mutation checks
+        run: npm run test:admin-mutations
+
+      - name: Apply user indexes
+        run: npm run db:indexes:apply
+
+      - name: Apply core indexes
+        run: npm run db:indexes:core:apply
+
+      - name: Run tenant isolation test
+        run: npm run test:tenant-isolation
+
+      - name: Run attendance dedupe test
+        run: npm run test:attendance-dedupe
+
+      - name: Run password selection test
+        run: npm run test:password-selection
+
+      - name: Run user uniqueness test
+        run: npm run test:user-uniqueness
+
       - name: Start server
         run: |
           node backend/server.js > /tmp/ilmquest-server.log 2>&1 &
@@ -40,7 +105,7 @@ jobs:
       - name: Wait for server
         run: |
           for i in {1..30}; do
-            if curl -fsS http://localhost:8880/ >/dev/null; then
+            if curl -fsS http://127.0.0.1:8880/ >/dev/null; then
               echo "Server is reachable"
               exit 0
             fi
@@ -52,11 +117,11 @@ jobs:
       - name: Run CSRF security tests
         run: npm run security:test:csrf
 
-      - name: Run role authorization test
-        run: npm run test:role-authorization
-
-      - name: Run tenant isolation test
-        run: npm run test:tenant-isolation
+      - name: Show server logs on failure
+        if: failure()
+        run: |
+          echo "---- /tmp/ilmquest-server.log ----"
+          cat /tmp/ilmquest-server.log || true
 
       - name: Stop server
         if: always()

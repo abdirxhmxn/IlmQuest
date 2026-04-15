@@ -1,0 +1,144 @@
+<%- include('partials/header') -%>
+
+<link rel="stylesheet" href="/css/pages/auth-shell.css" />
+
+<main class="auth-page auth-page-login">
+  <section class="auth-layout" aria-labelledby="signin-title">
+    <%- include('partials/authBrandPanel', {
+      eyebrow: 'WELCOME BACK',
+      headingTop: 'Illuminate your',
+      headingAccent: 'path of knowledge',
+      supportingText: "Join thousands of students on their journey through Qur'an memorization, Islamic studies, and academic excellence."
+    }) %>
+
+    <section class="auth-form-panel">
+      <div class="auth-form-wrap">
+        <header class="auth-form-header">
+          <h1 id="signin-title">Welcome back</h1>
+          <p>Sign in to continue your learning</p>
+        </header>
+
+        <% if (messages && (messages.errors || messages.info || messages.success)) { %>
+          <div class="flash-messages" role="status" aria-live="polite">
+            <% if (messages.errors) { %>
+              <% messages.errors.forEach(msg => { %>
+                <div class="flash-message flash-error"><%= msg.msg %></div>
+              <% }) %>
+            <% } %>
+            <% if (messages.info) { %>
+              <% messages.info.forEach(msg => { %>
+                <div class="flash-message flash-info"><%= msg.msg %></div>
+              <% }) %>
+            <% } %>
+            <% if (messages.success) { %>
+              <% messages.success.forEach(msg => { %>
+                <div class="flash-message flash-info"><%= msg.msg %></div>
+              <% }) %>
+            <% } %>
+          </div>
+        <% } %>
+
+        <div class="auth-divider" role="presentation">
+          <span>Continue with your account</span>
+        </div>
+
+        <form action="/login" method="POST" class="auth-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+          <div class="form-group auth-field">
+            <label for="email" class="form-label auth-label">Email or Username</label>
+            <div class="auth-field-control">
+              <span class="auth-input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="auth-icon"><path d="M3 6h18v12H3z"></path><path d="m3 7 9 7 9-7"></path></svg>
+              </span>
+              <input
+                type="text"
+                id="email"
+                name="identifier"
+                class="form-input auth-input"
+                placeholder="you@example.com or username"
+                autocomplete="username"
+                data-login-identifier
+                required
+              />
+            </div>
+          </div>
+          <input type="hidden" name="email" data-login-identifier-alias />
+
+          <div class="form-group auth-field">
+            <label for="schoolName" class="form-label auth-label">School Name (Optional)</label>
+            <div class="auth-field-control">
+              <span class="auth-input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="auth-icon"><path d="M4 8h16v11H4z"></path><path d="M2 8 12 3l10 5"></path><path d="M8 12v4"></path><path d="M12 12v4"></path><path d="M16 12v4"></path></svg>
+              </span>
+              <input
+                type="text"
+                id="schoolName"
+                name="schoolName"
+                class="form-input auth-input"
+                placeholder="Only needed if your username/email is shared"
+                autocomplete="organization"
+              />
+            </div>
+          </div>
+
+          <div class="form-group auth-field">
+            <div class="password-group auth-field-top">
+              <label for="password" class="form-label auth-label">Password</label>
+              <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+            </div>
+            <div class="auth-field-control has-trailing-icon">
+              <span class="auth-input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="auth-icon"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3"></path></svg>
+              </span>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-input auth-input"
+                placeholder="********"
+                autocomplete="current-password"
+                required
+              />
+              <span class="auth-input-trailing" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="auth-icon"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </span>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn auth-submit">
+            Sign In
+            <svg viewBox="0 0 24 24" class="auth-icon" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+          </button>
+        </form>
+
+        <p class="auth-switch-link">
+          Need access to a school workspace?
+          <span>Contact your school administrator or IlmQuest platform support.</span>
+        </p>
+
+        <p class="auth-copyright">&copy; <%= new Date().getFullYear() %> IlmQuest. All rights reserved.</p>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script>
+  (function syncLegacyEmailField() {
+    const form = document.querySelector(".auth-form");
+    if (!form) return;
+    const identifierInput = form.querySelector("[data-login-identifier]");
+    const legacyEmailAlias = form.querySelector("[data-login-identifier-alias]");
+    if (!identifierInput || !legacyEmailAlias) return;
+
+    const sync = () => {
+      legacyEmailAlias.value = String(identifierInput.value || "").trim();
+    };
+
+    identifierInput.addEventListener("input", sync);
+    form.addEventListener("submit", sync);
+    sync();
+  })();
+</script>
+
+<%- include('partials/footer') -%>

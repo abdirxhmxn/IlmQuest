@@ -1,0 +1,594 @@
+/*
+ * ============================================================
+ *  parent-shell.css
+ *  IlmQuest - Parent Shell + Shared Parent Surface System
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. App Shell
+ *    4. Sidebar
+ *    5. Main + Header
+ *    6. Shared Parent Components
+ *    7. Responsive
+ * ============================================================
+ */
+
+:root {
+  color-scheme: light;
+
+  --parent-canvas: #e7dfd3;
+  --parent-shell-bg: #efe8dc;
+  --parent-surface: #ffffff;
+  --parent-surface-soft: #f7faf8;
+  --parent-border: #d6ded8;
+  --parent-border-strong: #c5d3ca;
+
+  --parent-text-main: #11261d;
+  --parent-text-muted: #5b7166;
+  --parent-text-soft: #7a8f84;
+
+  --parent-sidebar-bg: #0f4f40;
+  --parent-sidebar-bg-soft: #0b3f33;
+  --parent-sidebar-line: rgba(130, 188, 164, 0.3);
+  --parent-sidebar-text: #e3f4eb;
+  --parent-sidebar-muted: #a9c8ba;
+  --parent-sidebar-active-bg: rgba(83, 207, 151, 0.2);
+  --parent-sidebar-active-line: rgba(111, 225, 174, 0.42);
+  --parent-sidebar-active-text: #b6f6d8;
+
+  --parent-accent: #1f7852;
+  --parent-accent-hover: #185f41;
+  --parent-accent-soft: #e8f6ee;
+
+  --parent-radius-xl: 16px;
+  --parent-radius-lg: 12px;
+  --parent-radius-md: 10px;
+  --parent-radius-sm: 8px;
+
+  --parent-shadow-sm: 0 8px 24px rgba(9, 39, 28, 0.08);
+  --parent-shadow-md: 0 18px 36px rgba(9, 39, 28, 0.16);
+
+  --parent-shell-pad-x: clamp(12px, 1.5vw, 22px);
+  --parent-shell-pad-y: clamp(12px, 1.6vw, 20px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  background: var(--parent-canvas);
+  color: var(--parent-text-main);
+  overflow: hidden;
+}
+
+a {
+  color: inherit;
+}
+
+/* 3. App Shell */
+.parent-app-shell {
+  width: calc(100% - 16px);
+  height: calc(100dvh - 16px);
+  min-height: 0;
+  margin: 8px;
+  border-radius: 18px;
+  border: 1px solid var(--parent-border);
+  overflow: hidden;
+  background: var(--parent-shell-bg);
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  transition: grid-template-columns 0.24s ease;
+}
+
+.parent-app-shell.parent-sidebar-collapsed {
+  grid-template-columns: 88px minmax(0, 1fr);
+}
+
+.parent-main {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--parent-shell-pad-y) var(--parent-shell-pad-x);
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  background: var(--parent-shell-bg);
+}
+
+/* 4. Sidebar */
+.parent-sidebar {
+  min-height: 0;
+  background: linear-gradient(180deg, var(--parent-sidebar-bg-soft) 0%, var(--parent-sidebar-bg) 45%, var(--parent-sidebar-bg) 100%);
+  border-right: 1px solid var(--parent-sidebar-line);
+  color: var(--parent-sidebar-text);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px 10px;
+}
+
+.parent-sidebar-brand {
+  width: 100%;
+  min-height: 68px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--parent-sidebar-line);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.parent-sidebar-brand:hover {
+  background: rgba(121, 177, 155, 0.14);
+  border-color: rgba(134, 189, 166, 0.26);
+}
+
+.parent-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #f0fdff;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.parent-brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.parent-brand-name {
+  margin: 0;
+  color: #f6fcf9;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.parent-brand-role {
+  margin: 3px 0 0;
+  color: var(--parent-sidebar-muted);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.parent-sidebar-nav {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 4px 2px;
+}
+
+.parent-sidebar-link {
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--parent-sidebar-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.parent-sidebar-link:hover {
+  background: rgba(146, 171, 188, 0.12);
+}
+
+.parent-sidebar-link.active {
+  background: var(--parent-sidebar-active-bg);
+  border-color: var(--parent-sidebar-active-line);
+  color: var(--parent-sidebar-active-text);
+}
+
+.parent-sidebar-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.parent-sidebar-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.parent-sidebar-profile {
+  border-top: 1px solid var(--parent-sidebar-line);
+  border-radius: 10px;
+  padding: 10px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.parent-sidebar-profile:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.parent-profile-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #2f8169;
+  background: #195f4e;
+  color: #cdf5e4;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.parent-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.parent-profile-meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.parent-profile-name {
+  margin: 0;
+  color: #f4fbf8;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.parent-profile-role {
+  margin: 0;
+  color: #95c3b0;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.parent-profile-email {
+  margin: 0;
+  color: var(--parent-sidebar-muted);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.parent-app-shell.parent-sidebar-collapsed .parent-sidebar-brand,
+.parent-app-shell.parent-sidebar-collapsed .parent-sidebar-link,
+.parent-app-shell.parent-sidebar-collapsed .parent-sidebar-profile {
+  justify-content: center;
+}
+
+.parent-app-shell.parent-sidebar-collapsed .parent-brand-name,
+.parent-app-shell.parent-sidebar-collapsed .parent-brand-role,
+.parent-app-shell.parent-sidebar-collapsed .parent-sidebar-link span:last-child,
+.parent-app-shell.parent-sidebar-collapsed .parent-profile-name,
+.parent-app-shell.parent-sidebar-collapsed .parent-profile-role,
+.parent-app-shell.parent-sidebar-collapsed .parent-profile-email {
+  display: none;
+}
+
+.parent-app-shell.parent-sidebar-collapsed .parent-sidebar-link {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.parent-sidebar-scrim {
+  display: none;
+}
+
+/* 5. Main + Header */
+.parent-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid rgba(126, 184, 161, 0.34);
+  border-radius: var(--parent-radius-lg);
+  background: linear-gradient(180deg, rgba(11, 63, 51, 0.96) 0%, rgba(15, 79, 64, 0.94) 100%);
+  color: #e6f4ed;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.parent-sidebar-toggle {
+  min-height: 36px;
+  border: 1px solid rgba(132, 188, 164, 0.42);
+  border-radius: 10px;
+  background: rgba(4, 31, 25, 0.4);
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.parent-sidebar-toggle:hover {
+  border-color: rgba(162, 205, 184, 0.62);
+}
+
+.parent-page-title h1 {
+  margin: 0;
+  color: #f5fcf8;
+  font-size: clamp(1.2rem, 1.05rem + 0.6vw, 1.52rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+
+.parent-page-title p {
+  margin: 5px 0 0;
+  color: #b3d4c6;
+  font-size: 0.84rem;
+}
+
+.parent-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.parent-action-link {
+  min-height: 34px;
+  border: 1px solid rgba(132, 188, 164, 0.4);
+  border-radius: 10px;
+  background: rgba(4, 31, 25, 0.4);
+  color: #e6f4ed;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.parent-action-link:hover {
+  border-color: rgba(162, 205, 184, 0.62);
+}
+
+.parent-header-user {
+  min-height: 36px;
+  border: 1px solid rgba(132, 188, 164, 0.42);
+  border-radius: 10px;
+  background: rgba(4, 31, 25, 0.4);
+  color: #e7f4ee;
+  text-decoration: none;
+  padding: 6px 10px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.parent-header-user-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.parent-header-user-role {
+  color: #adcfc1;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* 6. Shared Parent Components */
+.parent-card {
+  border: 1px solid var(--parent-border);
+  border-radius: var(--parent-radius-lg);
+  background: var(--parent-surface);
+  box-shadow: var(--parent-shadow-sm);
+}
+
+.parent-empty-state {
+  border: 1px dashed var(--parent-border);
+  border-radius: 10px;
+  padding: 14px;
+  color: var(--parent-text-muted);
+  background: var(--parent-surface-soft);
+  font-size: 0.9rem;
+}
+
+.parent-flash {
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.parent-flash-success {
+  color: #1e5f3f;
+  background: #edf8f1;
+  border-color: #b8ddc6;
+}
+
+.parent-flash-error {
+  color: #8b1f2b;
+  background: #fef2f2;
+  border-color: #f5c2c7;
+}
+
+.parent-page-shell {
+  width: min(1460px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.parent-main > .profile-hub.profile-shell-mode {
+  width: min(1460px, 100%);
+  margin: 0 auto;
+  gap: 12px;
+}
+
+.parent-shell-grid,
+.parent-shell-grid-2 {
+  display: grid;
+  gap: 12px;
+}
+
+.parent-shell-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #2f7f5a;
+  outline-offset: 2px;
+}
+
+/* 7. Responsive */
+@media (max-width: 1260px) {
+  .parent-page-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .parent-header-user {
+    display: none;
+  }
+}
+
+@media (max-width: 1080px) {
+  .parent-app-shell {
+    width: 100%;
+    height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    border: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .parent-sidebar {
+    position: fixed;
+    z-index: 50;
+    inset: 10px auto 10px 10px;
+    width: min(300px, calc(100% - 20px));
+    border-radius: 14px;
+    border: 1px solid var(--parent-sidebar-line);
+    transform: translateX(calc(-100% + 58px));
+    transition: transform 0.22s ease;
+    box-shadow: var(--parent-shadow-md);
+  }
+
+  .parent-app-shell.parent-sidebar-open .parent-sidebar {
+    transform: translateX(0);
+  }
+
+  .parent-sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: rgba(4, 16, 13, 0.58);
+    z-index: 38;
+  }
+
+  .parent-app-shell.parent-sidebar-open .parent-sidebar-scrim {
+    display: block;
+  }
+
+  .parent-main {
+    --parent-shell-pad-x: 10px;
+    --parent-shell-pad-y: 10px;
+  }
+
+  .parent-page-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .parent-top-actions {
+    grid-column: 1 / -1;
+  }
+
+  .parent-shell-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .parent-page-header {
+    grid-template-columns: auto 1fr;
+  }
+
+  .parent-page-title {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+
+  .parent-sidebar-toggle {
+    min-height: 34px;
+    padding-inline: 9px;
+  }
+
+  .parent-action-link {
+    min-height: 33px;
+    font-size: 0.78rem;
+  }
+}

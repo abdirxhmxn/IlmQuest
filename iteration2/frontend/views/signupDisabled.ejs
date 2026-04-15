@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title || "Signup Disabled" %></title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/signup-disabled.css" />
+</head>
+<body class="signup-disabled-page">
+  <main class="disabled-shell">
+    <section class="disabled-card" role="status" aria-live="polite">
+      <h1>School Signup Is Disabled</h1>
+      <p><%= message || "Public school signup is not available." %></p>
+      <div class="disabled-actions">
+        <a class="disabled-link primary" href="/login">Go To Login</a>
+        <a class="disabled-link" href="/">Return Home</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

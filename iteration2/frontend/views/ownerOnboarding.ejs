@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title || "Owner Onboarding" %></title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/auth-shell.css" />
+  <link rel="stylesheet" href="/css/pages/owner-onboarding.css" />
+</head>
+<body class="owner-onboarding-page">
+  <main class="auth-page auth-page-login">
+    <section class="auth-layout owner-onboarding-layout" aria-labelledby="owner-onboarding-title">
+      <section class="auth-form-panel owner-onboarding-panel">
+        <div class="auth-form-wrap">
+          <header class="auth-form-header">
+            <p class="owner-badge">School Owner Setup</p>
+            <h1 id="owner-onboarding-title">Complete Your School Workspace</h1>
+            <p>
+              <strong><%= school.schoolName %></strong>
+              <% if (school.schoolEmail) { %>
+                · <%= school.schoolEmail %>
+              <% } %>
+            </p>
+          </header>
+
+          <% if (messages && (messages.errors || messages.info || messages.success)) { %>
+            <div class="flash-messages" role="status" aria-live="polite">
+              <% if (messages.errors) { messages.errors.forEach((entry) => { %>
+                <div class="flash-message flash-error"><%= entry.msg %></div>
+              <% }) } %>
+              <% if (messages.info) { messages.info.forEach((entry) => { %>
+                <div class="flash-message flash-info"><%= entry.msg || entry %></div>
+              <% }) } %>
+              <% if (messages.success) { messages.success.forEach((entry) => { %>
+                <div class="flash-message flash-info"><%= entry.msg || entry %></div>
+              <% }) } %>
+            </div>
+          <% } %>
+
+          <div class="owner-summary">
+            <p><strong>Owner Email:</strong> <%= owner.email %></p>
+            <p><strong>Invite Expires:</strong> <%= owner.expiresAt ? new Date(owner.expiresAt).toLocaleString() : "Soon" %></p>
+          </div>
+
+          <form action="/owner-onboarding/<%= token %>" method="POST" class="auth-form owner-onboarding-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+            <div class="auth-field-grid">
+              <div class="form-group auth-field split-col">
+                <label for="firstName" class="form-label auth-label">First Name</label>
+                <input id="firstName" name="firstName" class="form-input auth-input" type="text" value="<%= owner.fullName.split(' ')[0] || '' %>" required />
+              </div>
+              <div class="form-group auth-field split-col">
+                <label for="lastName" class="form-label auth-label">Last Name</label>
+                <input id="lastName" name="lastName" class="form-input auth-input" type="text" value="<%= owner.fullName.split(' ').slice(1).join(' ') || '' %>" />
+              </div>
+            </div>
+
+            <div class="form-group auth-field">
+              <label for="userName" class="form-label auth-label">Username</label>
+              <input id="userName" name="userName" class="form-input auth-input" type="text" value="<%= owner.userName || '' %>" required />
+            </div>
+
+            <div class="auth-field-grid">
+              <div class="form-group auth-field split-col">
+                <label for="password" class="form-label auth-label">New Password</label>
+                <input id="password" name="password" class="form-input auth-input" type="password" autocomplete="new-password" required />
+              </div>
+              <div class="form-group auth-field split-col">
+                <label for="confirmPassword" class="form-label auth-label">Confirm Password</label>
+                <input id="confirmPassword" name="confirmPassword" class="form-input auth-input" type="password" autocomplete="new-password" required />
+              </div>
+            </div>
+
+            <button type="submit" class="submit-btn auth-submit">
+              Activate School Owner Account
+            </button>
+          </form>
+
+          <p class="auth-switch-link">
+            Already completed setup?
+            <a href="/login">Sign in</a>
+          </p>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

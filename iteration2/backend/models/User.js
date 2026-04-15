@@ -1,0 +1,269 @@
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const {
+  normalizeEmail,
+  normalizeUserName,
+  deriveUserNameCandidate,
+  normalizeIdentifier,
+  normalizeStudentNumber
+} = require("../utils/userIdentifiers");
+
+const StudentParentLinkSchema = new mongoose.Schema(
+  {
+    parentID: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    parentName: { type: String, trim: true, default: "" },
+    relationship: {
+      type: String,
+      enum: ["Mother", "Father", "Guardian", "Other"],
+      default: "Guardian"
+    },
+    linkedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
+const ParentChildLinkSchema = new mongoose.Schema(
+  {
+    childID: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    childName: { type: String, trim: true, default: "" },
+    relationship: {
+      type: String,
+      enum: ["Mother", "Father", "Guardian", "Other"],
+      default: "Guardian"
+    },
+    linkedAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
+const ParentBillingProfileSchema = new mongoose.Schema(
+  {
+    monthlyTuitionAmount: { type: Number, default: 0, min: 0 },
+    billingDayOfMonth: { type: Number, default: 1, min: 1, max: 28 },
+    currency: { type: String, trim: true, default: "USD" }
+  },
+  { _id: false }
+);
+
+//
+// Main User Schema
+//
+const UserSchema = new mongoose.Schema({
+  schoolId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "School",
+    required: function requiredSchoolId() {
+      return this.role !== "superAdmin";
+    },
+    default: null,
+    index: true
+  },
+
+  // Login
+  userName: { type: String, required: true, trim: true },
+  userNameNormalized: { type: String, default: undefined },
+  email: { type: String, required: true, lowercase: true, trim: true },
+  emailNormalized: { type: String, default: undefined },
+  password: { type: String, required: true, select: false },
+
+  // Role
+  role: {
+    type: String,
+    enum: ["superAdmin", "admin", "teacher", "parent", "student"],
+    default: "student"
+  },
+  isSchoolOwner: { type: Boolean, default: false },
+
+  // Profile info
+  firstName: { type: String, trim: true },
+  lastName: { type: String, trim: true },
+  DOB: { type: Date },
+  gender: {
+    type: String,
+    enum: ["male", "female", "other"], 
+  },
+  profileImage: { type: String },
+  profileImageCloudinaryId: { type: String, trim: true, default: "" },
+
+  // STUDENT INFO
+  studentInfo: {
+    enrollmentDate: { type: Date, default: Date.now },
+    gradeLevel: {
+      type: String,
+      enum: ["Prep 1", "Prep 2", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"]
+    },
+    programType: {
+      type: String,
+      enum: ["Tahfiidth", "Khatm"],
+      default: "Khatm"
+    },
+    classId: { type: mongoose.Schema.Types.ObjectId, ref: "Class" },
+    studentNumber: { type: Number },
+    parents: { type: [StudentParentLinkSchema], default: [] }
+  },
+  studentNumberNormalized: { type: String, default: undefined },
+  // TEACHER INFO
+  teacherInfo: {
+    employeeId: { type: String },
+    hireDate: { type: Date },
+    classes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Class" }],
+    subjects: [{ type: String }]
+  },
+  parentInfo: {
+    children: { type: [ParentChildLinkSchema], default: [] },
+    billingProfile: { type: ParentBillingProfileSchema, default: () => ({}) }
+  },
+  employeeIdNormalized: { type: String, default: undefined },
+
+  // GAMIFICATION
+  xp: { type: Number, default: 0, min: 0 },
+  points: { type: Number, default: 0, min: 0 },
+  rank: {
+    type: String,
+    enum: ["F", "E", "D", "C", "B", "A", "S"],
+    default: "F"
+  },
+  manualRank: {
+    type: String,
+    enum: ["F", "E", "D", "C", "B", "A", "S"],
+    default: undefined
+  },
+  rankOverrideEnabled: { type: Boolean, default: false },
+  rankOverrideReason: { type: String, trim: true, default: "" },
+  rankOverrideSetBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  rankOverrideSetAt: { type: Date, default: null },
+  mustChangePassword: { type: Boolean, default: false },
+  isFirstLogin: { type: Boolean, default: false },
+  temporaryPasswordIssued: { type: Boolean, default: false },
+  passwordChangedAt: { type: Date, default: null },
+  ownerInviteTokenHash: { type: String, default: null, select: false, index: true },
+  ownerInviteExpiresAt: { type: Date, default: null, select: false },
+  ownerInviteSentAt: { type: Date, default: null },
+  ownerOnboardingCompletedAt: { type: Date, default: null },
+  resetPasswordTokenHash: { type: String, default: null, select: false, index: true },
+  resetPasswordExpiresAt: { type: Date, default: null, select: false },
+  deletedAt: { type: Date, default: null, index: true },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
+
+}, { timestamps: true });
+
+UserSchema.index({ schoolId: 1, userNameNormalized: 1, deletedAt: 1 });
+UserSchema.index({ emailNormalized: 1, deletedAt: 1 });
+UserSchema.index({ schoolId: 1, role: 1, deletedAt: 1, createdAt: -1 });
+UserSchema.index({ schoolId: 1, "studentInfo.classId": 1, role: 1, deletedAt: 1 });
+UserSchema.index({ schoolId: 1, "parentInfo.children.childID": 1, role: 1, deletedAt: 1 });
+UserSchema.index({ schoolId: 1, "studentInfo.parents.parentID": 1, role: 1, deletedAt: 1 });
+UserSchema.index(
+  { schoolId: 1, userNameNormalized: 1 },
+  {
+    name: "school_username_active_unique",
+    unique: true,
+    partialFilterExpression: {
+      deletedAt: null,
+      userNameNormalized: { $type: "string", $gt: "" }
+    }
+  }
+);
+UserSchema.index(
+  { schoolId: 1, emailNormalized: 1 },
+  {
+    name: "school_email_active_unique",
+    unique: true,
+    partialFilterExpression: {
+      deletedAt: null,
+      emailNormalized: { $type: "string", $gt: "" }
+    }
+  }
+);
+UserSchema.index(
+  { schoolId: 1, employeeIdNormalized: 1 },
+  {
+    name: "school_employee_active_unique",
+    unique: true,
+    partialFilterExpression: {
+      deletedAt: null,
+      employeeIdNormalized: { $type: "string", $gt: "" }
+    }
+  }
+);
+UserSchema.index(
+  { schoolId: 1, studentNumberNormalized: 1 },
+  {
+    name: "school_student_number_active_unique",
+    unique: true,
+    partialFilterExpression: {
+      deletedAt: null,
+      studentNumberNormalized: { $type: "string", $gt: "" }
+    }
+  }
+);
+UserSchema.index(
+  { role: 1, userNameNormalized: 1 },
+  {
+    name: "platform_superadmin_username_unique",
+    unique: true,
+    partialFilterExpression: {
+      deletedAt: null,
+      role: "superAdmin",
+      userNameNormalized: { $type: "string", $gt: "" }
+    }
+  }
+);
+UserSchema.index(
+  { role: 1, emailNormalized: 1 },
+  {
+    name: "platform_superadmin_email_unique",
+    unique: true,
+    partialFilterExpression: {
+      deletedAt: null,
+      role: "superAdmin",
+      emailNormalized: { $type: "string", $gt: "" }
+    }
+  }
+);
+
+
+//
+// PASSWORD LOGIC
+//
+UserSchema.pre("validate", function (next) {
+  const normalizedUserName = deriveUserNameCandidate({
+    preferred: this.userName,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    email: this.email
+  });
+  this.userName = normalizeUserName(normalizedUserName) || "user";
+  this.userNameNormalized = this.userName || undefined;
+
+  this.email = normalizeEmail(this.email);
+  this.emailNormalized = this.email || undefined;
+  this.employeeIdNormalized = normalizeIdentifier(this.teacherInfo?.employeeId) || undefined;
+  this.studentNumberNormalized = normalizeStudentNumber(this.studentInfo?.studentNumber) || undefined;
+  if (this.role === "student") {
+    const xpParsed = Number(this.xp);
+    const pointsParsed = Number(this.points);
+    const hasXp = Number.isFinite(xpParsed);
+    const hasPoints = Number.isFinite(pointsParsed);
+    const resolvedXp = hasXp
+      ? Math.max(0, Math.floor(xpParsed))
+      : hasPoints
+        ? Math.max(0, Math.floor(pointsParsed))
+        : 0;
+    this.xp = resolvedXp;
+    this.points = resolvedXp;
+  }
+  next();
+});
+
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+UserSchema.methods.comparePassword = function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+module.exports = mongoose.model("User", UserSchema);

@@ -1,0 +1,32 @@
+/*
+ * ============================================================
+ *  admin-users.css
+ *  IlmQuest - Legacy Alias for Admin Users Page Styles
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+/* Delegated to canonical page stylesheet. */
+
+/* 2. Base */
+@import url("./pages/admin-users.css");
+
+/* 3. Layout */
+/* Delegated. */
+
+/* 4. Components */
+/* Delegated. */
+
+/* 5. States */
+/* Delegated. */
+
+/* 6. Responsive */
+/* Delegated. */

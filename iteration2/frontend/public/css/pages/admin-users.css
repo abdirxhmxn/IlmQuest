@@ -1,0 +1,342 @@
+/*
+ * ============================================================
+ *  admin-users.css
+ *  IlmQuest - Admin User Management Forms, Utilities, and Tables
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+.users-page {
+  display: grid;
+  gap: 14px;
+}
+
+.users-layout {
+  align-items: start;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+#parentForm {
+  grid-column: span 2;
+}
+
+.card form {
+  display: grid;
+  gap: 11px;
+  padding: 14px 16px 16px;
+}
+
+.card-header {
+  margin: 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.required::after {
+  content: " *";
+  color: #b42318;
+}
+
+.student-picker {
+  display: grid;
+  gap: 7px;
+}
+
+.student-picker-search {
+  min-height: 38px;
+}
+
+.student-picker-list {
+  border: 1px solid #dce4ef;
+  border-radius: 10px;
+  padding: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+  background: #f7fafc;
+}
+
+.student-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #dde6f0;
+  border-radius: 9px;
+  padding: 8px;
+  background: #fff;
+}
+
+.student-option input {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+}
+
+.student-option-main {
+  font-size: 0.84rem;
+  font-weight: 760;
+  color: #1a2b41;
+}
+
+.student-option-meta {
+  grid-column: 2;
+  color: #6b7e96;
+  font-size: 0.76rem;
+}
+
+.picker-empty {
+  margin: 0;
+  color: #657890;
+  font-size: 0.84rem;
+}
+
+.student-option.hidden-option {
+  display: none;
+}
+
+.users-utility-card {
+  overflow: hidden;
+}
+
+.users-role-bars {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.users-role-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  color: #2f445d;
+  font-size: 0.84rem;
+}
+
+.users-role-row strong {
+  color: #142338;
+}
+
+.users-tips-list {
+  margin: 0;
+  padding: 12px 14px 16px 30px;
+  display: grid;
+  gap: 8px;
+  color: #4f6077;
+  font-size: 0.84rem;
+}
+
+.users-table-panel {
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.table-wrap {
+  padding: 12px;
+}
+
+#studentTable {
+  min-width: 1580px;
+}
+
+#teacherTable {
+  min-width: 980px;
+}
+
+#parentTable {
+  min-width: 1120px;
+}
+
+.action-cell {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.student-rank-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  border-radius: 999px;
+  border: 1px solid #bad9c7;
+  background: #ebf6ef;
+  color: #1f6644;
+  font-size: 0.74rem;
+  font-weight: 780;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.student-rank-chip.manual {
+  border-color: #e8d48d;
+  background: #fff8e1;
+  color: #8a6211;
+}
+
+.student-rank-progress {
+  min-width: 210px;
+  display: grid;
+  gap: 4px;
+}
+
+.student-rank-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #40576d;
+  font-size: 0.72rem;
+}
+
+.student-rank-progress-track {
+  height: 7px;
+  border-radius: 999px;
+  background: #dbe7f0;
+  overflow: hidden;
+}
+
+.student-rank-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f8b60, #4fb482);
+}
+
+.student-rank-progress small {
+  color: #60758b;
+  font-size: 0.68rem;
+}
+
+.inline-avatar-form {
+  margin: 0;
+  display: inline-flex;
+  gap: 0;
+}
+
+.action-btn-avatar {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.action-btn-avatar input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.action-btn-avatar-remove {
+  border-color: #e5c7c7;
+  color: #b42318;
+}
+
+.action-btn-avatar-remove:hover {
+  border-color: #d5aaaa;
+  background: #fff5f5;
+}
+
+.row-edit-inputs,
+.cell-edit {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.row-split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field-error,
+.inline-error {
+  color: #b42318;
+  font-size: 0.78rem;
+}
+
+.dialog-copy {
+  margin: 0.4rem 0 0.7rem;
+  color: #5f6e84;
+  font-size: 0.87rem;
+}
+
+.dialog-label {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 0.83rem;
+}
+
+#parentChildrenError {
+  margin: 0.6rem 0 0;
+  min-height: 14px;
+}
+
+@media (max-width: 1280px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #parentForm {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 1024px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-cell {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 320px) {
+  .table-wrap {
+    padding: 10px;
+  }
+}

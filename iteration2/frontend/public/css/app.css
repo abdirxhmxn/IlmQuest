@@ -1,0 +1,54 @@
+/*
+ * ============================================================
+ *  app.css
+ *  IlmQuest - Legacy Base Entry Point (Delegates to base.css)
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+/* Delegated to base.css. */
+
+/* 2. Base */
+@import url("./base.css");
+
+/* 3. Layout */
+/* Kept for backward compatibility with existing utility usage. */
+.mt-0 { margin-top: 0; }
+.mt-2 { margin-top: var(--space-2); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
+.mb-0 { margin-bottom: 0; }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+
+/* 4. Components */
+.logo-img-auth {
+  width: 82px;
+  height: 82px;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-4);
+}
+
+/* 5. States */
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+/* 6. Responsive */
+@media (max-width: 768px) {
+  .logo-img-auth {
+    width: 76px;
+    height: 76px;
+  }
+}

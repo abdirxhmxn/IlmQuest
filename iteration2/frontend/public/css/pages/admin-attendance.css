@@ -1,0 +1,261 @@
+/*
+ * ============================================================
+ *  admin-attendance.css
+ *  IlmQuest - Page Styles
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+.attendance-page {
+  display: grid;
+  gap: 18px;
+}
+
+.attendance-header-actions {
+  margin-left: auto;
+}
+
+.attendance-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 15px;
+  border-radius: 8px;
+  border: 1px solid #54a66d;
+  background: #54a66d;
+  color: #f6fff9;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.attendance-create-btn:hover {
+  background: #478c5d;
+  border-color: #478c5d;
+}
+
+.attendance-create-btn-plus {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.attendance-group {
+  display: grid;
+  gap: 10px;
+}
+
+.attendance-group-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: #7c8aa0;
+}
+
+.attendance-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid #d6dee8;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 14px 14px 13px;
+}
+
+.attendance-card-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.attendance-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attendance-card-title-row h3 {
+  margin: 0;
+  font-size: 1.13rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #202a39;
+}
+
+.attendance-card-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: #6f8096;
+}
+
+.attendance-card-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.attendance-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.chip-class {
+  background: #ecf5ec;
+  color: #4d8f63;
+}
+
+.chip-tone.tone-success {
+  background: #e9f6ed;
+  color: #2f7d4a;
+}
+
+.chip-tone.tone-warning {
+  background: #fff4df;
+  color: #a16711;
+}
+
+.chip-tone.tone-critical {
+  background: #ffeceb;
+  color: #b33a33;
+}
+
+.chip-tone.tone-neutral {
+  background: #f2f5f9;
+  color: #6a7b90;
+}
+
+.attendance-card-detail {
+  margin: 6px 0 0;
+  color: #708198;
+  line-height: 1.35;
+}
+
+.attendance-card-meta {
+  margin: 8px 0 0;
+  color: #8a9ab0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}
+
+.attendance-card-meta-sep {
+  color: #a0adbe;
+}
+
+.attendance-card-status {
+  color: #be8b2e;
+  font-weight: 700;
+}
+
+.attendance-card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: #a6b3c3;
+  margin-top: 2px;
+}
+
+.attendance-card-action svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.attendance-card.tone-success {
+  border-left: 4px solid #58a76e;
+}
+
+.attendance-card.tone-success .attendance-card-icon {
+  color: #58a76e;
+}
+
+.attendance-card.tone-warning {
+  border-left: 4px solid #e4a343;
+}
+
+.attendance-card.tone-warning .attendance-card-icon {
+  color: #e4a343;
+}
+
+.attendance-card.tone-critical {
+  border-left: 4px solid #e05a53;
+}
+
+.attendance-card.tone-critical .attendance-card-icon {
+  color: #e05a53;
+}
+
+.attendance-card.tone-neutral {
+  border-left: 4px solid #9baac0;
+}
+
+.attendance-card.tone-neutral .attendance-card-icon {
+  color: #9baac0;
+}
+
+.attendance-card.tone-expired {
+  border-left: 4px solid #c8d1dd;
+  background: #f8fafc;
+}
+
+.attendance-card.tone-expired .attendance-card-title-row h3,
+.attendance-card.tone-expired .attendance-card-detail,
+.attendance-card.tone-expired .attendance-card-meta,
+.attendance-card.tone-expired .attendance-card-action,
+.attendance-card.tone-expired .attendance-card-icon {
+  color: #93a0b2;
+}
+
+.attendance-card.empty {
+  justify-content: center;
+  color: #7f8da1;
+}
+
+.attendance-card.empty p {
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .attendance-create-btn {
+    min-height: 38px;
+    font-size: 0.9rem;
+  }
+
+  .attendance-card-title-row h3 {
+    font-size: 1.02rem;
+  }
+}

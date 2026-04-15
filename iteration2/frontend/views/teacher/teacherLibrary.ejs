@@ -1,0 +1,125 @@
+<%
+  const teacherActivePage = "library";
+  const teacherPageTitle = "Library Publishing";
+  const teacherPageSubtitle = "Publish class resources with links, images, and context for students.";
+%>
+<%- include("../partials/teacherHeader") %>
+
+<link rel="stylesheet" href="/css/pages/teacher-library.css">
+
+<%
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+
+  const classOptions = Array.isArray(teacherClasses) ? teacherClasses : [];
+  const resources = Array.isArray(libraryResources) ? libraryResources : [];
+%>
+
+<main class="teacher-main teacher-library-page">
+  <section class="teacher-page-shell teacher-library-shell">
+    <header class="teacher-page-hero teacher-library-hero">
+      <div>
+        <h1>Library Resources</h1>
+        <p>Share study materials to student libraries using an image, a link, or both.</p>
+      </div>
+      <p class="teacher-library-counter"><%= resources.length %> published</p>
+    </header>
+
+    <% if (successMessages.length > 0) { %>
+      <div class="flash-message success"><%= successMessages.join(" ") %></div>
+    <% } %>
+    <% if (errorMessages.length > 0) { %>
+      <div class="flash-message error"><%= errorMessages.join(" ") %></div>
+    <% } %>
+
+    <section class="teacher-library-form-card">
+      <h2>Publish New Resource</h2>
+      <form action="/teacher/library" method="POST" enctype="multipart/form-data" class="teacher-library-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <label for="resourceTitle">
+          <span>Title</span>
+          <input id="resourceTitle" name="title" type="text" maxlength="160" required placeholder="Weekly Tafsir Reading">
+        </label>
+
+        <label for="resourceDescription">
+          <span>Description / Comments</span>
+          <textarea id="resourceDescription" name="description" rows="5" maxlength="4000" required placeholder="Explain the learning objective and what students should focus on."></textarea>
+        </label>
+
+        <div class="teacher-library-form-grid">
+          <label for="resourceLink">
+            <span>External Link (Optional)</span>
+            <input id="resourceLink" name="externalUrl" type="url" placeholder="https://example.com/resource">
+          </label>
+
+          <label for="resourceImage">
+            <span>Image Upload (Optional)</span>
+            <input id="resourceImage" name="resourceImage" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+          </label>
+        </div>
+
+        <label for="resourceClassTarget">
+          <span>Publish To</span>
+          <select id="resourceClassTarget" name="targetClassIds" <%= classOptions.length ? "" : "disabled" %>>
+            <option value="all">All My Classes</option>
+            <% classOptions.forEach((classOption) => { %>
+              <option value="<%= classOption.id %>">
+                <%= classOption.className %><%= classOption.classCode ? ` (${classOption.classCode})` : "" %>
+              </option>
+            <% }) %>
+          </select>
+        </label>
+
+        <p class="teacher-library-help">At least one of image or link is required. Description is always required.</p>
+
+        <div class="teacher-library-form-actions">
+          <button type="submit" class="btn-primary">Publish Resource</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="teacher-library-list-card">
+      <header>
+        <h2>Published Resources</h2>
+        <p>Students in the selected classes can see these items in their library page.</p>
+      </header>
+
+      <% if (!resources.length) { %>
+        <div class="teacher-library-empty">
+          No resources published yet. Your first post will appear here and in student libraries.
+        </div>
+      <% } else { %>
+        <div class="teacher-library-list">
+          <% resources.forEach((resource) => { %>
+            <article class="teacher-library-item">
+              <% if (resource.imageUrl) { %>
+                <div class="teacher-library-item-media">
+                  <img src="<%= resource.imageUrl %>" alt="<%= resource.title %>" loading="lazy">
+                </div>
+              <% } %>
+              <div class="teacher-library-item-content">
+                <div class="teacher-library-item-head">
+                  <h3><%= resource.title %></h3>
+                  <span><%= resource.publishLabel || resource.createdAtLabel %></span>
+                </div>
+                <p><%= resource.content || resource.summary || "" %></p>
+                <div class="teacher-library-item-meta">
+                  <span>Classes: <%= resource.classNames?.length ? resource.classNames.join(", ") : "All assigned classes" %></span>
+                  <% if (resource.externalUrl) { %>
+                    <a href="<%= resource.externalUrl %>" target="_blank" rel="noopener noreferrer">Open Link</a>
+                  <% } %>
+                </div>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+  </section>
+</main>
+
+<%- include("../partials/teacherFooter") %>

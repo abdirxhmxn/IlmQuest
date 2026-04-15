@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IlmQuest Platform Provisioning</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/platform-home.css" />
+</head>
+<body class="platform-page">
+  <main class="platform-shell">
+    <header class="platform-header">
+      <div>
+        <p class="platform-eyebrow">IlmQuest Platform Console</p>
+        <h1>Private School Provisioning</h1>
+        <p class="platform-subtitle">Provision new schools securely. Public tenant signup is disabled.</p>
+      </div>
+      <div class="platform-session">
+        <p class="platform-user"><%= (user?.userName || user?.email || "superadmin") %></p>
+        <a href="/logout" class="platform-link">Sign out</a>
+      </div>
+    </header>
+
+    <% if (messages && (messages.errors || messages.success || messages.info)) { %>
+      <section class="platform-flash" aria-live="polite">
+        <% if (messages.errors) { messages.errors.forEach((entry) => { %>
+          <div class="flash-item flash-error"><%= entry.msg %></div>
+        <% }) } %>
+        <% if (messages.success) { messages.success.forEach((entry) => { %>
+          <div class="flash-item flash-success"><%= entry %></div>
+        <% }) } %>
+        <% if (messages.info) { messages.info.forEach((entry) => { %>
+          <div class="flash-item flash-info"><%= entry.msg || entry %></div>
+        <% }) } %>
+      </section>
+    <% } %>
+
+    <% if (provisioningResult) { %>
+      <section class="provisioning-result">
+        <h2>Owner Invite Created</h2>
+        <p>
+          <strong><%= provisioningResult.schoolName %></strong> is provisioned.
+          Share this onboarding link only with <strong><%= provisioningResult.ownerEmail %></strong>.
+        </p>
+        <div class="invite-link-wrap">
+          <input id="ownerInviteLink" type="text" readonly value="<%= provisioningResult.inviteLink %>" />
+          <button type="button" data-copy-invite>Copy Link</button>
+        </div>
+        <p class="invite-expiry">Expires: <%= new Date(provisioningResult.expiresAt).toLocaleString() %></p>
+      </section>
+    <% } %>
+
+    <section class="platform-grid">
+      <article class="platform-card">
+        <h2>Provision New School</h2>
+        <form method="POST" action="/platform/schools" class="provision-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+          <label>
+            School Name
+            <input type="text" name="schoolName" required placeholder="Al Noor Academy" />
+          </label>
+
+          <label>
+            School Email
+            <input type="email" name="schoolEmail" required placeholder="admin@school.edu" />
+          </label>
+
+          <label>
+            Owner Full Name
+            <input type="text" name="ownerName" required placeholder="Amina Ali" />
+          </label>
+
+          <label>
+            Owner Email
+            <input type="email" name="ownerEmail" required placeholder="owner@school.edu" />
+          </label>
+
+          <label>
+            Owner Username (Optional)
+            <input type="text" name="ownerUserName" placeholder="amina-ali" />
+          </label>
+
+          <button type="submit">Create School Tenant</button>
+        </form>
+      </article>
+
+      <article class="platform-card">
+        <h2>Provisioned Schools</h2>
+        <% if (!schoolRows || !schoolRows.length) { %>
+          <p class="empty-state">No schools have been provisioned yet.</p>
+        <% } else { %>
+          <div class="table-wrap">
+            <table class="school-table">
+              <thead>
+                <tr>
+                  <th>School</th>
+                  <th>Owner</th>
+                  <th>Onboarding</th>
+                  <th>Provisioned</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% schoolRows.forEach((row) => { %>
+                  <tr>
+                    <td>
+                      <strong><%= row.schoolName %></strong>
+                      <div><%= row.schoolEmail || "No email" %></div>
+                    </td>
+                    <td>
+                      <div><%= row.ownerName %></div>
+                      <div>@<%= row.ownerUserName || "pending" %></div>
+                    </td>
+                    <td>
+                      <% if (row.ownerOnboarded) { %>
+                        <span class="status-pill status-ready">Completed</span>
+                      <% } else { %>
+                        <span class="status-pill status-pending">Pending</span>
+                      <% } %>
+                    </td>
+                    <td><%= row.provisionedAt ? new Date(row.provisionedAt).toLocaleDateString() : "N/A" %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    (function bindCopyInviteLink() {
+      const copyButton = document.querySelector("[data-copy-invite]");
+      const input = document.getElementById("ownerInviteLink");
+      if (!copyButton || !input) return;
+      copyButton.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(input.value);
+          copyButton.textContent = "Copied";
+          setTimeout(() => { copyButton.textContent = "Copy Link"; }, 1600);
+        } catch (_err) {
+          input.select();
+          document.execCommand("copy");
+          copyButton.textContent = "Copied";
+          setTimeout(() => { copyButton.textContent = "Copy Link"; }, 1600);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+body.signup-disabled-page {
+  margin: 0;
+  background: #eef3ef;
+}
+
+.disabled-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.disabled-card {
+  width: min(620px, 100%);
+  background: #fff;
+  border: 1px solid #d8e4dc;
+  border-radius: 18px;
+  padding: 1.25rem;
+  box-shadow: 0 14px 34px rgba(23, 52, 40, 0.08);
+  color: #183329;
+}
+
+.disabled-card h1 {
+  margin-top: 0;
+  margin-bottom: 0.55rem;
+}
+
+.disabled-card p {
+  margin: 0 0 1rem;
+  color: #4f6e61;
+}
+
+.disabled-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.disabled-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 0.62rem 0.9rem;
+  text-decoration: none;
+  font-weight: 600;
+  border: 1px solid #b7d5c5;
+  color: #2a5b46;
+  background: #f4faf7;
+}
+
+.disabled-link.primary {
+  background: linear-gradient(120deg, #236848, #2f8a63);
+  color: #fff;
+  border-color: transparent;
+}

@@ -1,0 +1,124 @@
+<%# Teacher shell header: sidebar workspace shell shared by all teacher pages. %>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/layout.css">
+<link rel="stylesheet" href="/css/components.css">
+<link rel="stylesheet" href="/css/pages/teacher-shell.css">
+<link rel="stylesheet" href="/css/pages/app-shell.css">
+<%
+  const teacherAvatarUrl = String(user?.profileImage || user?.profilePic || "").trim();
+  const teacherInitials = `${(user?.firstName || "T").charAt(0)}${(user?.lastName || "U").charAt(0)}`.toUpperCase();
+  const teacherDisplayName = `${user?.firstName || "Teacher"} ${user?.lastName || "User"}`.trim();
+  const teacherRoleLabel = String(user?.role || user?.accountType || "teacher")
+    .trim()
+    .replace(/_/g, " ")
+    .toUpperCase();
+  const resolvedActivePage = typeof teacherActivePage === "string" ? teacherActivePage : "";
+  const resolvedPageTitle = typeof teacherPageTitle === "string" && teacherPageTitle.trim().length
+    ? teacherPageTitle.trim()
+    : "Teacher Workspace";
+  const resolvedPageSubtitle = typeof teacherPageSubtitle === "string" ? teacherPageSubtitle : "";
+
+  function teacherIconSvg(iconName) {
+    const icons = {
+      dashboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>',
+      progress: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M7 14l3-3 3 2 4-5"/><circle cx="7" cy="14" r="1"/><circle cx="10" cy="11" r="1"/><circle cx="13" cy="13" r="1"/><circle cx="17" cy="8" r="1"/></svg>',
+      missions: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.9 5.88 6.5.95-4.7 4.57 1.1 6.46L12 17.9l-5.8 3.06 1.1-6.46L2.6 9.83l6.5-.95z"/></svg>',
+      grades: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="m7 16 3-4 3 2 4-6"/></svg>',
+      attendance: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 10h18"/><path d="m9 15 2 2 4-4"/></svg>',
+      library: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2Z"/></svg>',
+      customize: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16"/><path d="M4 12h16"/><circle cx="12" cy="12" r="3"/></svg>',
+      profile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>',
+      chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>'
+    };
+
+    return icons[iconName] || icons.dashboard;
+  }
+
+  const teacherNavItems = [
+    { key: "home", href: "/teacher/home", label: "Dashboard", icon: "dashboard" },
+    { key: "grades", href: "/teacher/manage-grades", label: "Grades", icon: "grades" },
+    { key: "progress", href: "/teacher/student-progress", label: "Student Progress", icon: "progress" },
+    { key: "attendance", href: "/teacher/manage-attendance", label: "Teacher Attendance", icon: "attendance" },
+    { key: "missions", href: "/teacher/manage-missions", label: "Missions", icon: "missions" },
+    { key: "library", href: "/teacher/library", label: "Library", icon: "library" },
+    { key: "customize", href: "/teacher/customize", label: "Customize", icon: "customize" },
+    { key: "profile", href: "/profile", label: "Profile", icon: "profile" }
+  ];
+%>
+
+<div
+  class="teacher-app-shell role-app-shell"
+  id="teacherShell"
+  data-role-shell="teacher"
+  data-shell-role="teacher"
+  data-shell-storage-key="ilmquest_teacher_sidebar_collapsed"
+  data-shell-user-name="<%= teacherDisplayName %>"
+  data-shell-user-role="<%= teacherRoleLabel %>"
+  data-shell-active-key="<%= resolvedActivePage %>"
+>
+  <aside class="teacher-sidebar role-sidebar" id="teacherSidebar" aria-label="Teacher Navigation" data-teacher-sidebar-toggle-surface data-shell-toggle-surface>
+    <div class="teacher-sidebar-brand role-sidebar-brand">
+      <span class="teacher-brand-icon role-brand-icon">
+        <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" />
+      </span>
+      <span class="teacher-brand-text role-brand-meta">
+        <span class="teacher-brand-name role-brand-name">IlmQuest</span>
+        <span class="teacher-brand-role role-brand-role">Teacher Portal</span>
+      </span>
+    </div>
+
+    <nav class="teacher-sidebar-nav role-sidebar-nav">
+      <% teacherNavItems.forEach((item) => { %>
+        <a
+          href="<%= item.href %>"
+          class="teacher-sidebar-link role-sidebar-link <%= resolvedActivePage === item.key ? 'active' : '' %>"
+          data-teacher-nav-key="<%= item.key %>"
+          data-shell-nav-key="<%= item.key %>"
+          title="<%= item.label %>"
+        >
+          <span class="teacher-sidebar-icon role-sidebar-icon"><%- teacherIconSvg(item.icon) %></span>
+          <span class="teacher-sidebar-label role-sidebar-label"><%= item.label %></span>
+        </a>
+      <% }) %>
+    </nav>
+
+    <a class="teacher-sidebar-profile role-sidebar-profile" href="/profile" aria-label="Open profile">
+      <span class="teacher-profile-avatar role-profile-avatar">
+        <% if (teacherAvatarUrl) { %>
+          <img src="<%= teacherAvatarUrl %>" alt="<%= teacherDisplayName %> avatar" loading="lazy" />
+        <% } else { %>
+          <%= teacherInitials %>
+        <% } %>
+      </span>
+      <span class="teacher-profile-meta role-profile-meta">
+        <span class="teacher-profile-name role-profile-name"><%= teacherDisplayName %></span>
+        <span class="teacher-profile-role role-profile-role"><%= teacherRoleLabel %></span>
+      </span>
+    </a>
+  </aside>
+
+  <button
+    type="button"
+    class="teacher-sidebar-scrim role-sidebar-scrim"
+    data-teacher-sidebar-scrim
+    data-shell-scrim
+    aria-label="Close sidebar"
+  ></button>
+
+  <div class="teacher-main-shell role-main-shell">
+    <header class="teacher-page-header role-page-header">
+      <div class="teacher-page-title role-page-title">
+        <p class="teacher-page-kicker">Teacher Workspace</p>
+        <h2><%= resolvedPageTitle %></h2>
+        <% if (resolvedPageSubtitle) { %>
+          <p><%= resolvedPageSubtitle %></p>
+        <% } %>
+      </div>
+
+      <a class="teacher-header-user role-header-user" href="/profile" aria-label="Open profile">
+        <span><%= teacherDisplayName %></span>
+        <small><%= teacherRoleLabel %></small>
+      </a>
+    </header>
+
+    <div class="teacher-content-shell">

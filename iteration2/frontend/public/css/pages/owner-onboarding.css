@@ -1,0 +1,41 @@
+body.owner-onboarding-page {
+  background: #eef3ef;
+}
+
+.owner-onboarding-layout {
+  max-width: 980px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.owner-onboarding-panel {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.owner-badge {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #2f8a63;
+}
+
+.owner-summary {
+  border: 1px solid rgba(47, 138, 99, 0.2);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: #f4fbf7;
+  margin-bottom: 1rem;
+}
+
+.owner-summary p {
+  margin: 0.18rem 0;
+  color: #375b4b;
+  font-size: 0.9rem;
+}
+
+.owner-onboarding-form .auth-input {
+  width: 100%;
+}

@@ -1,0 +1,40 @@
+/*
+ * ============================================================
+ *  components.css
+ *  IlmQuest - Legacy Component Entry Point (Delegates to modules)
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+/* Delegated to module files. */
+
+/* 2. Base */
+@import url("./components/buttons.css");
+@import url("./components/forms.css");
+@import url("./components/cards.css");
+@import url("./components/tables.css");
+@import url("./components/modals.css");
+@import url("./components/navbar.css");
+@import url("./components/sidebar.css");
+
+/* 3. Layout */
+/* Intentionally empty: layout primitives live in layout.css. */
+
+/* 4. Components */
+/* Intentionally empty: all component rules are imported above. */
+
+/* 5. States */
+.hidden {
+  display: none;
+}
+
+/* 6. Responsive */
+/* Intentionally empty: responsive logic is module-local. */

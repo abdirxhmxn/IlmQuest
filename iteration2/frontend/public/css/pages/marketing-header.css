@@ -1,0 +1,43 @@
+/*
+ * ============================================================
+ *  marketing-header.css
+ *  IlmQuest - Marketing Header Brand Label Styling
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+/* Uses shared global tokens from base.css. */
+
+/* 2. Base */
+.brand-name {
+  font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-text-main);
+  text-decoration: none;
+}
+
+/* 3. Layout */
+/* No additional layout rules required. */
+
+/* 4. Components */
+/* No component-specific overrides required. */
+
+/* 5. States */
+.brand-name:hover {
+  color: var(--color-brand-700);
+}
+
+/* 6. Responsive */
+@media (max-width: 480px) {
+  .brand-name {
+    font-size: clamp(1.2rem, 1rem + 1.1vw, 1.7rem);
+  }
+}

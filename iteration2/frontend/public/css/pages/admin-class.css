@@ -1,0 +1,219 @@
+/*
+ * ============================================================
+ *  admin-class.css
+ *  IlmQuest - Admin Class Builder, Scheduling, and Class Table Layout
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+.classes-page {
+  display: grid;
+  gap: 14px;
+}
+
+.classes-layout {
+  align-items: start;
+}
+
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.card form {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px 16px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.assign-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.assign-col {
+  display: grid;
+  gap: 6px;
+}
+
+.required::after {
+  content: " *";
+  color: #b42318;
+}
+
+select[multiple] {
+  min-height: 160px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.helper-text {
+  display: block;
+  color: #6b7b93;
+  font-size: 0.8rem;
+}
+
+.day-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.day-btn.active {
+  border-color: var(--admin-brand-accent-dark);
+  background: var(--admin-brand-accent);
+  color: #f4fff9;
+}
+
+.day-schedule {
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.day-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+  font-weight: 760;
+  color: #25364f;
+}
+
+.time-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+#subjects-container > div {
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #f8fbff;
+}
+
+.subject-entry {
+  margin-bottom: 10px;
+}
+
+.class-utility-card {
+  overflow: hidden;
+}
+
+.class-checklist {
+  margin: 0;
+  padding: 12px 14px 16px 30px;
+  display: grid;
+  gap: 8px;
+  color: #4e6077;
+  font-size: 0.84rem;
+}
+
+.class-quick-metrics {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.class-quick-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  color: #2f445d;
+  font-size: 0.84rem;
+}
+
+.class-quick-row strong {
+  color: #142338;
+}
+
+.class-table-panel {
+  overflow: hidden;
+}
+
+.table-wrap {
+  padding: 12px;
+}
+
+#classTable {
+  min-width: 1120px;
+}
+
+.action-cell {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.row-edit-inputs {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.row-edit-inputs input,
+.row-edit-inputs select {
+  margin: 0;
+  min-height: 34px;
+  padding: 0 8px;
+  font-size: 0.84rem;
+}
+
+.inline-error {
+  color: #b42318;
+  font-size: 0.78rem;
+  margin-top: 0.3rem;
+}
+
+@media (max-width: 1024px) {
+  .assign-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .field-row,
+  .time-inputs {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-buttons-row {
+    gap: 6px;
+  }
+
+  #classTable {
+    min-width: 980px;
+  }
+}
+
+@media (max-width: 320px) {
+  .table-wrap {
+    padding: 10px;
+  }
+}
