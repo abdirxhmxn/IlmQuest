@@ -1,0 +1,219 @@
+/*
+ * ============================================================
+ *  admin-settings.css
+ *  IlmQuest - Admin Settings Workspace, Profile, and Quick-Access Panels
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+.settings-layout {
+  align-items: start;
+}
+
+.settings-card {
+  border: 1px solid var(--admin-card-border);
+  border-radius: 12px;
+  background: var(--admin-card-bg);
+  box-shadow: var(--admin-card-shadow);
+  min-width: 0;
+}
+
+.settings-card-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--admin-card-border);
+}
+
+.settings-card-header h2,
+.settings-card-header h3 {
+  margin: 0;
+  font-size: 1.06rem;
+  letter-spacing: -0.01em;
+  color: var(--admin-text-main);
+}
+
+.settings-card-header p {
+  margin: 6px 0 0;
+  color: var(--admin-text-muted);
+  font-size: 0.85rem;
+}
+
+.settings-definition-list {
+  margin: 0;
+  padding: 14px 16px 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-definition-list div {
+  border: 1px solid #e1e8f1;
+  border-radius: 10px;
+  background: #fbfdff;
+  padding: 10px;
+}
+
+.settings-definition-list dt {
+  margin: 0;
+  color: var(--admin-text-subtle);
+  font-size: 0.73rem;
+  font-weight: 780;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.settings-definition-list dd {
+  margin: 6px 0 0;
+  color: var(--admin-text-main);
+  font-size: 0.9rem;
+  font-weight: 710;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.settings-shortcut-grid {
+  padding: 14px 16px 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-shortcut {
+  border: 1px solid #d8e2ee;
+  border-radius: 11px;
+  background: #ffffff;
+  text-decoration: none;
+  color: inherit;
+  padding: 12px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.settings-shortcut:hover {
+  border-color: #9cb3cf;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.settings-shortcut h3 {
+  margin: 0;
+  color: #1b2d43;
+  font-size: 0.95rem;
+}
+
+.settings-shortcut p {
+  margin: 6px 0 0;
+  color: #5f7189;
+  font-size: 0.82rem;
+}
+
+.settings-actions-row {
+  padding: 14px 16px 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-action {
+  min-height: 36px;
+  border: 1px solid #cad5e3;
+  border-radius: 9px;
+  background: #fff;
+  color: #1f344c;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 760;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-action:hover {
+  border-color: #a5bad3;
+}
+
+.settings-note {
+  margin: 0;
+  padding: 0 16px 14px;
+  color: var(--admin-text-muted);
+  font-size: 0.84rem;
+}
+
+.settings-side-card {
+  overflow: hidden;
+}
+
+.settings-list {
+  margin: 0;
+  padding: 12px 14px 16px 30px;
+  display: grid;
+  gap: 8px;
+  color: #4f6077;
+  font-size: 0.84rem;
+}
+
+.settings-link-stack {
+  padding: 12px 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.settings-link-stack a {
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #fff;
+  text-decoration: none;
+  color: #2a405b;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 8px 10px;
+}
+
+.settings-link-stack a:hover {
+  border-color: #a9bdd7;
+  color: #162a3f;
+}
+
+@media (max-width: 1024px) {
+  .settings-definition-list,
+  .settings-shortcut-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-actions-row {
+    flex-direction: column;
+  }
+
+  .settings-action {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-card-header {
+    padding: 12px 14px;
+  }
+
+  .settings-definition-list,
+  .settings-shortcut-grid,
+  .settings-actions-row,
+  .settings-note,
+  .settings-link-stack {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+@media (max-width: 320px) {
+  .settings-definition-list {
+    gap: 10px;
+  }
+}

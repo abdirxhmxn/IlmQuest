@@ -283,48 +283,6 @@
       `
     },
     {
-      cellSelector: ".p-cell-tuition",
-      fields: ["monthlyTuitionAmount"],
-      renderView: ({ cell, data }) => {
-        const amount = Number(data.monthlyTuitionAmount || 0);
-        cell.textContent = Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
-      },
-      renderEdit: (data) => `
-        <div class="cell-edit">
-          <input type="number" name="monthlyTuitionAmount" min="0" step="0.01" value="${AdminViewEdit.esc(data.monthlyTuitionAmount)}" />
-          <div class="field-error" data-field-error="monthlyTuitionAmount"></div>
-        </div>
-      `
-    },
-    {
-      cellSelector: ".p-cell-billing",
-      fields: ["billingDayOfMonth"],
-      renderView: ({ cell, data }) => {
-        cell.textContent = data.billingDayOfMonth || "1";
-      },
-      renderEdit: (data) => `
-        <div class="cell-edit">
-          <input type="number" name="billingDayOfMonth" min="1" max="28" value="${AdminViewEdit.esc(data.billingDayOfMonth)}" />
-          <div class="field-error" data-field-error="billingDayOfMonth"></div>
-        </div>
-      `
-    },
-    {
-      cellSelector: ".p-cell-currency",
-      fields: ["currency"],
-      renderView: ({ cell, data }) => {
-        cell.textContent = data.currency || "USD";
-      },
-      renderEdit: (data) => `
-        <div class="cell-edit">
-          <select name="currency">
-            ${["USD", "CAD", "EUR", "GBP"].map((currency) => `<option value="${currency}" ${data.currency === currency ? "selected" : ""}>${currency}</option>`).join("")}
-          </select>
-          <div class="field-error" data-field-error="currency"></div>
-        </div>
-      `
-    },
-    {
       cellSelector: ".p-cell-username",
       fields: ["userName"],
       renderView: ({ cell, data }) => {
@@ -434,10 +392,7 @@
       firstName: rowEl.dataset.firstName || "",
       lastName: rowEl.dataset.lastName || "",
       userName: rowEl.dataset.userName || "",
-      email: rowEl.dataset.email || "",
-      monthlyTuitionAmount: rowEl.dataset.monthlyTuitionAmount || "0",
-      billingDayOfMonth: rowEl.dataset.billingDayOfMonth || "1",
-      currency: rowEl.dataset.currency || "USD"
+      email: rowEl.dataset.email || ""
     };
 
     AdminViewEdit.createRowEditor({
@@ -445,7 +400,7 @@
       type: "parent",
       userId: rowEl.dataset.id,
       initialData,
-      editableFields: ["firstName", "lastName", "userName", "email", "monthlyTuitionAmount", "billingDayOfMonth", "currency"],
+      editableFields: ["firstName", "lastName", "userName", "email"],
       endpoint: (id) => `/admin/users/${id}`,
       csrfToken,
       fieldDefs: parentFieldDefs,
@@ -454,10 +409,7 @@
         firstName: serverData.firstName || "",
         lastName: serverData.lastName || "",
         userName: serverData.userName || "",
-        email: serverData.email || "",
-        monthlyTuitionAmount: String(serverData.monthlyTuitionAmount ?? 0),
-        billingDayOfMonth: String(serverData.billingDayOfMonth ?? 1),
-        currency: serverData.currency || "USD"
+        email: serverData.email || ""
       }),
       extraViewActionsHtml: `
         ${buildAvatarActionMarkup(rowEl.dataset.id, hasAvatar)}

@@ -1,180 +1,489 @@
+<%
+  const teacherActivePage = 'attendance';
+  const teacherPageTitle = 'Teacher Attendance';
+  const teacherPageSubtitle = 'Track student presence, update daily records, and review month trends.';
+%>
 <%- include('../partials/teacherHeader') %>
-  <link rel="stylesheet" href="/css/teacherAttendance.css">
-  <link rel="stylesheet" href="/css/teacherGrades.css">
-  <main class="attendance-page">
-    <div class="page-heading">
+
+<link rel="stylesheet" href="/css/teacherAttendance.css">
+
+<main class="teacher-main teacher-attendance-page attendance-page">
+  <section class="teacher-page-shell attendance-shell">
+    <header class="teacher-page-hero attendance-page-heading">
       <h1>Attendance</h1>
-      <p>Track daily presence across classes.</p>
-    </div>
-    <!-- Class Tabs -->
-    <div class="class-filters">
-      <% classes.forEach((cls, i)=> { %>
-        <button class="class-btn <%= i === 0 ? 'active' : '' %>" data-class-index="<%= i %>">
+      <p>Monitor daily records and save attendance updates for every class.</p>
+    </header>
+
+    <div class="class-filters attendance-class-tabs" aria-label="Class tabs">
+      <% classes.forEach((cls, i) => { %>
+        <button
+          type="button"
+          class="class-btn <%= i === 0 ? 'active' : '' %>"
+          data-class-index="<%= i %>"
+          data-class-id="<%= cls._id %>"
+        >
           <%= cls.className %> (<%= cls.students.length %>)
         </button>
-        <% }) %>
-    </div>
-    <form class="filter-bar" action="/teacher/manage-attendance/save" method="POST">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <div class="field">
-        <label>Select Class</label>
-        <select name="classId" required>
-          <option value="">-- Select Class --</option>
-          <% classes.forEach(cls=> { %>
-            <option value="<%= cls._id %>">
-              <%= cls.className %>
-            </option>
-            <% }) %>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Select Student</label>
-        <select name="studentId" required>
-          <option value="">-- Select Student --</option>
-
-          <% classes.forEach(cls=> { %>
-            <% cls.students.forEach(student=> { %>
-              <option value="<%= student._id %>">
-                <%= student.name %> — <%= cls.className %>
-              </option>
-              <% }) %>
-                <% }) %>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Date</label>
-        <input type="date" name="date" required>
-      </div>
-
-      <div class="field">
-        <label>Status</label>
-        <select name="status" required>
-          <option value="Present">Present</option>
-          <option value="Absent">Absent</option>
-          <option value="Late">Late</option>
-          <option value="Excused">Excused</option>
-          <option value="Holiday">Holiday</option>
-          <option value="Weather">Weather</option>
-        </select>
-      </div>
-
-      <button type="submit" class="save-btn">Save Record</button>
-    </form>
-
-    <div class="month-buttons">
-      <% (months || []).forEach((month, mIndex)=> { %>
-        <button class="months <%= mIndex === 0 ? 'active-month' : '' %>" data-month="<%= month.index %>">
-          <%= month.name %>
-        </button>
-        <% }) %>
+      <% }) %>
     </div>
 
-    <!-- One block per Class + Month combo -->
-    <% classes.forEach((cls, classIndex)=> { %>
-      <% (months || []).forEach((month, monthIndex)=> { %>
-        <div class="class-card month-card <%= classIndex === 0 && monthIndex === 0 ? '' : 'hidden' %>"
-          data-class-index="<%= classIndex %>" data-month-index="<%= month.index %>"
-          id="card-<%= classIndex %>-<%= month.index %>">
-
-          <header>
-            <h2>
-              <%= cls.className %> — <%= month.name %>
-                  <%= selectedYear %>
-            </h2>
-            <p class="meta">
-              <%= cls.students.length %> students
-            </p>
+    <div class="attendance-layout">
+      <aside class="attendance-rail">
+        <article class="attendance-calendar-card">
+          <header class="attendance-calendar-head">
+            <button type="button" class="calendar-nav-btn" id="calendarPrevMonth" aria-label="Previous month">&#8249;</button>
+            <h2 id="attendanceCalendarLabel">Month</h2>
+            <button type="button" class="calendar-nav-btn" id="calendarNextMonth" aria-label="Next month">&#8250;</button>
           </header>
 
-          <div class="sheet-wrap">
-            <table class="sheet-table attendance-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <% for (let day=1; day <=month.days; day++) { %>
-                    <th>
-                      <%= day %>
-                    </th>
-                    <% } %>
-                </tr>
-              </thead>
-              <tbody>
-                <% cls.students.forEach(student=> { %>
-                  <tr>
-                    <td class="student-cell">
-                      <%= student.name %>
-                    </td>
-
-                    <% for (let day=1; day <=month.days; day++) { %>
-                      <% // Build the exact key used in attendanceMap const
-                        dateStr=`${selectedYear}-${String(month.index + 1).padStart(2, '0'
-                        )}-${String(day).padStart(2, '0' )}`; const key=`${cls._id}_${dateStr}_${student._id}`; const
-                        status=attendanceMap[key] || '' ; %>
-
-                        <td class="status-cell <%= status.toLowerCase() %>">
-                          <%= status ? { Present: 'Present' , Absent: 'Absent' , Late: 'Late' , Excused: 'Excused' ,
-                            Holiday: 'Holiday' , Weather: 'Weather' }[status] || status : '' %>
-                        </td>
-                        <% } %>
-                  </tr>
-                  <!-- End day loop -->
-
-                  </tr>
-                  <% }) %>
-              </tbody>
-            </table>
+          <div class="attendance-calendar-weekdays" aria-hidden="true">
+            <span>Su</span>
+            <span>Mo</span>
+            <span>Tu</span>
+            <span>We</span>
+            <span>Th</span>
+            <span>Fr</span>
+            <span>Sa</span>
           </div>
-        </div>
-        <% }) %>
+
+          <div class="attendance-calendar-grid" id="attendanceCalendarGrid"></div>
+
+          <div class="month-buttons attendance-month-buttons">
+            <% (months || []).forEach((month, mIndex) => { %>
+              <button
+                type="button"
+                class="months <%= mIndex === 0 ? 'active-month' : '' %>"
+                data-month="<%= month.index %>"
+              >
+                <%= month.name %>
+              </button>
+            <% }) %>
+          </div>
+        </article>
+
+        <article class="attendance-info-card">
+          <h3>Class Information</h3>
+          <div class="attendance-info-list">
+            <div class="attendance-info-item">
+              <span class="label">Class</span>
+              <strong id="attendanceInfoClass">-</strong>
+            </div>
+            <div class="attendance-info-item">
+              <span class="label">Teacher</span>
+              <strong id="attendanceInfoTeacher"><%= `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Teacher' %></strong>
+            </div>
+            <div class="attendance-info-item">
+              <span class="label">Selected Date</span>
+              <strong id="attendanceInfoSchedule">-</strong>
+            </div>
+          </div>
+        </article>
+      </aside>
+
+      <section class="attendance-board-card">
+        <header class="attendance-board-header">
+          <div>
+            <h2>Mark Attendance</h2>
+            <p id="attendanceBoardSubtitle">Choose a class, date, and status, then save.</p>
+          </div>
+          <div class="attendance-board-actions">
+            <span class="attendance-status-chip">Pending</span>
+            <button type="button" class="attendance-download-btn" id="attendanceDownloadBtn">Download CSV</button>
+            <button type="submit" class="attendance-save-btn" form="attendanceSaveForm">Save Attendance</button>
+          </div>
+        </header>
+
+        <form
+          class="filter-bar attendance-controls"
+          id="attendanceSaveForm"
+          action="/teacher/manage-attendance/save"
+          method="POST"
+        >
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+          <div class="field">
+            <label>Select Class</label>
+            <select name="classId" required>
+              <option value="">-- Select Class --</option>
+              <% classes.forEach(cls => { %>
+                <option value="<%= cls._id %>"><%= cls.className %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Select Student</label>
+            <select name="studentId" required>
+              <option value="">-- Select Student --</option>
+              <% classes.forEach(cls => { %>
+                <% cls.students.forEach(student => { %>
+                  <option value="<%= student._id %>" data-class-id="<%= cls._id %>">
+                    <%= student.name %> — <%= cls.className %>
+                  </option>
+                <% }) %>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Date</label>
+            <input type="date" name="date" required>
+          </div>
+
+          <div class="field">
+            <label>Status</label>
+            <select name="status" required>
+              <option value="Present">Present</option>
+              <option value="Absent">Absent</option>
+              <option value="Late">Late</option>
+              <option value="Excused">Excused</option>
+              <option value="Holiday">Holiday</option>
+              <option value="Weather">Weather</option>
+            </select>
+          </div>
+
+          <button type="submit" class="save-btn attendance-inline-save">Save Attendance</button>
+        </form>
+
+        <% classes.forEach((cls, classIndex) => { %>
+          <% (months || []).forEach((month, monthIndex) => { %>
+            <div
+              class="class-card month-card <%= classIndex === 0 && monthIndex === 0 ? '' : 'hidden' %>"
+              data-class-index="<%= classIndex %>"
+              data-class-id="<%= cls._id %>"
+              data-month-index="<%= month.index %>"
+              id="card-<%= classIndex %>-<%= month.index %>"
+            >
+              <header>
+                <h2><%= cls.className %> — <%= month.name %> <%= selectedYear %></h2>
+                <p class="meta"><%= cls.students.length %> students</p>
+              </header>
+
+              <div class="sheet-wrap">
+                <table class="sheet-table attendance-table">
+                  <thead>
+                    <tr>
+                      <th>Student ID</th>
+                      <th>Student Name</th>
+                      <% for (let day = 1; day <= month.days; day++) { %>
+                        <th><%= day %></th>
+                      <% } %>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% cls.students.forEach(student => { %>
+                      <tr>
+                        <td class="student-id-cell">ILM<%= String(student._id).slice(-4).toUpperCase() %></td>
+                        <td class="student-cell"><%= student.name %></td>
+
+                        <% for (let day = 1; day <= month.days; day++) { %>
+                          <% // Build the exact key used in attendanceMap
+                            const dateStr = `${selectedYear}-${String(month.index + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const key = `${cls._id}_${dateStr}_${student._id}`;
+                            const status = attendanceMap[key] || '';
+                          %>
+                          <td class="status-cell <%= status.toLowerCase() %>" data-day="<%= day %>">
+                            <%= status ? { Present: 'Present', Absent: 'Absent', Late: 'Late', Excused: 'Excused', Holiday: 'Holiday', Weather: 'Weather' }[status] || status : '' %>
+                          </td>
+                        <% } %>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           <% }) %>
-  </main>
+        <% }) %>
+      </section>
+    </div>
+  </section>
+</main>
 
-  <script>
-    // Class Tab Switching
-    document.querySelectorAll('.class-btn').forEach((btn, index) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+<script>
+  (function initTeacherAttendancePage() {
+    const classButtons = Array.from(document.querySelectorAll('.class-btn'));
+    const monthButtons = Array.from(document.querySelectorAll('.months'));
+    const monthCards = Array.from(document.querySelectorAll('.month-card'));
 
-        const activeMonth = document.querySelector('.months.active-month')?.dataset.month || 0;
+    const classSelect = document.querySelector('select[name="classId"]');
+    const studentSelect = document.querySelector('select[name="studentId"]');
+    const studentOptions = Array.from(studentSelect ? studentSelect.querySelectorAll('option[data-class-id]') : []);
+    const dateInput = document.querySelector('input[name="date"]');
 
-        document.querySelectorAll('.month-card').forEach(card => {
-          card.classList.add('hidden');
-          if (card.dataset.classIndex == index && card.dataset.monthIndex == activeMonth) {
-            card.classList.remove('hidden');
-          }
-        });
-      });
-    });
+    const calendarGrid = document.getElementById('attendanceCalendarGrid');
+    const calendarLabel = document.getElementById('attendanceCalendarLabel');
+    const prevMonthBtn = document.getElementById('calendarPrevMonth');
+    const nextMonthBtn = document.getElementById('calendarNextMonth');
 
-    document.querySelectorAll('.months').forEach((btn, index) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.months').forEach(b => b.classList.remove('active-month'));
-        btn.classList.add('active-month');
+    const infoClass = document.getElementById('attendanceInfoClass');
+    const infoSchedule = document.getElementById('attendanceInfoSchedule');
+    const boardSubtitle = document.getElementById('attendanceBoardSubtitle');
 
-        const activeClass = document.querySelector('.class-btn.active')?.dataset.classIndex || 0;
+    const downloadBtn = document.getElementById('attendanceDownloadBtn');
+    const selectedYear = Number('<%= selectedYear %>');
 
-        document.querySelectorAll('.month-card').forEach(card => {
-          card.classList.add('hidden');
-          if (card.dataset.classIndex == activeClass && card.dataset.monthIndex == btn.dataset.month) {
-            card.classList.remove('hidden');
-          }
-        });
-      });
-    });
-
-    // Optional: Helper to show checkmark, X, etc.
-    function getStatusSymbol(status) {
-      const symbols = {
-        Present: '✓',
-        Absent: '✗',
-        Late: 'L',
-        Excused: 'E',
-        Holiday: 'H',
-        Weather: 'W'
-      };
-      return symbols[status] || '';
+    function getActiveClassButton() {
+      return document.querySelector('.class-btn.active') || classButtons[0] || null;
     }
-  </script>
+
+    function getActiveMonthButton() {
+      return document.querySelector('.months.active-month') || monthButtons[0] || null;
+    }
+
+    function getVisibleMonthCard() {
+      return monthCards.find((card) => !card.classList.contains('hidden')) || null;
+    }
+
+    function formatDate(year, month, day) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function formatDateLabel(value) {
+      if (!value) return 'Not selected';
+      const parsed = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(parsed.getTime())) return 'Not selected';
+      return parsed.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    function classNameFromButton(button) {
+      if (!button) return 'Class';
+      return button.textContent.replace(/\(\d+\)\s*$/, '').trim() || 'Class';
+    }
+
+    function setActiveClass(index) {
+      classButtons.forEach((btn, btnIndex) => {
+        btn.classList.toggle('active', btnIndex === index);
+      });
+    }
+
+    function setActiveMonth(monthIndex) {
+      monthButtons.forEach((btn) => {
+        btn.classList.toggle('active-month', Number(btn.dataset.month) === Number(monthIndex));
+      });
+    }
+
+    function filterStudentsByClass(classId) {
+      if (!studentSelect) return;
+      studentSelect.value = '';
+
+      studentOptions.forEach((option) => {
+        const matches = option.dataset.classId === classId;
+        option.hidden = !matches;
+        option.disabled = !matches;
+      });
+    }
+
+    function syncVisibleCards() {
+      const activeClassIndex = getActiveClassButton()?.dataset.classIndex || '0';
+      const activeMonthIndex = getActiveMonthButton()?.dataset.month || '0';
+
+      monthCards.forEach((card) => {
+        const matches =
+          card.dataset.classIndex === String(activeClassIndex) &&
+          card.dataset.monthIndex === String(activeMonthIndex);
+        card.classList.toggle('hidden', !matches);
+      });
+
+      updateInfoBlocks();
+      renderCalendar();
+    }
+
+    function getMarkedDaysForVisibleCard() {
+      const visibleCard = getVisibleMonthCard();
+      const marked = new Set();
+      if (!visibleCard) return marked;
+
+      visibleCard.querySelectorAll('td.status-cell').forEach((cell) => {
+        if (cell.textContent.trim()) {
+          marked.add(Number(cell.dataset.day));
+        }
+      });
+
+      return marked;
+    }
+
+    function renderCalendar() {
+      if (!calendarGrid || !calendarLabel) return;
+
+      const activeMonth = Number(getActiveMonthButton()?.dataset.month || 0);
+      const firstDayWeekIndex = new Date(selectedYear, activeMonth, 1).getDay();
+      const daysInMonth = new Date(selectedYear, activeMonth + 1, 0).getDate();
+      const markedDays = getMarkedDaysForVisibleCard();
+
+      const selectedDate = dateInput?.value ? new Date(`${dateInput.value}T00:00:00`) : null;
+      const selectedDay =
+        selectedDate &&
+        selectedDate.getFullYear() === selectedYear &&
+        selectedDate.getMonth() === activeMonth
+          ? selectedDate.getDate()
+          : null;
+
+      calendarLabel.textContent = new Date(selectedYear, activeMonth, 1).toLocaleString('en-US', {
+        month: 'long',
+        year: 'numeric'
+      });
+
+      const nodes = [];
+      for (let i = 0; i < firstDayWeekIndex; i += 1) {
+        nodes.push('<span class="calendar-empty" aria-hidden="true"></span>');
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const selectedClass = day === selectedDay ? ' is-selected' : '';
+        const markedClass = markedDays.has(day) ? ' has-mark' : '';
+        nodes.push(`<button type="button" class="calendar-day${selectedClass}${markedClass}" data-day="${day}">${day}<span class="calendar-dot" aria-hidden="true"></span></button>`);
+      }
+
+      calendarGrid.innerHTML = nodes.join('');
+      calendarGrid.querySelectorAll('.calendar-day').forEach((button) => {
+        button.addEventListener('click', () => {
+          const day = Number(button.dataset.day || '1');
+          if (dateInput) {
+            dateInput.value = formatDate(selectedYear, activeMonth + 1, day);
+          }
+          updateInfoBlocks();
+          renderCalendar();
+        });
+      });
+    }
+
+    function updateInfoBlocks() {
+      const activeClassButton = getActiveClassButton();
+      const activeMonthButton = getActiveMonthButton();
+      const className = classNameFromButton(activeClassButton);
+      const monthName = activeMonthButton ? activeMonthButton.textContent.trim() : 'Month';
+      const dateLabel = formatDateLabel(dateInput?.value || '');
+
+      if (infoClass) infoClass.textContent = className;
+      if (infoSchedule) infoSchedule.textContent = dateLabel;
+      if (boardSubtitle) boardSubtitle.textContent = `${className} • ${monthName} ${selectedYear}`;
+    }
+
+    function exportVisibleTableToCsv() {
+      const visibleCard = getVisibleMonthCard();
+      if (!visibleCard) return;
+
+      const rows = Array.from(visibleCard.querySelectorAll('table tr'));
+      if (!rows.length) return;
+
+      const csvRows = rows.map((row) => {
+        const cols = Array.from(row.querySelectorAll('th, td')).map((cell) => {
+          const value = cell.textContent.replace(/\s+/g, ' ').trim();
+          return `"${value.replace(/"/g, '""')}"`;
+        });
+        return cols.join(',');
+      });
+
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const className = classNameFromButton(getActiveClassButton()).replace(/\s+/g, '-').toLowerCase();
+      const monthName = getActiveMonthButton()?.textContent.trim().toLowerCase() || 'month';
+
+      link.href = URL.createObjectURL(blob);
+      link.download = `attendance-${className}-${monthName}-${selectedYear}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    classButtons.forEach((button, index) => {
+      button.addEventListener('click', () => {
+        setActiveClass(index);
+
+        const selectedClassId = button.dataset.classId;
+        if (classSelect && selectedClassId) {
+          classSelect.value = selectedClassId;
+        }
+        if (selectedClassId) {
+          filterStudentsByClass(selectedClassId);
+        }
+
+        syncVisibleCards();
+      });
+    });
+
+    monthButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setActiveMonth(button.dataset.month);
+        syncVisibleCards();
+      });
+    });
+
+    classSelect?.addEventListener('change', () => {
+      const selectedClassId = classSelect.value;
+      const matchedButton = classButtons.find((btn) => btn.dataset.classId === selectedClassId);
+      if (matchedButton) {
+        setActiveClass(Number(matchedButton.dataset.classIndex || 0));
+      }
+      filterStudentsByClass(selectedClassId);
+      syncVisibleCards();
+    });
+
+    dateInput?.addEventListener('change', () => {
+      if (!dateInput.value) {
+        updateInfoBlocks();
+        renderCalendar();
+        return;
+      }
+
+      const parsed = new Date(`${dateInput.value}T00:00:00`);
+      if (!Number.isNaN(parsed.getTime()) && parsed.getFullYear() === selectedYear) {
+        setActiveMonth(parsed.getMonth());
+      }
+
+      syncVisibleCards();
+    });
+
+    prevMonthBtn?.addEventListener('click', () => {
+      const currentMonth = Number(getActiveMonthButton()?.dataset.month || 0);
+      const nextMonth = (currentMonth + 11) % 12;
+      setActiveMonth(nextMonth);
+      syncVisibleCards();
+    });
+
+    nextMonthBtn?.addEventListener('click', () => {
+      const currentMonth = Number(getActiveMonthButton()?.dataset.month || 0);
+      const nextMonth = (currentMonth + 1) % 12;
+      setActiveMonth(nextMonth);
+      syncVisibleCards();
+    });
+
+    downloadBtn?.addEventListener('click', exportVisibleTableToCsv);
+
+    if (dateInput && !dateInput.value) {
+      const today = new Date();
+      const fallbackDate = today.getFullYear() === selectedYear
+        ? today
+        : new Date(selectedYear, Number(getActiveMonthButton()?.dataset.month || 0), 1);
+
+      dateInput.value = formatDate(
+        fallbackDate.getFullYear(),
+        fallbackDate.getMonth() + 1,
+        fallbackDate.getDate()
+      );
+    }
+
+    if (dateInput?.value) {
+      const initialDate = new Date(`${dateInput.value}T00:00:00`);
+      if (!Number.isNaN(initialDate.getTime()) && initialDate.getFullYear() === selectedYear) {
+        setActiveMonth(initialDate.getMonth());
+      }
+    }
+
+    const initialClassId = getActiveClassButton()?.dataset.classId;
+    if (classSelect && initialClassId) {
+      classSelect.value = initialClassId;
+      filterStudentsByClass(initialClassId);
+    }
+
+    syncVisibleCards();
+  })();
+</script>
+
+<%- include('../partials/teacherFooter') %>

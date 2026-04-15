@@ -11,11 +11,21 @@ const { isHtmlRequest } = require("../middleware/validate");
 const { pickAllowedFields, validateUserPatchPayload, validateClassPatchPayload } = require("../middleware/adminMutations");
 const { logAdminAction, simpleDiff } = require("../utils/audit");
 const {
+  isValidRankKey,
+  getAutoRankForXp,
+  resolveStudentXp,
+  buildRankSummaryFromUser,
+  canStudentAccessMissionRank
+} = require("../utils/ranks");
+const {
   normalizeEmail,
+  normalizeUserName,
+  deriveUserNameCandidate,
   normalizeIdentifier,
   normalizeStudentNumber,
   mapDuplicateKeyError
 } = require("../utils/userIdentifiers");
+const { applyFirstLoginPasswordFlags } = require("../utils/passwordSetup");
 const { scopedQuery, scopedIdQuery } = require("../utils/tenant");
 const {
   normalizeRelationship,
@@ -504,9 +514,59 @@ function toIdArray(value) {
   return [value];
 }
 
+function resolveRequestedUserName(body = {}, normalizedEmail = "") {
+  return deriveUserNameCandidate({
+    preferred: body?.userName,
+    firstName: body?.firstName,
+    lastName: body?.lastName,
+    email: normalizedEmail
+  });
+}
+
+async function resolveUserNameForCreate(req, body = {}, normalizedEmail = "") {
+  const explicitUserName = normalizeUserName(body?.userName || "");
+  if (explicitUserName) {
+    return {
+      userName: explicitUserName,
+      generated: false
+    };
+  }
+
+  const baseUserName = resolveRequestedUserName(body, normalizedEmail) || "user";
+  let candidate = baseUserName;
+  let suffix = 2;
+
+  // Generated usernames get deterministic suffixes when a collision exists
+  // in the same school scope (user, user-2, user-3 ...).
+  while (await User.findOne(scopedQuery(req, { userNameNormalized: candidate })).lean()) {
+    candidate = `${baseUserName}-${suffix}`;
+    suffix += 1;
+  }
+
+  return {
+    userName: candidate,
+    generated: true
+  };
+}
+
 function parseChildrenFromPayload(value) {
   const raw = toIdArray(value).map((entry) => String(entry || "").trim());
   return uniqueObjectIdStrings(raw);
+}
+
+function buildRankAuditSnapshot(studentDocLike = {}, rankSummary = {}, extras = {}) {
+  return {
+    studentId: String(studentDocLike?._id || ""),
+    totalXp: Number(rankSummary?.xp || 0),
+    previousRank: extras.previousRank || "",
+    newRank: extras.newRank || "",
+    changeType: extras.changeType || "automatic",
+    reason: extras.reason || "",
+    changedBy: extras.changedBy || "",
+    changedAt: extras.changedAt || new Date().toISOString(),
+    displaySource: rankSummary?.isManualOverride ? "manual_override" : "xp_automatic",
+    manualOverrideEnabled: Boolean(studentDocLike?.rankOverrideEnabled)
+  };
 }
 
 function isCloudinaryConfigured() {
@@ -650,7 +710,17 @@ module.exports = {
   createStudent: async (req, res) => {
     try {
       const normalizedEmail = normalizeEmail(req.body.email);
-      const emailConflict = await User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean();
+      const { userName: normalizedUserName, generated: userNameGenerated } = await resolveUserNameForCreate(
+        req,
+        req.body,
+        normalizedEmail
+      );
+      const [emailConflict, userNameConflict] = await Promise.all([
+        User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean(),
+        userNameGenerated
+          ? Promise.resolve(null)
+          : User.findOne(scopedQuery(req, { userNameNormalized: normalizedUserName })).lean()
+      ]);
       if (emailConflict) {
         return respondMutation(
           req,
@@ -660,10 +730,19 @@ module.exports = {
           "/admin/users"
         );
       }
+      if (userNameConflict) {
+        return respondMutation(
+          req,
+          res,
+          409,
+          { error: "conflict", field: "userName", message: "Username already exists for this school." },
+          "/admin/users"
+        );
+      }
       const student = new User({
         schoolId: req.schoolId,
         // Login credentials
-        userName: req.body.userName,
+        userName: normalizedUserName,
         email: normalizedEmail,
         password: req.body.password,
 
@@ -682,7 +761,11 @@ module.exports = {
           enrollmentDate: req.body.enrollmentDate || Date.now(),
           studentNumber: Math.floor(Math.random() * 1000000),
           parents: []
-        }
+        },
+        xp: 0,
+        points: 0,
+        rank: "F",
+        ...applyFirstLoginPasswordFlags()
       });
       await student.save();
 
@@ -701,7 +784,17 @@ module.exports = {
   createTeacher: async (req, res) => {
     try {
       const normalizedEmail = normalizeEmail(req.body.email);
-      const emailConflict = await User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean();
+      const { userName: normalizedUserName, generated: userNameGenerated } = await resolveUserNameForCreate(
+        req,
+        req.body,
+        normalizedEmail
+      );
+      const [emailConflict, userNameConflict] = await Promise.all([
+        User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean(),
+        userNameGenerated
+          ? Promise.resolve(null)
+          : User.findOne(scopedQuery(req, { userNameNormalized: normalizedUserName })).lean()
+      ]);
 
       if (emailConflict) {
         return respondMutation(
@@ -712,12 +805,21 @@ module.exports = {
           "/admin/users"
         );
       }
+      if (userNameConflict) {
+        return respondMutation(
+          req,
+          res,
+          409,
+          { error: "conflict", field: "userName", message: "Username already exists for this school." },
+          "/admin/users"
+        );
+      }
 
       const generatedEmployeeId = await generateUniqueTeacherEmployeeId(req);
 
       const teacher = new User({
         schoolId: req.schoolId,
-        userName: req.body.userName,
+        userName: normalizedUserName,
         email: normalizedEmail,
         password: req.body.password,
         role: 'teacher',
@@ -729,7 +831,8 @@ module.exports = {
           employeeId: generatedEmployeeId,
           hireDate: req.body.hireDate || Date.now(),
           subjects: req.body.subjects ? req.body.subjects.split(',').map(s => s.trim()) : []
-        }
+        },
+        ...applyFirstLoginPasswordFlags()
       });
       await teacher.save();
 
@@ -748,13 +851,32 @@ module.exports = {
   createParent: async (req, res) => {
     try {
       const normalizedEmail = normalizeEmail(req.body.email);
-      const emailConflict = await User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean();
+      const { userName: normalizedUserName, generated: userNameGenerated } = await resolveUserNameForCreate(
+        req,
+        req.body,
+        normalizedEmail
+      );
+      const [emailConflict, userNameConflict] = await Promise.all([
+        User.findOne(scopedQuery(req, { emailNormalized: normalizedEmail })).lean(),
+        userNameGenerated
+          ? Promise.resolve(null)
+          : User.findOne(scopedQuery(req, { userNameNormalized: normalizedUserName })).lean()
+      ]);
       if (emailConflict) {
         return respondMutation(
           req,
           res,
           409,
           { error: "conflict", field: "email", message: "Email already exists for this school." },
+          "/admin/users"
+        );
+      }
+      if (userNameConflict) {
+        return respondMutation(
+          req,
+          res,
+          409,
+          { error: "conflict", field: "userName", message: "Username already exists for this school." },
           "/admin/users"
         );
       }
@@ -775,14 +897,9 @@ module.exports = {
         }
       }
 
-      const monthlyTuitionAmount = Math.max(0, Number(req.body.monthlyTuitionAmount || 0) || 0);
-      const billingDayRaw = Number(req.body.billingDayOfMonth || 1) || 1;
-      const billingDayOfMonth = Math.min(28, Math.max(1, billingDayRaw));
-      const currency = String(req.body.currency || "USD").trim().toUpperCase() || "USD";
-
       const parent = new User({
         schoolId: req.schoolId,
-        userName: req.body.userName,
+        userName: normalizedUserName,
         email: normalizedEmail,
         password: req.body.password,
         role: 'parent',
@@ -791,13 +908,9 @@ module.exports = {
         DOB: req.body.DOB || null,
 
         parentInfo: {
-          children: [],
-          billingProfile: {
-            monthlyTuitionAmount,
-            billingDayOfMonth,
-            currency
-          }
-        }
+          children: []
+        },
+        ...applyFirstLoginPasswordFlags()
       });
       await parent.save();
 
@@ -1210,6 +1323,125 @@ module.exports = {
       res.redirect("back");
     }
   },
+  updateStudentRankOverride: async (req, res) => {
+    try {
+      const studentId = req.params.id;
+      const classId = String(req.body.classId || "").trim();
+      const manualRank = String(req.body.manualRank || "").trim().toUpperCase();
+      const reason = String(req.body.rankOverrideReason || "").trim().slice(0, 180);
+      const requestedReturnTo = String(req.body.returnTo || "").trim();
+      const redirectPath = /^\/teacher\/students\/[a-fA-F0-9]{24}\/progress(?:\?.*)?$/.test(requestedReturnTo)
+        ? requestedReturnTo
+        : "/teacher/manage-grades";
+
+      const classScope = classId
+        ? { _id: classId, "teachers._id": req.user._id, "students._id": studentId }
+        : { "teachers._id": req.user._id, "students._id": studentId };
+      const assignedClass = await Class.findOne(scopedQuery(req, classScope))
+        .select("_id className")
+        .lean();
+
+      if (!assignedClass) {
+        req.flash("error", "You are not authorized to change rank for this student.");
+        return res.redirect(redirectPath);
+      }
+
+      const studentDoc = await User.findOne(scopedIdQuery(req, studentId, { role: "student" }))
+        .select("_id firstName lastName points xp rank manualRank rankOverrideEnabled rankOverrideReason rankOverrideSetBy rankOverrideSetAt")
+        .lean();
+
+      if (!studentDoc) {
+        req.flash("error", "Student record not found.");
+        return res.redirect(redirectPath);
+      }
+
+      if (manualRank && !isValidRankKey(manualRank)) {
+        req.flash("error", "Invalid rank selection.");
+        return res.redirect(redirectPath);
+      }
+
+      const beforeSummary = buildRankSummaryFromUser(studentDoc);
+      const now = new Date();
+      const updateSet = {};
+      const updateUnset = {};
+      let actionReason = "";
+
+      if (manualRank) {
+        updateSet.rankOverrideEnabled = true;
+        updateSet.manualRank = manualRank;
+        updateSet.rank = manualRank;
+        updateSet.rankOverrideReason = reason;
+        updateSet.rankOverrideSetBy = req.user._id;
+        updateSet.rankOverrideSetAt = now;
+        actionReason = reason || "Manual rank override by teacher";
+      } else {
+        const fallbackAutoRank = getAutoRankForXp(resolveStudentXp(studentDoc)).key;
+        updateSet.rankOverrideEnabled = false;
+        updateSet.rankOverrideReason = "";
+        updateSet.rankOverrideSetBy = null;
+        updateSet.rankOverrideSetAt = null;
+        updateSet.rank = fallbackAutoRank;
+        updateUnset.manualRank = 1;
+        actionReason = reason || "Manual override removed; reverted to XP progression";
+      }
+
+      const updateOperation = { $set: updateSet };
+      if (Object.keys(updateUnset).length > 0) {
+        updateOperation.$unset = updateUnset;
+      }
+
+      const updatedStudent = await User.findOneAndUpdate(
+        scopedIdQuery(req, studentId, { role: "student" }),
+        updateOperation,
+        { new: true }
+      )
+        .select("_id firstName lastName points xp rank manualRank rankOverrideEnabled rankOverrideReason rankOverrideSetBy rankOverrideSetAt")
+        .lean();
+
+      if (!updatedStudent) {
+        req.flash("error", "Could not update student rank.");
+        return res.redirect(redirectPath);
+      }
+
+      const afterSummary = buildRankSummaryFromUser(updatedStudent);
+      const changedAt = now.toISOString();
+
+      await logAdminAction(req, {
+        action: manualRank ? "teacher.student.rank.override.set" : "teacher.student.rank.override.clear",
+        targetType: "user",
+        targetId: updatedStudent._id,
+        before: buildRankAuditSnapshot(studentDoc, beforeSummary, {
+          previousRank: beforeSummary.displayRankLabel,
+          newRank: beforeSummary.displayRankLabel,
+          changeType: "manual",
+          reason: actionReason,
+          changedBy: String(req.user?._id || ""),
+          changedAt
+        }),
+        after: buildRankAuditSnapshot(updatedStudent, afterSummary, {
+          previousRank: beforeSummary.displayRankLabel,
+          newRank: afterSummary.displayRankLabel,
+          changeType: "manual",
+          reason: actionReason,
+          changedBy: String(req.user?._id || ""),
+          changedAt
+        })
+      });
+
+      const studentName = `${updatedStudent.firstName || ""} ${updatedStudent.lastName || ""}`.trim() || "Student";
+      if (manualRank) {
+        req.flash("success", `${studentName} is now set to ${afterSummary.displayRankLabel} (manual override).`);
+      } else {
+        req.flash("success", `${studentName} rank override removed. XP progression is active again.`);
+      }
+
+      return res.redirect(redirectPath);
+    } catch (err) {
+      console.error("Error updating student rank override:", err);
+      req.flash("error", "Could not update student rank.");
+      return res.redirect("/teacher/manage-grades");
+    }
+  },
   createGrade: async (req, res) => {
     try {
       const {
@@ -1583,6 +1815,34 @@ module.exports = {
         return res.redirect('/student/missions');
       }
 
+      const [studentDoc, missionDoc] = await Promise.all([
+        User.findOne(scopedIdQuery(req, req.user._id, { role: "student" }))
+          .select("_id points xp rank manualRank rankOverrideEnabled")
+          .lean(),
+        Mission.findOne(scopedIdQuery(req, missionId))
+          .select("_id title rank")
+          .lean()
+      ]);
+
+      if (!studentDoc || !missionDoc) {
+        console.log("Student or mission not found for mission start");
+        return res.redirect('/student/missions');
+      }
+
+      const studentRankSummary = buildRankSummaryFromUser(studentDoc);
+      const canAccessMission = canStudentAccessMissionRank(
+        studentRankSummary.displayRankKey,
+        missionDoc.rank,
+        { accessMode: "exact" }
+      );
+
+      if (!canAccessMission) {
+        console.log(
+          `Mission start blocked due to rank lock. Student rank: ${studentRankSummary.displayRankKey}, mission rank: ${missionDoc.rank}`
+        );
+        return res.redirect('/student/missions');
+      }
+
       await Mission.findOneAndUpdate(
         scopedIdQuery(req, missionId),
         {
@@ -1590,7 +1850,8 @@ module.exports = {
             "active.studentInfo": {
               _id: req.user._id,
               name: `${req.user.firstName} ${req.user.lastName}`,
-              status: "started"
+              status: "started",
+              startedAt: new Date()
             }
           }
         }
@@ -1626,7 +1887,10 @@ module.exports = {
         return res.redirect("/student/missions");
       }
 
-      const points = mission.pointsXP || 0;
+      const missionXpRaw = Number(mission.pointsXP);
+      const awardedXp = Number.isFinite(missionXpRaw)
+        ? Math.max(0, Math.floor(missionXpRaw))
+        : 0;
 
       // Update mission status
       const updatedMission = await Mission.findOneAndUpdate(
@@ -1647,13 +1911,110 @@ module.exports = {
         return res.redirect("/student/missions");
       }
 
-      // Add XP
-      await User.findOneAndUpdate(scopedIdQuery(req, req.user._id), {
-        $inc: { points: points }
+      // Add XP and preserve backwards compatibility with legacy points consumers.
+      const studentBefore = await User.findOne(scopedIdQuery(req, req.user._id, { role: "student" }))
+        .select("_id points xp rank manualRank rankOverrideEnabled rankOverrideReason")
+        .lean();
+
+      if (!studentBefore) {
+        console.log("student not found for xp award");
+        return res.redirect("/student/missions");
+      }
+
+      const beforeSummary = buildRankSummaryFromUser(studentBefore);
+
+      // Backfill/sync legacy points-only records before incrementing to prevent XP drift.
+      const baselineXp = resolveStudentXp(studentBefore);
+      const needsXpSync = Number(studentBefore?.xp) !== baselineXp || Number(studentBefore?.points) !== baselineXp;
+      if (needsXpSync) {
+        await User.updateOne(
+          scopedIdQuery(req, req.user._id, { role: "student" }),
+          { $set: { xp: baselineXp, points: baselineXp } }
+        );
+      }
+
+      const studentAfterIncrement = await User.findOneAndUpdate(
+        scopedIdQuery(req, req.user._id, { role: "student" }),
+        {
+          $inc: { points: awardedXp, xp: awardedXp }
+        },
+        { new: true }
+      )
+        .select("_id points xp rank manualRank rankOverrideEnabled rankOverrideReason rankOverrideSetBy rankOverrideSetAt")
+        .lean();
+
+      if (!studentAfterIncrement) {
+        console.log("failed to update student xp");
+        return res.redirect("/student/missions");
+      }
+
+      const afterIncrementSummary = buildRankSummaryFromUser(studentAfterIncrement);
+      let finalStudentSnapshot = studentAfterIncrement;
+
+      // Automatic progression applies only when manual override is not active.
+      const shouldApplyAutoProgression = !afterIncrementSummary.isManualOverride;
+      const expectedAutoRank = getAutoRankForXp(resolveStudentXp(studentAfterIncrement)).key;
+      if (shouldApplyAutoProgression && String(studentAfterIncrement.rank || "F") !== expectedAutoRank) {
+        finalStudentSnapshot = await User.findOneAndUpdate(
+          scopedIdQuery(req, req.user._id, { role: "student" }),
+          { $set: { rank: expectedAutoRank } },
+          { new: true }
+        )
+          .select("_id points xp rank manualRank rankOverrideEnabled rankOverrideReason rankOverrideSetBy rankOverrideSetAt")
+          .lean();
+      }
+
+      const afterSummary = buildRankSummaryFromUser(finalStudentSnapshot || studentAfterIncrement);
+      const nowIso = new Date().toISOString();
+
+      await logAdminAction(req, {
+        action: "student.mission.xp_award",
+        targetType: "user",
+        targetId: studentBefore._id,
+        before: buildRankAuditSnapshot(studentBefore, beforeSummary, {
+          previousRank: beforeSummary.displayRankLabel,
+          newRank: beforeSummary.displayRankLabel,
+          changeType: "automatic",
+          reason: `Mission completed: ${mission.title}`,
+          changedBy: String(req.user?._id || ""),
+          changedAt: nowIso
+        }),
+        after: buildRankAuditSnapshot(finalStudentSnapshot || studentAfterIncrement, afterSummary, {
+          previousRank: beforeSummary.displayRankLabel,
+          newRank: afterSummary.displayRankLabel,
+          changeType: "automatic",
+          reason: `Mission completed: ${mission.title}`,
+          changedBy: String(req.user?._id || ""),
+          changedAt: nowIso
+        })
       });
 
+      if (!afterSummary.isManualOverride && beforeSummary.autoRankKey !== afterSummary.autoRankKey) {
+        await logAdminAction(req, {
+          action: "student.rank.auto_progression",
+          targetType: "user",
+          targetId: studentBefore._id,
+          before: buildRankAuditSnapshot(studentBefore, beforeSummary, {
+            previousRank: beforeSummary.autoRankLabel,
+            newRank: beforeSummary.autoRankLabel,
+            changeType: "automatic",
+            reason: `Auto progression after mission completion: ${mission.title}`,
+            changedBy: String(req.user?._id || ""),
+            changedAt: nowIso
+          }),
+          after: buildRankAuditSnapshot(finalStudentSnapshot || studentAfterIncrement, afterSummary, {
+            previousRank: beforeSummary.autoRankLabel,
+            newRank: afterSummary.autoRankLabel,
+            changeType: "automatic",
+            reason: `Auto progression after mission completion: ${mission.title}`,
+            changedBy: String(req.user?._id || ""),
+            changedAt: nowIso
+          })
+        });
+      }
+
       console.log(`Mission completed: ${mission.title}`);
-      console.log(`XP awarded: ${points}`);
+      console.log(`XP awarded: ${awardedXp}`);
 
       return res.redirect("/student/missions");
 
@@ -1679,14 +2040,13 @@ module.exports = {
       const allowedBase = ["firstName", "lastName", "userName", "email"];
       const allowedStudent = ["age", "programType", "gradeLevel", "enrollmentDate"];
       const allowedTeacher = ["subjects", "hireDate"];
-      const allowedParent = ["monthlyTuitionAmount", "billingDayOfMonth", "currency"];
       const allowedFields =
         targetUser.role === "student"
           ? [...allowedBase, ...allowedStudent]
           : targetUser.role === "teacher"
             ? [...allowedBase, ...allowedTeacher]
             : targetUser.role === "parent"
-              ? [...allowedBase, ...allowedParent]
+              ? [...allowedBase]
               : allowedBase;
       const filteredPayload = pickAllowedFields(req.body || {}, allowedFields);
 
@@ -1711,15 +2071,11 @@ module.exports = {
         gradeLevel: targetUser.studentInfo?.gradeLevel || "",
         enrollmentDate: targetUser.studentInfo?.enrollmentDate || null,
         subjects: targetUser.teacherInfo?.subjects || [],
-        hireDate: targetUser.teacherInfo?.hireDate || null,
-        monthlyTuitionAmount: targetUser.parentInfo?.billingProfile?.monthlyTuitionAmount ?? 0,
-        billingDayOfMonth: targetUser.parentInfo?.billingProfile?.billingDayOfMonth ?? 1,
-        currency: targetUser.parentInfo?.billingProfile?.currency || "USD"
+        hireDate: targetUser.teacherInfo?.hireDate || null
       };
 
       if (clean.firstName !== undefined) targetUser.firstName = clean.firstName;
       if (clean.lastName !== undefined) targetUser.lastName = clean.lastName;
-      if (clean.userName !== undefined) targetUser.userName = clean.userName;
       if (clean.email !== undefined) targetUser.email = clean.email;
 
       if (targetUser.role === "student") {
@@ -1740,20 +2096,6 @@ module.exports = {
         if (clean.hireDate !== undefined) targetUser.teacherInfo.hireDate = clean.hireDate;
       }
 
-      if (targetUser.role === "parent") {
-        targetUser.parentInfo = targetUser.parentInfo || {};
-        targetUser.parentInfo.billingProfile = targetUser.parentInfo.billingProfile || {};
-        if (clean.monthlyTuitionAmount !== undefined) {
-          targetUser.parentInfo.billingProfile.monthlyTuitionAmount = clean.monthlyTuitionAmount;
-        }
-        if (clean.billingDayOfMonth !== undefined) {
-          targetUser.parentInfo.billingProfile.billingDayOfMonth = clean.billingDayOfMonth;
-        }
-        if (clean.currency !== undefined) {
-          targetUser.parentInfo.billingProfile.currency = clean.currency;
-        }
-      }
-
       if (clean.email !== undefined) {
         const existingEmail = await User.findOne(
           scopedQuery(req, {
@@ -1770,6 +2112,26 @@ module.exports = {
             "/admin/users"
           );
         }
+      }
+
+      if (clean.userName !== undefined) {
+        const normalizedUserName = normalizeUserName(clean.userName);
+        const existingUserName = await User.findOne(
+          scopedQuery(req, {
+            _id: { $ne: targetUser._id },
+            userNameNormalized: normalizedUserName
+          })
+        ).lean();
+        if (existingUserName) {
+          return respondMutation(
+            req,
+            res,
+            409,
+            { error: "conflict", field: "userName", message: "Username already exists for this school." },
+            "/admin/users"
+          );
+        }
+        targetUser.userName = normalizedUserName;
       }
 
       await targetUser.save();
@@ -1792,10 +2154,7 @@ module.exports = {
         gradeLevel: targetUser.studentInfo?.gradeLevel || "",
         enrollmentDate: targetUser.studentInfo?.enrollmentDate || null,
         subjects: targetUser.teacherInfo?.subjects || [],
-        hireDate: targetUser.teacherInfo?.hireDate || null,
-        monthlyTuitionAmount: targetUser.parentInfo?.billingProfile?.monthlyTuitionAmount ?? 0,
-        billingDayOfMonth: targetUser.parentInfo?.billingProfile?.billingDayOfMonth ?? 1,
-        currency: targetUser.parentInfo?.billingProfile?.currency || "USD"
+        hireDate: targetUser.teacherInfo?.hireDate || null
       };
 
       await logAdminAction(req, {
@@ -2142,6 +2501,25 @@ module.exports = {
             res,
             409,
             { error: "conflict", field: "email", message: "Email already exists for this school." },
+            "/admin/users"
+          );
+        }
+      }
+
+      const userNameNormalized = user.userNameNormalized || normalizeUserName(user.userName);
+      if (userNameNormalized) {
+        const userNameConflict = await User.findOne(
+          scopedQuery(req, {
+            _id: { $ne: user._id },
+            userNameNormalized
+          })
+        ).lean();
+        if (userNameConflict) {
+          return respondMutation(
+            req,
+            res,
+            409,
+            { error: "conflict", field: "userName", message: "Username already exists for this school." },
             "/admin/users"
           );
         }

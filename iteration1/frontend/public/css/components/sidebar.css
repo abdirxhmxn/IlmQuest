@@ -1,0 +1,74 @@
+/*
+ * ============================================================
+ *  sidebar.css
+ *  IlmQuest - Sidebar Navigation Structure and Scroll Behavior
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+:root {
+  --sidebar-scrollbar-thumb: rgba(148, 163, 184, 0.42);
+}
+
+/* 2. Base */
+.admin-sidebar,
+.parent-sidebar {
+  min-height: 0;
+}
+
+.admin-sidebar a,
+.parent-sidebar a {
+  text-decoration: none;
+}
+
+/* 3. Layout */
+.sidebar-nav,
+.parent-sidebar-nav,
+.sidebar-nav-links {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* 4. Components */
+.sidebar-nav::-webkit-scrollbar,
+.parent-sidebar-nav::-webkit-scrollbar,
+.sidebar-nav-links::-webkit-scrollbar {
+  width: 9px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb,
+.parent-sidebar-nav::-webkit-scrollbar-thumb,
+.sidebar-nav-links::-webkit-scrollbar-thumb {
+  background: var(--sidebar-scrollbar-thumb);
+  border-radius: var(--radius-pill);
+}
+
+.admin-sidebar-scrim,
+.parent-sidebar-scrim {
+  border: 0;
+  background: rgba(2, 6, 23, 0.54);
+}
+
+/* 5. States */
+.sidebar-link:focus-visible,
+.parent-sidebar-link:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.65);
+  outline-offset: 2px;
+}
+
+/* 6. Responsive */
+@media (max-width: 1024px) {
+  .admin-sidebar,
+  .parent-sidebar {
+    box-shadow: var(--shadow-lg);
+  }
+}

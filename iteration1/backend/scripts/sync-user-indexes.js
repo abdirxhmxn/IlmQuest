@@ -5,6 +5,8 @@ const dotenv = require("dotenv");
 const User = require("../models/User");
 const {
   normalizeEmail,
+  normalizeUserName,
+  deriveUserNameCandidate,
   normalizeIdentifier,
   normalizeStudentNumber
 } = require("../utils/userIdentifiers");
@@ -25,10 +27,26 @@ function isSameKeyPattern(indexKey, expectedKey) {
   return expectedEntries.every(([k, v]) => indexKey[k] === v);
 }
 
+function hasCanonicalPartialExpression(indexDef, fieldName) {
+  const partial = indexDef?.partialFilterExpression || {};
+  if (partial.deletedAt !== null) return false;
+  const fieldFilter = partial[fieldName] || {};
+  const typeIsString = fieldFilter.$type === "string";
+  const hasNonEmptyConstraint = fieldFilter.$ne === "" || fieldFilter.$gt === "";
+  return typeIsString && hasNonEmptyConstraint;
+}
+
 function findLegacyUniqueIndexes(indexes) {
+  const canonicalNames = new Set([
+    "school_username_active_unique",
+    "school_email_active_unique",
+    "school_employee_active_unique",
+    "school_student_number_active_unique"
+  ]);
   const legacyNames = new Set([
     "schoolId_1_email_1",
     "schoolId_1_userName_1",
+    "schoolId_1_userNameNormalized_1",
     "email_1",
     "userName_1",
     "studentInfo.studentNumber_1",
@@ -38,6 +56,7 @@ function findLegacyUniqueIndexes(indexes) {
   const legacyKeyPatterns = [
     { schoolId: 1, email: 1 },
     { schoolId: 1, userName: 1 },
+    { schoolId: 1, userNameNormalized: 1 },
     { email: 1 },
     { userName: 1 },
     { "studentInfo.studentNumber": 1 },
@@ -46,7 +65,20 @@ function findLegacyUniqueIndexes(indexes) {
 
   return indexes.filter((idx) => {
     if (!idx.unique) return false;
+    if (canonicalNames.has(idx.name)) return false;
     if (legacyNames.has(idx.name)) return true;
+    if (isSameKeyPattern(idx.key, { schoolId: 1, userNameNormalized: 1 })) {
+      return !hasCanonicalPartialExpression(idx, "userNameNormalized");
+    }
+    if (isSameKeyPattern(idx.key, { schoolId: 1, emailNormalized: 1 })) {
+      return !hasCanonicalPartialExpression(idx, "emailNormalized");
+    }
+    if (isSameKeyPattern(idx.key, { schoolId: 1, employeeIdNormalized: 1 })) {
+      return !hasCanonicalPartialExpression(idx, "employeeIdNormalized");
+    }
+    if (isSameKeyPattern(idx.key, { schoolId: 1, studentNumberNormalized: 1 })) {
+      return !hasCanonicalPartialExpression(idx, "studentNumberNormalized");
+    }
     return legacyKeyPatterns.some((pattern) => isSameKeyPattern(idx.key, pattern));
   });
 }
@@ -54,18 +86,49 @@ function findLegacyUniqueIndexes(indexes) {
 async function backfillNormalizedFields() {
   const cursor = User.find({}, {
     _id: 1,
+    schoolId: 1,
+    firstName: 1,
+    lastName: 1,
+    userName: 1,
+    userNameNormalized: 1,
     email: 1,
     emailNormalized: 1,
+    deletedAt: 1,
+    createdAt: 1,
     employeeIdNormalized: 1,
     studentNumberNormalized: 1,
     "teacherInfo.employeeId": 1,
     "studentInfo.studentNumber": 1
-  }).cursor();
+  }).sort({ schoolId: 1, createdAt: 1, _id: 1 }).cursor();
 
   const ops = [];
   let count = 0;
+  const usedBySchool = new Map();
 
   for await (const user of cursor) {
+    const schoolKey = formatId(user.schoolId);
+    if (!usedBySchool.has(schoolKey)) usedBySchool.set(schoolKey, new Set());
+    const usedSet = usedBySchool.get(schoolKey);
+
+    const baseUserName = deriveUserNameCandidate({
+      preferred: user.userName,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email
+    });
+
+    let resolvedUserName = baseUserName || "user";
+    const isActive = !user.deletedAt;
+    if (isActive) {
+      let suffix = 2;
+      while (usedSet.has(resolvedUserName)) {
+        resolvedUserName = `${baseUserName || "user"}-${suffix}`;
+        suffix += 1;
+      }
+      usedSet.add(resolvedUserName);
+    }
+
+    const userNameNormalized = normalizeUserName(resolvedUserName) || "user";
     const emailNormalized = normalizeEmail(user.email);
     const employeeIdNormalized = normalizeIdentifier(user.teacherInfo?.employeeId);
     const studentNumberNormalized = normalizeStudentNumber(user.studentInfo?.studentNumber);
@@ -75,6 +138,8 @@ async function backfillNormalizedFields() {
         filter: { _id: user._id },
         update: {
           $set: {
+            userName: resolvedUserName,
+            userNameNormalized,
             emailNormalized,
             employeeIdNormalized,
             studentNumberNormalized
@@ -99,6 +164,21 @@ async function backfillNormalizedFields() {
 }
 
 function normalizedExprFor(fieldName) {
+  if (fieldName === "userNameNormalized") {
+    return {
+      $toLower: {
+        $trim: {
+          input: {
+            $cond: [
+              { $gt: [{ $strLenCP: { $ifNull: ["$userNameNormalized", ""] } }, 0] },
+              "$userNameNormalized",
+              { $ifNull: ["$userName", ""] }
+            ]
+          }
+        }
+      }
+    };
+  }
   if (fieldName === "emailNormalized") {
     return {
       $toLower: {
@@ -263,6 +343,11 @@ async function createCanonicalIndexWithFallback(indexSpec, name, fieldName) {
 
 async function createScopedIndexes() {
   await createCanonicalIndexWithFallback(
+    { schoolId: 1, userNameNormalized: 1 },
+    "school_username_active_unique",
+    "userNameNormalized"
+  );
+  await createCanonicalIndexWithFallback(
     { schoolId: 1, emailNormalized: 1 },
     "school_email_active_unique",
     "emailNormalized"
@@ -291,13 +376,21 @@ async function main() {
   try {
     await printEnvironmentContext();
 
-    const [emailConflicts, employeeConflicts, studentNumberConflicts] = await Promise.all([
+    let backfilled = 0;
+    if (mode === "apply") {
+      backfilled = await backfillNormalizedFields();
+      console.log(`Backfilled normalized fields for ${backfilled} user documents.`);
+    }
+
+    const [userNameConflicts, emailConflicts, employeeConflicts, studentNumberConflicts] = await Promise.all([
+      detectConflictsFor("userNameNormalized"),
       detectConflictsFor("emailNormalized"),
       detectConflictsFor("employeeIdNormalized"),
       detectConflictsFor("studentNumberNormalized")
     ]);
 
     const totalConflicts = printConflictReport({
+      userNameNormalized: userNameConflicts,
       emailNormalized: emailConflicts,
       employeeIdNormalized: employeeConflicts,
       studentNumberNormalized: studentNumberConflicts
@@ -314,8 +407,6 @@ async function main() {
       return;
     }
 
-    const backfilled = await backfillNormalizedFields();
-    console.log(`Backfilled normalized fields for ${backfilled} user documents.`);
     await dropLegacyIndexesIfPresent();
     await createScopedIndexes();
     console.log("\nIndex sync apply complete.");

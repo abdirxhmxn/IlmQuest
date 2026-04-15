@@ -1,0 +1,197 @@
+<%# Admin settings view: organization profile, configuration shortcuts, and operational hygiene quick actions. %>
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Admin Settings',
+  pageStyles: ['/css/pages/admin-settings.css'],
+  activePage: activePage || 'settings',
+  user
+}) %>
+
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const metrics = adminMetrics || {};
+  const school = schoolProfile || null;
+
+  const totalStudents = Number(metrics.totalStudents || 0);
+  const totalTeachers = Number(metrics.totalTeachers || 0);
+  const totalParents = Number(metrics.totalParents || 0);
+  const totalClasses = Number(metrics.totalClasses || 0);
+
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+%>
+
+<header class="admin-page-header">
+  <button
+    type="button"
+    class="sidebar-toggle"
+    data-sidebar-toggle
+    aria-label="Toggle sidebar"
+    aria-expanded="false"
+    aria-controls="adminSidebar"
+  >
+    <%- icon('menu') %>
+  </button>
+  <div class="admin-page-title">
+    <p class="admin-breadcrumbs">Admin / Workspace / Settings</p>
+    <h1>Admin Settings</h1>
+    <p>Review organization profile, configuration shortcuts, and operational hygiene checks.</p>
+  </div>
+  <div class="admin-icon-actions" aria-hidden="true">
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('activity') %></button>
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('bell') %></button>
+  </div>
+  <div class="admin-top-actions">
+    <a class="admin-action-link" href="/profile">My Profile</a>
+    <a class="admin-action-link" href="/admin/home">Dashboard</a>
+  </div>
+</header>
+
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="settings-stats admin-stat-grid">
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Students</p>
+    <p class="admin-stat-value"><%= totalStudents %></p>
+    <p class="admin-stat-meta">Managed learner accounts</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Teachers</p>
+    <p class="admin-stat-value"><%= totalTeachers %></p>
+    <p class="admin-stat-meta">Instruction team members</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Parents</p>
+    <p class="admin-stat-value"><%= totalParents %></p>
+    <p class="admin-stat-meta">Guardian oversight users</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Classes</p>
+    <p class="admin-stat-value"><%= totalClasses %></p>
+    <p class="admin-stat-meta">Class catalog records</p>
+  </article>
+</section>
+
+<section class="settings-layout admin-page-grid">
+  <div class="admin-main-column">
+    <article class="settings-card">
+      <header class="settings-card-header">
+        <h2>Organization Profile</h2>
+        <p>Reference details tied to your current school workspace.</p>
+      </header>
+      <% if (!school) { %>
+        <div class="admin-empty-state">School profile data is unavailable right now.</div>
+      <% } else { %>
+        <dl class="settings-definition-list">
+          <div>
+            <dt>School Name</dt>
+            <dd><%= school.schoolName || 'Not set' %></dd>
+          </div>
+          <div>
+            <dt>School Email</dt>
+            <dd><%= school.schoolEmail || 'Not set' %></dd>
+          </div>
+          <div>
+            <dt>Admin Username</dt>
+            <dd><%= school.adminUser || 'Not set' %></dd>
+          </div>
+          <div>
+            <dt>Contact Email</dt>
+            <dd><%= school.contactEmail || 'Not set' %></dd>
+          </div>
+          <div>
+            <dt>Contact Phone</dt>
+            <dd><%= school.contactPhone || 'Not set' %></dd>
+          </div>
+          <div>
+            <dt>Address</dt>
+            <dd><%= school.address || 'Not set' %></dd>
+          </div>
+          <div>
+            <dt>Established</dt>
+            <dd><%= school.establishedLabel || 'Not set' %></dd>
+          </div>
+          <div>
+            <dt>Workspace Created</dt>
+            <dd><%= school.createdLabel || 'Not set' %></dd>
+          </div>
+        </dl>
+      <% } %>
+    </article>
+
+    <article class="settings-card">
+      <header class="settings-card-header">
+        <h2>Configuration Shortcuts</h2>
+        <p>Use these modules for operational settings and policy updates.</p>
+      </header>
+      <div class="settings-shortcut-grid">
+        <a class="settings-shortcut" href="/admin/users">
+          <h3>User Access</h3>
+          <p>Manage student, teacher, and parent account lifecycle.</p>
+        </a>
+        <a class="settings-shortcut" href="/admin/classes">
+          <h3>Class Setup</h3>
+          <p>Control class assignments, schedules, and activation state.</p>
+        </a>
+        <a class="settings-shortcut" href="/admin/announcements">
+          <h3>Communication Rules</h3>
+          <p>Publish scoped announcements and audience messaging.</p>
+        </a>
+        <a class="settings-shortcut" href="/admin/attendance">
+          <h3>Attendance Monitoring</h3>
+          <p>Review class attendance coverage and intervention trends.</p>
+        </a>
+      </div>
+    </article>
+
+    <article class="settings-card">
+      <header class="settings-card-header">
+        <h2>Security &amp; Account</h2>
+        <p>Keep admin access and profile details up to date.</p>
+      </header>
+      <div class="settings-actions-row">
+        <a class="settings-action" href="/profile">Update Profile</a>
+        <a class="settings-action" href="/admin/reports">Audit Reports</a>
+        <a class="settings-action" href="/logout">Sign Out</a>
+      </div>
+      <p class="settings-note">For authentication changes, use your profile page controls to keep existing login flows intact.</p>
+    </article>
+  </div>
+
+  <aside class="admin-side-column admin-utility-rail">
+    <article class="settings-card settings-side-card">
+      <header class="settings-card-header">
+        <h3>System Hygiene</h3>
+        <p>Recommended weekly checks.</p>
+      </header>
+      <ul class="settings-list">
+        <li>Review attendance and grade alerts for at-risk students.</li>
+        <li>Validate teacher/class assignments for new enrollments.</li>
+        <li>Archive stale announcements and drafts.</li>
+        <li>Generate reports for current quarter checkpoints.</li>
+      </ul>
+    </article>
+
+    <article class="settings-card settings-side-card">
+      <header class="settings-card-header">
+        <h3>Quick Links</h3>
+        <p>Jump directly to high-frequency tools.</p>
+      </header>
+      <nav class="settings-link-stack" aria-label="Settings quick links">
+        <a href="/admin/home">Dashboard</a>
+        <a href="/admin/attendance">Attendance</a>
+        <a href="/admin/announcements">Announcements</a>
+        <a href="/admin/reports">Reports</a>
+      </nav>
+    </article>
+  </aside>
+</section>
+
+<%- include('../partials/adminShellEnd') %>

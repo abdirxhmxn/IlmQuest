@@ -1,0 +1,112 @@
+/*
+ * ============================================================
+ *  modals.css
+ *  IlmQuest - Modal, Dialog, and Overlay Interaction Layer
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+:root {
+  --overlay-bg: rgba(2, 6, 23, 0.5);
+}
+
+/* 2. Base */
+.dialog,
+dialog,
+.modal {
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  padding: 0;
+}
+
+.dialog::backdrop,
+dialog::backdrop {
+  background: var(--overlay-bg);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--overlay-bg);
+  z-index: 1000;
+}
+
+/* 3. Layout */
+.dialog-card,
+.modal,
+.modal-box {
+  width: min(92vw, 560px);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  background: var(--color-surface-panel);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.dialog-card,
+.modal-box {
+  padding: var(--space-4);
+}
+
+.dialog-actions,
+.modal-actions {
+  margin-top: var(--space-3);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* 4. Components */
+.modal-title,
+#modalTitle {
+  color: var(--color-text-main);
+  margin-top: 0;
+}
+
+.modal-description,
+#modalDescription {
+  color: var(--color-text-muted);
+}
+
+/* 5. States */
+.modal-overlay.is-open {
+  display: flex;
+}
+
+/* 6. Responsive */
+@media (max-width: 768px) {
+  /* Bottom-sheet behavior improves thumb reach on smaller phones. */
+  .dialog-card,
+  .modal,
+  .modal-box {
+    width: 100%;
+    max-height: 92vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .dialog-actions,
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+}

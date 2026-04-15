@@ -1,13 +1,13 @@
 const fs = require("node:fs/promises");
 const User = require("../models/User");
+const School = require("../models/School");
 const Class = require("../models/Class");
 const Grade = require("../models/Grades");
 const Attendance = require("../models/Attendance");
-const ParentPayment = require("../models/ParentPayment");
 const ReportActivity = require("../models/ReportActivity");
 const cloudinary = require("../middleware/cloudinary");
 const { scopedQuery } = require("../utils/tenant");
-const { normalizeEmail } = require("../utils/userIdentifiers");
+const { normalizeEmail, normalizeUserName } = require("../utils/userIdentifiers");
 
 function toIdString(value) {
   if (!value) return "";
@@ -76,36 +76,12 @@ function buildQuickActions(role, dashboardPath) {
     ],
     parent: [
       { label: "Dashboard", href: dashboardPath },
-      { label: "Payments", href: "/parent/home#payments" },
+      { label: "Missions", href: "/parent/home#missions" },
       { label: "Children", href: "/parent/home#children" }
     ]
   };
 
   return actionsByRole[role] || [{ label: "Dashboard", href: dashboardPath }];
-}
-
-function summarizeParentPayments(payments = []) {
-  let outstanding = 0;
-  let nextDue = null;
-
-  payments.forEach((payment) => {
-    const expected = Number(payment.expectedAmount || 0);
-    const paid = Number(payment.paidAmount || 0);
-    const dueAmount = Math.max(0, expected - paid);
-    if (dueAmount > 0) outstanding += dueAmount;
-
-    if (!nextDue && dueAmount > 0) {
-      nextDue = payment;
-    }
-  });
-
-  return {
-    count: payments.length,
-    outstanding: Math.round(outstanding * 100) / 100,
-    nextDueDate: nextDue?.dueDate || null,
-    nextDueAmount: nextDue ? Math.max(0, Number(nextDue.expectedAmount || 0) - Number(nextDue.paidAmount || 0)) : 0,
-    currency: nextDue?.currency || "USD"
-  };
 }
 
 async function cleanupUploadedFile(filePath) {
@@ -176,6 +152,9 @@ module.exports = {
         .sort({ createdAt: -1 })
         .limit(6)
         .lean();
+      const schoolQuery = School.findById(req.schoolId)
+        .select("schoolName")
+        .lean();
 
       const viewerProfileQuery = User.findOne(scopedQuery(req, { _id: userId }))
         .select("profileImage profilePic")
@@ -206,11 +185,6 @@ module.exports = {
           ? Attendance.find(scopedQuery(req, { "records.studentId": userId })).select("records").lean()
           : Promise.resolve([]);
 
-      const parentPaymentsQuery =
-        role === "parent"
-          ? ParentPayment.find(scopedQuery(req, { parentId: userId })).sort({ dueDate: 1 }).lean()
-          : Promise.resolve([]);
-
       const linkedChildrenQuery =
         role === "parent" && linkedChildIds.length
           ? User.find(scopedQuery(req, { _id: { $in: linkedChildIds }, role: "student" }))
@@ -225,9 +199,9 @@ module.exports = {
         teacherGradeCount,
         studentGradeCount,
         studentAttendanceDocs,
-        parentPayments,
         linkedChildren,
-        viewerProfile
+        viewerProfile,
+        schoolDoc
       ] = await Promise.all([
         classesQuery,
         reportQuery,
@@ -235,10 +209,11 @@ module.exports = {
         teacherGradeCountQuery,
         studentGradeCountQuery,
         studentAttendanceQuery,
-        parentPaymentsQuery,
         linkedChildrenQuery,
-        viewerProfileQuery
+        viewerProfileQuery,
+        schoolQuery
       ]);
+      const schoolName = String(schoolDoc?.schoolName || "").trim() || "Unknown School";
 
       const profileUser = {
         ...req.user,
@@ -275,8 +250,6 @@ module.exports = {
         emptyListText: "No role-specific records available yet."
       };
 
-      const parentPaymentSummary = summarizeParentPayments(parentPayments);
-
       if (role === "admin" && Array.isArray(adminCounts)) {
         const [studentCount, teacherCount, parentCount, totalUsers] = adminCounts;
         quickStats.push(
@@ -286,7 +259,7 @@ module.exports = {
           { label: "Parents", value: String(parentCount), tone: "neutral" }
         );
         rolePanel.items.push(
-          { label: "School Scope", value: toIdString(req.user?.schoolId) || "N/A" },
+          { label: "School", value: schoolName },
           { label: "Active Classes", value: String(classRows.length) },
           { label: "Administrative Access", value: "Users, classes, announcements, reports" }
         );
@@ -355,22 +328,17 @@ module.exports = {
         rolePanel.listItems = classRows.map((row) => `${row.className} (${row.classCode})`);
         rolePanel.emptyListText = "No classes are linked yet.";
       } else if (role === "parent") {
-        const outstandingLabel = new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: String(parentPaymentSummary.currency || "USD").toUpperCase()
-        }).format(Number(parentPaymentSummary.outstanding || 0));
-
         quickStats.push(
           { label: "Linked Children", value: String(linkedChildIds.length), tone: "neutral" },
           { label: "Active Classes", value: String(classRows.length), tone: "neutral" },
-          { label: "Outstanding", value: outstandingLabel, tone: parentPaymentSummary.outstanding > 0 ? "warning" : "success" },
-          { label: "Next Due", value: parentPaymentSummary.nextDueDate ? formatProfileDate(parentPaymentSummary.nextDueDate) : "No pending due", tone: "neutral" }
+          { label: "Recent Reports", value: String(recentReportsRaw.length || 0), tone: "neutral" },
+          { label: "Portal Access", value: "Read-only", tone: "success" }
         );
         rolePanel.items.push(
           { label: "Linked Students", value: String(linkedChildIds.length) },
-          { label: "Monthly Billing Day", value: String(req.user?.parentInfo?.billingProfile?.billingDayOfMonth || 1) },
-          { label: "Billing Currency", value: cleanInput(req.user?.parentInfo?.billingProfile?.currency) || "USD" },
-          { label: "Open Invoices", value: String(parentPaymentSummary.count) }
+          { label: "Academic Visibility", value: "Grades, attendance, missions" },
+          { label: "Latest Report Records", value: String(recentReportsRaw.length || 0) },
+          { label: "Portal Permissions", value: "Read-only academic monitoring" }
         );
         rolePanel.chips = (linkedChildren || []).map((child) => {
           const childName = `${child?.firstName || ""} ${child?.lastName || ""}`.trim() || "Student";
@@ -404,14 +372,14 @@ module.exports = {
       const overviewRows = [
         { label: "Full Name", value: `${req.user?.firstName || ""} ${req.user?.lastName || ""}`.trim() || "Not provided" },
         { label: "Username", value: cleanInput(req.user?.userName) || "Not provided" },
-        { label: "Email", value: cleanInput(req.user?.email) || "Not provided" },
         { label: "Role", value: roleLabel },
         { label: "Member Since", value: formatProfileDate(req.user?.createdAt) },
-        { label: "School Scope", value: toIdString(req.user?.schoolId) || "N/A" }
+        { label: "School", value: schoolName }
       ];
 
       const profileModel = {
         dashboardPath,
+        schoolName,
         roleLabel,
         avatarUrl: cleanInput(profileUser.profileImage || profileUser.profilePic, 600),
         canManageAvatar: role === "admin",
@@ -423,7 +391,6 @@ module.exports = {
         quickActions: buildQuickActions(role, dashboardPath),
         classRows,
         recentReports,
-        parentPaymentSummary,
         editable: {
           firstName: cleanInput(req.user?.firstName, 80),
           lastName: cleanInput(req.user?.lastName, 80),
@@ -457,7 +424,7 @@ module.exports = {
 
       const firstName = cleanInput(req.body?.firstName, 80);
       const lastName = cleanInput(req.body?.lastName, 80);
-      const userName = cleanInput(req.body?.userName, 80);
+      const userName = normalizeUserName(req.body?.userName || "");
       const email = normalizeEmail(req.body?.email || "");
       const genderRaw = cleanInput(req.body?.gender, 16).toLowerCase();
       const dobInputRaw = cleanInput(req.body?.DOB, 20);
@@ -494,7 +461,7 @@ module.exports = {
         User.findOne(
           scopedQuery(req, {
             _id: { $ne: currentUser._id },
-            userName
+            userNameNormalized: userName
           })
         ).lean()
       ]);

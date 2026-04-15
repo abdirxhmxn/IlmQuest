@@ -1,3 +1,8 @@
+<%
+  const teacherActivePage = 'home';
+  const teacherPageTitle = 'Teacher Dashboard';
+  const teacherPageSubtitle = 'Daily overview for your classes, progress, and classroom priorities.';
+%>
 <%- include('../partials/teacherHeader') %>
 
 <link rel="stylesheet" href="/css/pages/teacher-dashboard.css">
@@ -6,9 +11,9 @@
   const announcements = Array.isArray(teacherAnnouncements) ? teacherAnnouncements : [];
 %>
 
-<main class="teacher-dashboard-page">
-  <section class="dashboard-shell">
-    <header class="dashboard-header">
+<main class="teacher-main teacher-dashboard-page">
+  <section class="teacher-page-shell dashboard-shell">
+    <header class="teacher-page-hero dashboard-header">
       <div>
         <h1>Teacher Dashboard</h1>
         <p>Welcome back, <strong><%= user.firstName %></strong>. Review each class and keep plans on track.</p>
@@ -123,7 +128,7 @@
                   <ol class="leaderboard-list">
                     <% cls.topStudents.forEach((student) => { %>
                       <li>
-                        <span><%= student.name %></span>
+                        <a href="/teacher/students/<%= student._id %>/progress?classId=<%= cls._id %>"><%= student.name %></a>
                         <strong><%= student.points %> pts</strong>
                       </li>
                     <% }) %>
@@ -158,6 +163,7 @@
                 <div class="quick-links">
                   <a href="/teacher/manage-attendance">Attendance</a>
                   <a href="/teacher/manage-grades">Grades</a>
+                  <a href="/teacher/student-progress">Student Progress</a>
                   <a href="/teacher/manage-missions">Missions</a>
                   <a href="/teacher/customize?classId=<%= cls._id %>">Customize This Class</a>
                 </div>

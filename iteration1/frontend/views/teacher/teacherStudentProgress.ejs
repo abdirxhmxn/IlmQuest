@@ -1,0 +1,347 @@
+<%
+  const teacherActivePage = 'progress';
+  const teacherPageTitle = 'Student Progress Dashboard';
+  const teacherPageSubtitle = 'Command center for student performance, missions, attendance, and rank progression.';
+%>
+<%- include('../partials/teacherHeader') %>
+
+<link rel="stylesheet" href="/css/pages/student-progress.css">
+
+<%
+  const view = progress || {};
+  const identity = view.identity || {};
+  const rank = view.rank || {};
+  const grades = view.grades || {};
+  const attendance = view.attendance || {};
+  const missions = view.missions || {};
+  const metrics = view.metrics || {};
+  const insights = view.teacherInsights || {};
+  const rankTiers = Array.isArray(rankLadder) ? rankLadder : [];
+  const progressWidth = Math.max(0, Math.min(100, Number(rank.progressPercent || 0)));
+  const rankReturnTo = identity.id
+    ? `/teacher/students/${identity.id}/progress${identity.classId ? `?classId=${identity.classId}` : ''}`
+    : '/teacher/student-progress';
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+%>
+
+<main class="teacher-main teacher-progress-page">
+  <section class="teacher-page-shell student-progress-page teacher-progress-mode">
+    <% if (successMessages.length) { %>
+      <div class="flash-message success"><%= successMessages.join(' ') %></div>
+    <% } %>
+    <% if (errorMessages.length) { %>
+      <div class="flash-message error"><%= errorMessages.join(' ') %></div>
+    <% } %>
+
+    <header class="progress-hero-card">
+      <div>
+        <p class="progress-kicker">Teacher Command Center</p>
+        <h1><%= identity.fullName || 'Student' %></h1>
+        <p class="progress-subtitle">
+          <strong><%= identity.className || 'Unassigned' %></strong>
+          <% if (identity.classCode) { %> · <span>Code <%= identity.classCode %></span><% } %>
+          <% if (identity.programType && identity.programType !== 'N/A') { %> · <span><%= identity.programType %></span><% } %>
+          <% if (identity.gradeLevel && identity.gradeLevel !== 'N/A') { %> · <span><%= identity.gradeLevel %></span><% } %>
+        </p>
+      </div>
+      <div class="progress-hero-actions">
+        <a class="btn-outline" href="/teacher/student-progress">Back to Directory</a>
+        <a class="btn-primary" href="/teacher/manage-missions">Assign / Review Missions</a>
+      </div>
+    </header>
+
+    <section class="progress-summary-grid">
+      <article class="progress-metric-card">
+        <p class="metric-label">Current Rank</p>
+        <p class="metric-value"><%= rank.displayRankLabel || 'F Rank' %></p>
+        <small class="metric-note"><%= rank.isManualOverride ? 'Manual override active' : 'Automatic XP progression' %></small>
+      </article>
+      <article class="progress-metric-card">
+        <p class="metric-label">Total XP</p>
+        <p class="metric-value"><%= Number(rank.xp || 0).toLocaleString() %></p>
+        <small class="metric-note"><%= Number(rank.xpToNextRank || 0).toLocaleString() %> XP to <%= rank.nextRankLabel || 'Max Rank' %></small>
+      </article>
+      <article class="progress-metric-card">
+        <p class="metric-label">Attendance</p>
+        <p class="metric-value"><%= attendance.attendanceRateLabel || 'N/A' %></p>
+        <small class="metric-note"><%= Number(attendance.presentCount || 0) %> present · <%= Number(attendance.absentCount || 0) %> absent</small>
+      </article>
+      <article class="progress-metric-card">
+        <p class="metric-label">Grade Average</p>
+        <p class="metric-value"><%= grades.overallAverageLabel || 'N/A' %></p>
+        <small class="metric-note"><%= Number(grades.totalEntries || 0) %> assessments recorded</small>
+      </article>
+      <article class="progress-metric-card">
+        <p class="metric-label">Missions</p>
+        <p class="metric-value"><%= Number(missions.total || 0) %></p>
+        <small class="metric-note"><%= missions.completionRateLabel || 'N/A' %> completion</small>
+      </article>
+      <article class="progress-metric-card">
+        <p class="metric-label">Status</p>
+        <p class="metric-value status"><span class="status-chip status-<%= metrics.statusChip?.tone || 'neutral' %>"><%= metrics.statusChip?.label || 'In Progress' %></span></p>
+        <small class="metric-note">Live learning health indicator</small>
+      </article>
+    </section>
+
+    <section class="progress-rank-panel">
+      <div class="progress-rank-main">
+        <h2>Rank Progression</h2>
+        <p><%= rank.progressLabel || '0 / 0 XP' %></p>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= progressWidth %>">
+          <span style="width: <%= progressWidth %>%;"></span>
+        </div>
+      </div>
+      <form class="progress-rank-form" action="/teacher/students/<%= identity.id %>/rank" method="POST" onsubmit="return window.confirm('Apply this rank change for this student?');">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="classId" value="<%= identity.classId || '' %>" />
+        <input type="hidden" name="returnTo" value="<%= rankReturnTo %>" />
+        <label for="manualRank">Override rank</label>
+        <select id="manualRank" name="manualRank">
+          <option value="">Automatic (XP Based)</option>
+          <% rankTiers.forEach((tier) => { %>
+            <option value="<%= tier.key %>" <%= rank.isManualOverride && rank.manualRankKey === tier.key ? 'selected' : '' %>>
+              <%= tier.label %>
+            </option>
+          <% }) %>
+        </select>
+        <label for="rankOverrideReason">Reason (optional)</label>
+        <input
+          id="rankOverrideReason"
+          type="text"
+          name="rankOverrideReason"
+          maxlength="180"
+          value="<%= rank.rankOverrideReason || '' %>"
+          placeholder="Promotion, correction, intervention..."
+        />
+        <button type="submit" class="btn-primary">Update Rank</button>
+      </form>
+    </section>
+
+    <section class="progress-grid">
+      <article class="progress-panel">
+        <header class="panel-header">
+          <h2>Academic Performance</h2>
+          <a class="btn-outline" href="/teacher/manage-grades">Open Grade Management</a>
+        </header>
+
+        <div class="table-wrap">
+          <table class="progress-table">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Average</th>
+                <th>Entries</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!Array.isArray(grades.bySubject) || grades.bySubject.length === 0) { %>
+                <tr><td colspan="3" class="table-empty">No subject data available yet.</td></tr>
+              <% } else { %>
+                <% grades.bySubject.forEach((row) => { %>
+                  <tr>
+                    <td><%= row.subject %></td>
+                    <td><strong><%= row.averageLabel %></strong></td>
+                    <td><%= Number(row.count || 0) %></td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="subsection-title">Recent Grade Entries</h3>
+        <div class="table-wrap">
+          <table class="progress-table">
+            <thead>
+              <tr>
+                <th>Assignment</th>
+                <th>Subject</th>
+                <th>Category</th>
+                <th>Score</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!Array.isArray(grades.recentEntries) || grades.recentEntries.length === 0) { %>
+                <tr><td colspan="5" class="table-empty">No recent grades to display.</td></tr>
+              <% } else { %>
+                <% grades.recentEntries.slice(0, 8).forEach((entry) => { %>
+                  <tr>
+                    <td><%= entry.assignment %></td>
+                    <td><%= entry.subject %></td>
+                    <td><%= entry.category %></td>
+                    <td><strong><%= entry.score %>/<%= entry.maxScore %></strong> (<%= entry.percent.toFixed(1) %>%)</td>
+                    <td><%= entry.updatedAtLabel %></td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="progress-panel">
+        <header class="panel-header">
+          <h2>Missions</h2>
+          <a class="btn-outline" href="/teacher/manage-missions">Open Mission Management</a>
+        </header>
+        <div class="status-chip-row">
+          <span class="status-chip status-assigned">Assigned <strong><%= Number(missions.counts?.assigned || 0) %></strong></span>
+          <span class="status-chip status-started">Active <strong><%= Number(missions.counts?.active || 0) %></strong></span>
+          <span class="status-chip status-pending">Pending <strong><%= Number(missions.counts?.pending || 0) %></strong></span>
+          <span class="status-chip status-danger">Rejected <strong><%= Number(missions.counts?.rejected || 0) %></strong></span>
+          <span class="status-chip status-completed">Completed <strong><%= Number(missions.counts?.completed || 0) %></strong></span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="progress-table">
+            <thead>
+              <tr>
+                <th>Mission</th>
+                <th>Type</th>
+                <th>XP</th>
+                <th>Status</th>
+                <th>Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!Array.isArray(missions.recentRows) || missions.recentRows.length === 0) { %>
+                <tr><td colspan="5" class="table-empty">No mission activity found.</td></tr>
+              <% } else { %>
+                <% missions.recentRows.slice(0, 10).forEach((entry) => { %>
+                  <tr>
+                    <td><%= entry.title %></td>
+                    <td><%= entry.type %> · <%= entry.category %></td>
+                    <td><%= Number(entry.pointsXP || 0) %></td>
+                    <td><span class="status-chip status-<%= entry.statusKey || 'neutral' %>"><%= entry.statusLabel %></span></td>
+                    <td><%= entry.dueDateLabel %></td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="progress-panel">
+        <header class="panel-header">
+          <h2>Attendance</h2>
+          <a class="btn-outline" href="/teacher/manage-attendance">Open Attendance Management</a>
+        </header>
+        <div class="attendance-metric-grid">
+          <article><p class="metric-label">Sessions</p><p class="metric-value-sm"><%= Number(attendance.totalCount || 0) %></p></article>
+          <article><p class="metric-label">Present</p><p class="metric-value-sm"><%= Number(attendance.presentCount || 0) %></p></article>
+          <article><p class="metric-label">Absent</p><p class="metric-value-sm"><%= Number(attendance.absentCount || 0) %></p></article>
+          <article><p class="metric-label">Late</p><p class="metric-value-sm"><%= Number(attendance.lateCount || 0) %></p></article>
+        </div>
+        <div class="table-wrap">
+          <table class="progress-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Class</th>
+                <th>Status</th>
+                <th>Recorded By</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!Array.isArray(attendance.recentRows) || attendance.recentRows.length === 0) { %>
+                <tr><td colspan="4" class="table-empty">No attendance records found.</td></tr>
+              <% } else { %>
+                <% attendance.recentRows.slice(0, 10).forEach((entry) => { %>
+                  <tr>
+                    <td><%= entry.dateLabel %></td>
+                    <td><%= entry.className %></td>
+                    <td><span class="status-chip status-<%= String(entry.status || '').toLowerCase() %>"><%= entry.status %></span></td>
+                    <td><%= entry.recordedBy || '—' %></td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="progress-panel">
+        <header class="panel-header">
+          <h2>Teacher Insights (Internal)</h2>
+        </header>
+        <div class="insight-columns">
+          <section>
+            <h3>Strengths</h3>
+            <ul>
+              <% if (!Array.isArray(insights.strengths) || insights.strengths.length === 0) { %>
+                <li>No strengths flagged yet.</li>
+              <% } else { %>
+                <% insights.strengths.forEach((item) => { %><li><%= item %></li><% }) %>
+              <% } %>
+            </ul>
+          </section>
+          <section>
+            <h3>Concerns</h3>
+            <ul>
+              <% if (!Array.isArray(insights.concerns) || insights.concerns.length === 0) { %>
+                <li>No critical concerns flagged.</li>
+              <% } else { %>
+                <% insights.concerns.forEach((item) => { %><li><%= item %></li><% }) %>
+              <% } %>
+            </ul>
+          </section>
+          <section>
+            <h3>Recommended Next Steps</h3>
+            <ul>
+              <% if (!Array.isArray(insights.nextSteps) || insights.nextSteps.length === 0) { %>
+                <li>No immediate next steps.</li>
+              <% } else { %>
+                <% insights.nextSteps.forEach((item) => { %><li><%= item %></li><% }) %>
+              <% } %>
+            </ul>
+          </section>
+        </div>
+
+        <h3 class="subsection-title">Recent Internal Observations</h3>
+        <% if (!Array.isArray(insights.internalObservations) || insights.internalObservations.length === 0) { %>
+          <p class="table-empty">No recent teacher notes from grade feedback.</p>
+        <% } else { %>
+          <div class="observation-list">
+            <% insights.internalObservations.forEach((item) => { %>
+              <article>
+                <h4><%= item.source %></h4>
+                <p><%= item.note %></p>
+                <small><%= item.atLabel %></small>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </article>
+    </section>
+
+    <section class="progress-panel">
+      <header class="panel-header">
+        <h2>Recent Performance Timeline</h2>
+      </header>
+      <% if (!Array.isArray(view.recentActivity) || view.recentActivity.length === 0) { %>
+        <p class="table-empty">No recent events are available yet.</p>
+      <% } else { %>
+        <ul class="timeline-list">
+          <% view.recentActivity.forEach((item) => { %>
+            <li class="timeline-item">
+              <span class="timeline-type"><%= item.type %></span>
+              <div>
+                <h4><%= item.title %></h4>
+                <p><%= item.detail %></p>
+              </div>
+              <small><%= item.atLabel %></small>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </section>
+</main>
+
+<%- include('../partials/teacherFooter') %>

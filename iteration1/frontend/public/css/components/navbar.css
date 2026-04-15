@@ -1,0 +1,202 @@
+/*
+ * ============================================================
+ *  navbar.css
+ *  IlmQuest - Top Navigation and Header Behavior
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+:root {
+  --nav-height: 84px;
+}
+
+/* 2. Base */
+.site-header,
+.header-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 3. Layout */
+.site-header {
+  min-height: var(--nav-height);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+}
+
+.header-right,
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.header-nav,
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* 4. Components */
+.site-header {
+  background: color-mix(in srgb, var(--color-surface-page) 86%, transparent);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.header-bar {
+  background: color-mix(in srgb, var(--color-brand-900) 90%, transparent);
+  color: #f0f7f1;
+  border-bottom: 1px solid rgba(214, 233, 221, 0.5);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-3) var(--space-5);
+}
+
+.brand-name {
+  font-size: clamp(1.3rem, 1.1rem + 0.9vw, 2.2rem);
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.nav-link,
+.nav-links a {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.nav-link {
+  border: 1px solid var(--color-brand-700);
+  background: var(--color-brand-700);
+  color: #ffffff;
+}
+
+.nav-link:first-child {
+  background: transparent;
+  color: var(--color-brand-700);
+}
+
+.nav-links a {
+  color: #e5f3e7;
+  border: 1px solid transparent;
+}
+
+.nav-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--color-brand-700);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.nav-toggle-bar {
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+/* 5. States */
+.nav-link:hover {
+  background: #ffffff;
+  color: var(--color-brand-700);
+}
+
+.nav-link:first-child:hover {
+  background: var(--color-brand-700);
+  color: #ffffff;
+}
+
+.nav-links a:hover {
+  background: #e6f4e8;
+  color: var(--color-brand-950);
+}
+
+/* 6. Responsive */
+@media (max-width: 1024px) {
+  .site-header,
+  .header-bar {
+    min-height: 74px;
+    padding: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .header-right,
+  .header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .header-nav {
+    display: none;
+    width: 100%;
+    order: 2;
+  }
+
+  .header-nav.is-open {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: stretch;
+  }
+
+  .header-nav .nav-links {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-nav .nav-links a,
+  .header-nav .nav-link {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header,
+  .header-bar {
+    padding: var(--space-2);
+  }
+
+  .brand-name {
+    font-size: clamp(1.05rem, 2.8vw, 1.3rem);
+  }
+}

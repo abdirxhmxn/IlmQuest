@@ -5,7 +5,16 @@ const User = require("../models/User");
 const School = require("../models/School");
 const env = require("../config/env");
 const { sendPasswordResetEmail, isMailerConfigured } = require("../utils/mailer");
-const { normalizeEmail, mapDuplicateKeyError } = require("../utils/userIdentifiers");
+const {
+  normalizeEmail,
+  normalizeUserName,
+  mapDuplicateKeyError
+} = require("../utils/userIdentifiers");
+const {
+  FORCE_PASSWORD_CHANGE_ROUTE,
+  hasPendingPasswordSetup,
+  clearPasswordSetupFlags
+} = require("../utils/passwordSetup");
 
 const RESET_TOKEN_BYTES = 32;
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -46,6 +55,9 @@ function appBaseUrl(req) {
 
 exports.getLogin = (req, res) => {
   if (req.user) {
+    if (hasPendingPasswordSetup(req.user)) {
+      return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
+    }
     return res.redirect("/profile");
   }
   return res.render("login", { title: "Login" });
@@ -53,8 +65,9 @@ exports.getLogin = (req, res) => {
 
 exports.postLogin = (req, res, next) => {
   const validationErrors = [];
-  if (!validator.isEmail(req.body.email || "")) {
-    validationErrors.push({ msg: "Please enter a valid email address." });
+  const identifier = String(req.body.identifier || req.body.email || "").trim();
+  if (validator.isEmpty(identifier)) {
+    validationErrors.push({ msg: "Email or username is required." });
   }
   if (validator.isEmpty(req.body.password || "")) {
     validationErrors.push({ msg: "Password cannot be blank." });
@@ -65,7 +78,16 @@ exports.postLogin = (req, res, next) => {
     return res.redirect("/login");
   }
 
-  req.body.email = normalizeEmail(req.body.email);
+  req.body.identifier = identifier;
+  if (req.body.schoolName !== undefined) {
+    req.body.schoolName = String(req.body.schoolName || "").trim();
+  }
+  if (req.body.school !== undefined) {
+    req.body.school = String(req.body.school || "").trim();
+  }
+  if (req.body.schoolId !== undefined) {
+    req.body.schoolId = String(req.body.schoolId || "").trim();
+  }
 
   return passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
@@ -83,6 +105,9 @@ exports.postLogin = (req, res, next) => {
       req.session.save((sessionErr) => {
         if (sessionErr) {
           return next(sessionErr);
+        }
+        if (hasPendingPasswordSetup(req.user)) {
+          return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
         }
         return res.redirect(getRoleHome(req.user.role));
       });
@@ -110,6 +135,9 @@ exports.logout = (req, res) => {
 
 exports.getSignup = (req, res) => {
   if (req.user) {
+    if (hasPendingPasswordSetup(req.user)) {
+      return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
+    }
     return res.redirect(getRoleHome(req.user.role));
   }
 
@@ -120,7 +148,8 @@ exports.postSignup = async (req, res, next) => {
   let createdSchoolId = null;
 
   try {
-    const submittedUserName = (req.body.userName || req.body.adminUser || "").trim();
+    const submittedUserName = normalizeUserName(req.body.userName || req.body.adminUser || "");
+    const confirmUserName = normalizeUserName(req.body.confirmUsername || "");
     const schoolName = (req.body.schoolName || "").trim();
     const adminName = (req.body.adminName || "").trim();
     const phone = (req.body.phone || "").trim();
@@ -145,7 +174,7 @@ exports.postSignup = async (req, res, next) => {
     if (!validator.isLength(req.body.password || "", { min: 8 })) {
       validationErrors.push({ msg: "Password must be at least 8 characters long." });
     }
-    if ((req.body.adminUser || "") !== (req.body.confirmUsername || "")) {
+    if (submittedUserName !== confirmUserName) {
       validationErrors.push({ msg: "Usernames do not match." });
     }
     if ((req.body.password || "") !== (req.body.confirmPassword || "")) {
@@ -224,6 +253,9 @@ exports.postSignup = async (req, res, next) => {
 
 exports.getForgotPassword = (req, res) => {
   if (req.user) {
+    if (hasPendingPasswordSetup(req.user)) {
+      return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
+    }
     return res.redirect("/reset-password");
   }
 
@@ -362,6 +394,7 @@ exports.postResetPasswordByToken = async (req, res, next) => {
     }
 
     user.password = password;
+    clearPasswordSetupFlags(user);
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpiresAt = null;
     await user.save();
@@ -403,6 +436,7 @@ exports.putResetPassword = async (req, res) => {
     }
 
     user.password = password;
+    clearPasswordSetupFlags(user);
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpiresAt = null;
     await user.save();
@@ -413,5 +447,59 @@ exports.putResetPassword = async (req, res) => {
     console.error("Error in putResetPassword:", err);
     req.flash("errors", [{ msg: "An error occurred while resetting the password. Please try again." }]);
     return res.redirect("/reset-password");
+  }
+};
+
+exports.getForcePasswordChange = (req, res) => {
+  return res.render("forcePasswordChange.ejs", {
+    title: "Password Update Required"
+  });
+};
+
+exports.putForcePasswordChange = async (req, res) => {
+  try {
+    const password = req.body["new-password"];
+    const confirmPassword = req.body["confirm-password"];
+
+    const user = await User.findOne({
+      _id: req.user._id,
+      schoolId: req.schoolId,
+      deletedAt: null
+    }).select("+password");
+
+    if (!user) {
+      req.flash("errors", [{ msg: "User not found." }]);
+      return res.redirect("/login");
+    }
+
+    if (!hasPendingPasswordSetup(user)) {
+      return res.redirect(getRoleHome(user.role));
+    }
+
+    const validationErrors = [];
+    if (!validator.isLength(password || "", { min: 8 })) {
+      validationErrors.push({ msg: "Password must be at least 8 characters long." });
+    }
+    if ((password || "") !== (confirmPassword || "")) {
+      validationErrors.push({ msg: "Passwords do not match." });
+    }
+
+    if (validationErrors.length) {
+      req.flash("errors", validationErrors);
+      return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
+    }
+
+    user.password = password;
+    clearPasswordSetupFlags(user);
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpiresAt = null;
+    await user.save();
+
+    req.flash("success", "Password updated. Welcome to your dashboard.");
+    return res.redirect(getRoleHome(user.role));
+  } catch (err) {
+    console.error("Error in putForcePasswordChange:", err);
+    req.flash("errors", [{ msg: "An error occurred while updating your password. Please try again." }]);
+    return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
   }
 };

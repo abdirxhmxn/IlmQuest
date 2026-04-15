@@ -3,6 +3,42 @@ function normalizeEmail(value) {
   return String(value).trim().toLowerCase();
 }
 
+function normalizeUserName(value) {
+  if (value === undefined || value === null) return "";
+
+  const normalized = String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['"`’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized;
+}
+
+function deriveUserNameCandidate({
+  preferred = "",
+  firstName = "",
+  lastName = "",
+  email = "",
+  fallback = "user"
+} = {}) {
+  const preferredSlug = normalizeUserName(preferred);
+  if (preferredSlug) return preferredSlug;
+
+  const fullNameSlug = normalizeUserName(`${firstName} ${lastName}`.trim());
+  if (fullNameSlug) return fullNameSlug;
+
+  const emailLocalPart = String(email || "").split("@")[0] || "";
+  const emailSlug = normalizeUserName(emailLocalPart);
+  if (emailSlug) return emailSlug;
+
+  return normalizeUserName(fallback) || "user";
+}
+
 function normalizeIdentifier(value) {
   if (value === undefined || value === null) return "";
   return String(value).trim().toLowerCase();
@@ -21,6 +57,13 @@ function mapDuplicateKeyError(err) {
     return {
       field: "email",
       message: "Email already exists for this school."
+    };
+  }
+
+  if (keyPattern.userNameNormalized) {
+    return {
+      field: "userName",
+      message: "Username already exists for this school."
     };
   }
 
@@ -46,6 +89,8 @@ function mapDuplicateKeyError(err) {
 
 module.exports = {
   normalizeEmail,
+  normalizeUserName,
+  deriveUserNameCandidate,
   normalizeIdentifier,
   normalizeStudentNumber,
   mapDuplicateKeyError

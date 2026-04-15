@@ -1,0 +1,234 @@
+/*
+ * ============================================================
+ *  teacher-library.css
+ *  IlmQuest - Teacher Library Publishing
+ * ============================================================
+ */
+
+.teacher-library-page {
+  width: 100%;
+}
+
+.teacher-library-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.teacher-library-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.teacher-library-hero h1 {
+  margin: 0;
+}
+
+.teacher-library-hero p {
+  margin: 6px 0 0;
+}
+
+.teacher-library-counter {
+  margin: 0;
+  border: 1px solid #c8ded2;
+  background: #f1f8f4;
+  color: #1c5a42;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.teacher-library-form-card,
+.teacher-library-list-card {
+  border: 1px solid #d5e4dc;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 18px 40px rgba(8, 30, 21, 0.06);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.teacher-library-form-card h2,
+.teacher-library-list-card h2 {
+  margin: 0;
+  color: #143a2c;
+}
+
+.teacher-library-list-card header p {
+  margin: 6px 0 0;
+  color: #5f786b;
+  font-size: 0.9rem;
+}
+
+.teacher-library-form {
+  display: grid;
+  gap: 12px;
+}
+
+.teacher-library-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.teacher-library-form label > span {
+  color: #365448;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.teacher-library-form input[type="text"],
+.teacher-library-form input[type="url"],
+.teacher-library-form input[type="file"],
+.teacher-library-form select,
+.teacher-library-form textarea {
+  border: 1px solid #c9ddd1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #122f24;
+  background: #fbfefd;
+}
+
+.teacher-library-form textarea {
+  resize: vertical;
+}
+
+.teacher-library-form input:focus,
+.teacher-library-form select:focus,
+.teacher-library-form textarea:focus {
+  outline: 0;
+  border-color: #499d73;
+  box-shadow: 0 0 0 3px rgba(73, 157, 115, 0.16);
+}
+
+.teacher-library-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.teacher-library-help {
+  margin: 0;
+  color: #607c70;
+  font-size: 0.84rem;
+}
+
+.teacher-library-form-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.teacher-library-list {
+  display: grid;
+  gap: 10px;
+}
+
+.teacher-library-item {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid #d6e4dc;
+  border-radius: 12px;
+  background: #f7fbf9;
+  padding: 10px;
+}
+
+.teacher-library-item-media {
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 110px;
+  background: #ebf4ef;
+}
+
+.teacher-library-item-media img {
+  width: 100%;
+  height: 100%;
+  min-height: 110px;
+  object-fit: cover;
+  display: block;
+}
+
+.teacher-library-item-content {
+  display: grid;
+  gap: 8px;
+}
+
+.teacher-library-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.teacher-library-item-head h3 {
+  margin: 0;
+  color: #143d2d;
+  font-size: 1rem;
+}
+
+.teacher-library-item-head span {
+  color: #5f7a6d;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.teacher-library-item-content p {
+  margin: 0;
+  color: #2d4f40;
+  font-size: 0.9rem;
+}
+
+.teacher-library-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: #5c796c;
+  font-size: 0.82rem;
+}
+
+.teacher-library-item-meta a {
+  color: #1f7a54;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.teacher-library-item-meta a:hover,
+.teacher-library-item-meta a:focus-visible {
+  text-decoration: underline;
+}
+
+.teacher-library-empty {
+  border: 1px dashed #c5d8cd;
+  border-radius: 12px;
+  padding: 14px;
+  color: #547064;
+  background: #fbfdfc;
+}
+
+@media (max-width: 960px) {
+  .teacher-library-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-library-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .teacher-library-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .teacher-library-form-card,
+  .teacher-library-list-card {
+    padding: 14px;
+  }
+}

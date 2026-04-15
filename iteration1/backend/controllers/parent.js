@@ -2,11 +2,12 @@ const User = require("../models/User");
 const Class = require("../models/Class");
 const Grade = require("../models/Grades");
 const Attendance = require("../models/Attendance");
-const ParentPayment = require("../models/ParentPayment");
+const Mission = require("../models/Missions");
 const ReportActivity = require("../models/ReportActivity");
 const { scopedIdQuery, scopedQuery } = require("../utils/tenant");
 const { renderStudentReportLatex, compileLatexToPdf, normalizeJobName } = require("../utils/latexReports");
 const { getLinkedStudentsForParent, buildDisplayName } = require("../utils/parentLinks");
+const { buildStudentProgressViewModel } = require("../utils/studentProgress");
 const { getVisibleAnnouncementsForUser, toAnnouncementViewModel } = require("../utils/announcements");
 
 function toIdString(value) {
@@ -38,23 +39,6 @@ function formatDateTime(value) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "N/A";
   return parsed.toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
-
-function formatCurrency(value, currency = "USD") {
-  const amount = Number(value || 0);
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: String(currency || "USD").toUpperCase()
-  }).format(amount);
-}
-
-function daysDiff(fromDate, toDate) {
-  const start = new Date(fromDate);
-  const end = new Date(toDate);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.ceil((end.getTime() - start.getTime()) / msPerDay);
 }
 
 function inferSubjectSlot(rawSubjectName = "") {
@@ -231,112 +215,56 @@ function summarizeSubjectsForClassReport(grades) {
   return summarized;
 }
 
-function computeNextRecurringDueDate(parentDoc, now = new Date()) {
-  const billingProfile = parentDoc?.parentInfo?.billingProfile || {};
-  const billingDay = Math.min(28, Math.max(1, Number(billingProfile.billingDayOfMonth || 1)));
-  const dueDate = new Date(now.getFullYear(), now.getMonth(), billingDay);
-
-  if (dueDate < now) {
-    return new Date(now.getFullYear(), now.getMonth() + 1, billingDay);
-  }
-  return dueDate;
+function normalizeMissionStatus(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (["complete", "completed", "done"].includes(normalized)) return "Completed";
+  if (["started", "in_progress", "in progress"].includes(normalized)) return "Started";
+  return "Assigned";
 }
 
-function normalizePaymentStatus(payment, now = new Date()) {
-  const expectedAmount = Number(payment.expectedAmount || 0);
-  const paidAmount = Number(payment.paidAmount || 0);
-  const amountDue = Math.max(expectedAmount - paidAmount, 0);
-  const dueDate = payment.dueDate ? new Date(payment.dueDate) : null;
-  const dueDateValid = dueDate && !Number.isNaN(dueDate.getTime());
+function summarizeMissionsForStudent(missionDocs = [], studentId = "") {
+  const rows = [];
+  let assigned = 0;
+  let started = 0;
+  let completed = 0;
 
-  let status = String(payment.status || "").trim() || "Due";
-  if (amountDue <= 0) status = "Paid";
-  else if (status === "PendingProcessor") status = "PendingProcessor";
-  else if (paidAmount > 0) status = "Partial";
-  else status = "Due";
+  missionDocs
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+    .forEach((mission) => {
+      const activity = (mission?.active?.studentInfo || []).find((entry) => toIdString(entry?._id) === String(studentId));
+      const directlyAssigned = (mission?.assignedTo?.studentInfo || []).some(
+        (entry) => toIdString(entry?._id || entry) === String(studentId)
+      );
+      if (!activity && !directlyAssigned) return;
 
-  if (amountDue > 0 && dueDateValid && dueDate < now && status !== "PendingProcessor") {
-    status = "Overdue";
-  }
+      const status = normalizeMissionStatus(activity?.status);
+      if (status === "Completed") completed += 1;
+      else if (status === "Started") started += 1;
+      else assigned += 1;
 
-  const daysRemaining = dueDateValid ? daysDiff(now, dueDate) : null;
+      if (rows.length < 12) {
+        rows.push({
+          title: mission?.title || "Mission",
+          type: mission?.type || "General",
+          category: mission?.category || "Solo",
+          pointsXP: Number(mission?.pointsXP || 0),
+          dueDateLabel: mission?.dueDate ? formatDate(mission.dueDate) : "No due date",
+          status,
+          updatedAtLabel: formatDate(mission?.updatedAt || mission?.createdAt || new Date())
+        });
+      }
+    });
 
+  const total = assigned + started + completed;
+  const completionRate = total > 0 ? (completed / total) * 100 : null;
   return {
-    ...payment,
-    status,
-    amountDue,
-    dueDate,
-    dueDateLabel: dueDateValid ? formatDate(dueDate) : "N/A",
-    paidAtLabel: payment.paidAt ? formatDate(payment.paidAt) : "—",
-    createdAtLabel: payment.createdAt ? formatDateTime(payment.createdAt) : "—",
-    daysRemaining
-  };
-}
-
-function buildPaymentRing(nextPayment, now = new Date()) {
-  if (!nextPayment) {
-    return {
-      percent: 0,
-      state: "none",
-      amountLabel: "$0.00",
-      statusLabel: "No payment due",
-      dueLabel: "No pending invoices"
-    };
-  }
-
-  if (nextPayment.status === "Paid") {
-    return {
-      percent: 100,
-      state: "paid",
-      amountLabel: formatCurrency(0, nextPayment.currency),
-      statusLabel: "Paid",
-      dueLabel: `Paid on ${nextPayment.paidAtLabel || nextPayment.dueDateLabel}`
-    };
-  }
-
-  if (nextPayment.status === "Overdue") {
-    return {
-      percent: 100,
-      state: "overdue",
-      amountLabel: formatCurrency(nextPayment.amountDue, nextPayment.currency),
-      statusLabel: "Overdue",
-      dueLabel: `Due ${nextPayment.dueDateLabel}`
-    };
-  }
-
-  if (nextPayment.status === "PendingProcessor") {
-    return {
-      percent: 85,
-      state: "pending",
-      amountLabel: formatCurrency(nextPayment.amountDue, nextPayment.currency),
-      statusLabel: "Payment Requested",
-      dueLabel: `Awaiting processor setup (${nextPayment.dueDateLabel})`
-    };
-  }
-
-  const dueDate = nextPayment.dueDate ? new Date(nextPayment.dueDate) : null;
-  const dueDateValid = dueDate && !Number.isNaN(dueDate.getTime());
-  const windowDays = 30;
-  let percent = 0;
-
-  if (dueDateValid) {
-    const startDate = new Date(dueDate);
-    startDate.setDate(startDate.getDate() - windowDays);
-    const elapsed = now.getTime() - startDate.getTime();
-    const total = dueDate.getTime() - startDate.getTime();
-    percent = total > 0 ? (elapsed / total) * 100 : 0;
-  }
-
-  percent = Math.max(0, Math.min(100, percent));
-
-  return {
-    percent,
-    state: "due",
-    amountLabel: formatCurrency(nextPayment.amountDue, nextPayment.currency),
-    statusLabel: nextPayment.daysRemaining != null && nextPayment.daysRemaining >= 0
-      ? `${nextPayment.daysRemaining} day(s) left`
-      : "Due soon",
-    dueLabel: `Due ${nextPayment.dueDateLabel}`
+    total,
+    assigned,
+    started,
+    completed,
+    completionRate,
+    completionRateLabel: toPercentLabel(completionRate),
+    rows
   };
 }
 
@@ -380,13 +308,13 @@ async function buildParentPortalViewModel(req, options = {}) {
 
   const selectedChildIdRaw = options.selectedChildId || req.query.childId;
   const invalidSelectedChildId = Boolean(selectedChildIdRaw) && !childIdSet.has(String(selectedChildIdRaw));
-  const selectedChildId = selectedChildIdRaw && childIdSet.has(String(selectedChildIdRaw))
+  let selectedChildId = selectedChildIdRaw && childIdSet.has(String(selectedChildIdRaw))
     ? String(selectedChildIdRaw)
     : childIds.length
       ? String(childIds[0])
       : null;
 
-  const [classDocs, gradeDocs, attendanceDocs, paymentDocs, reportDocs, parentAnnouncementsRaw] = await Promise.all([
+  const [classDocs, gradeDocs, attendanceDocs, missionDocs, reportDocs, parentAnnouncementsRaw] = await Promise.all([
     childIds.length
       ? Class.find(scopedQuery(req, { "students._id": { $in: childIds } })).lean()
       : [],
@@ -396,7 +324,18 @@ async function buildParentPortalViewModel(req, options = {}) {
     childIds.length
       ? Attendance.find(scopedQuery(req, { "records.studentId": { $in: childIds } })).sort({ date: -1 }).lean()
       : [],
-    ParentPayment.find(scopedQuery(req, { parentId: parent._id })).sort({ dueDate: 1, createdAt: -1 }).lean(),
+    childIds.length
+      ? Mission.find(
+        scopedQuery(req, {
+          $or: [
+            { "active.studentInfo._id": { $in: childIds } },
+            { "assignedTo.studentInfo": { $in: childIds } }
+          ]
+        })
+      )
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .lean()
+      : [],
     childIds.length
       ? ReportActivity.find(
         scopedQuery(req, {
@@ -411,10 +350,9 @@ async function buildParentPortalViewModel(req, options = {}) {
     getVisibleAnnouncementsForUser(req, parent, { limit: 10 })
   ]);
 
-  const childNameById = new Map(
-    linkedStudents.map((student) => [String(student._id), buildDisplayName(student)])
+  const classById = new Map(
+    classDocs.map((classDoc) => [String(classDoc?._id || ""), classDoc])
   );
-
   const classByStudentId = new Map();
   classDocs.forEach((classDoc) => {
     (classDoc.students || []).forEach((entry) => {
@@ -424,10 +362,12 @@ async function buildParentPortalViewModel(req, options = {}) {
 
   const gradesByStudentId = new Map();
   const attendanceByStudentId = new Map();
+  const missionsByStudentId = new Map();
 
   linkedStudents.forEach((child) => {
     gradesByStudentId.set(String(child._id), []);
     attendanceByStudentId.set(String(child._id), []);
+    missionsByStudentId.set(String(child._id), []);
   });
 
   gradeDocs.forEach((grade) => {
@@ -449,14 +389,37 @@ async function buildParentPortalViewModel(req, options = {}) {
     });
   });
 
+  missionDocs.forEach((mission) => {
+    const linkedMissionStudentIds = new Set();
+
+    (mission?.active?.studentInfo || []).forEach((entry) => {
+      const id = String(entry?._id || "");
+      if (!missionsByStudentId.has(id)) return;
+      linkedMissionStudentIds.add(id);
+    });
+
+    (mission?.assignedTo?.studentInfo || []).forEach((entry) => {
+      const id = String((entry && entry._id) ? entry._id : entry || "");
+      if (!missionsByStudentId.has(id)) return;
+      linkedMissionStudentIds.add(id);
+    });
+
+    linkedMissionStudentIds.forEach((id) => {
+      missionsByStudentId.get(id).push(mission);
+    });
+  });
+
   const childSummaries = linkedStudents.map((child) => {
     const childId = String(child._id);
     const childGrades = gradesByStudentId.get(childId) || [];
     const childAttendance = attendanceByStudentId.get(childId) || [];
-    const classDoc = classByStudentId.get(childId);
+    const childMissions = missionsByStudentId.get(childId) || [];
+    const preferredClassId = String(child?.studentInfo?.classId || "").trim();
+    const classDoc = (preferredClassId && classById.get(preferredClassId)) || classByStudentId.get(childId);
 
     const gradeSummary = summarizeGradesForStudent(childGrades, childId);
     const attendanceSummary = summarizeAttendanceForStudent(childAttendance, childId);
+    const missionSummary = summarizeMissionsForStudent(childMissions, childId);
     const statusChip = computeChildStatusChip({
       overallAverage: gradeSummary.overallAverage,
       attendanceRate: attendanceSummary.attendanceRate
@@ -474,58 +437,46 @@ async function buildParentPortalViewModel(req, options = {}) {
       attendanceRate: attendanceSummary.attendanceRate,
       attendanceRateLabel: toPercentLabel(attendanceSummary.attendanceRate),
       gradeCount: gradeSummary.gradeCount,
+      missionCount: missionSummary.total,
+      missionCompleted: missionSummary.completed,
+      missionCompletionLabel: missionSummary.completionRateLabel,
       statusChip
     };
-  });
+  }).sort((a, b) => String(a?.fullName || "").localeCompare(String(b?.fullName || "")));
+
+  if (!selectedChildIdRaw && childSummaries.length > 0) {
+    selectedChildId = String(childSummaries[0].childId || selectedChildId || "");
+  }
 
   const selectedChild = childSummaries.find((entry) => entry.childId === selectedChildId) || null;
   const selectedChildGrades = selectedChildId ? (gradesByStudentId.get(selectedChildId) || []) : [];
   const selectedChildAttendance = selectedChildId ? (attendanceByStudentId.get(selectedChildId) || []) : [];
+  const selectedChildMissions = selectedChildId ? (missionsByStudentId.get(selectedChildId) || []) : [];
 
   const selectedGradesSummary = summarizeGradesForStudent(selectedChildGrades, selectedChildId);
   const selectedAttendanceSummary = summarizeAttendanceForStudent(selectedChildAttendance, selectedChildId);
+  const selectedMissionsSummary = summarizeMissionsForStudent(selectedChildMissions, selectedChildId);
 
-  const normalizedPayments = paymentDocs
-    .map((entry) => {
-      const normalized = normalizePaymentStatus(entry, new Date());
-      const childId = normalized.studentId ? String(normalized.studentId) : "";
-      return {
-        ...normalized,
-        childName: childId ? (childNameById.get(childId) || "N/A") : "Family"
-      };
-    })
-    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  const finiteGradeValues = childSummaries
+    .map((entry) => Number(entry.overallAverage))
+    .filter((value) => Number.isFinite(value));
+  const finiteAttendanceValues = childSummaries
+    .map((entry) => Number(entry.attendanceRate))
+    .filter((value) => Number.isFinite(value));
 
-  const familyOutstanding = normalizedPayments.reduce((sum, payment) => sum + Number(payment.amountDue || 0), 0);
-  const totalPaid = normalizedPayments.reduce((sum, payment) => sum + Number(payment.paidAmount || 0), 0);
+  const totalMissionAssigned = childSummaries.reduce((sum, entry) => sum + Number(entry.missionCount || 0), 0);
+  const totalMissionCompleted = childSummaries.reduce((sum, entry) => sum + Number(entry.missionCompleted || 0), 0);
 
-  let nextPayment = normalizedPayments.find((payment) =>
-    ["Due", "Overdue", "Partial", "PendingProcessor"].includes(payment.status) && Number(payment.amountDue || 0) > 0
-  ) || null;
-
-  if (!nextPayment) {
-    const monthlyAmount = Number(parent?.parentInfo?.billingProfile?.monthlyTuitionAmount || 0);
-    if (monthlyAmount > 0) {
-      const dueDate = computeNextRecurringDueDate(parent, new Date());
-      nextPayment = normalizePaymentStatus(
-        {
-          _id: null,
-          title: "Monthly Tuition",
-          category: "Tuition",
-          expectedAmount: monthlyAmount,
-          paidAmount: 0,
-          currency: parent?.parentInfo?.billingProfile?.currency || "USD",
-          dueDate,
-          status: "Due",
-          notes: "Auto-generated from billing profile"
-        },
-        new Date()
-      );
-      nextPayment.synthetic = true;
-    }
-  }
-
-  const paymentRing = buildPaymentRing(nextPayment, new Date());
+  const familySnapshot = {
+    averageGrade: finiteGradeValues.length
+      ? finiteGradeValues.reduce((sum, value) => sum + value, 0) / finiteGradeValues.length
+      : null,
+    averageAttendance: finiteAttendanceValues.length
+      ? finiteAttendanceValues.reduce((sum, value) => sum + value, 0) / finiteAttendanceValues.length
+      : null,
+    missionAssigned: totalMissionAssigned,
+    missionCompleted: totalMissionCompleted
+  };
 
   const recentReports = reportDocs.map((entry) => ({
     studentId: String(entry?.target?._id || ""),
@@ -550,11 +501,8 @@ async function buildParentPortalViewModel(req, options = {}) {
     selectedChild,
     selectedGradesSummary,
     selectedAttendanceSummary,
-    payments: normalizedPayments,
-    nextPayment,
-    paymentRing,
-    familyOutstanding,
-    totalPaid,
+    selectedMissionsSummary,
+    familySnapshot,
     recentReports,
     announcements
   };
@@ -653,109 +601,28 @@ module.exports = {
         return res.redirect("/parent/home");
       }
 
-      return res.redirect(`/parent/home?childId=${req.params.id}`);
-    } catch (err) {
-      console.error("Parent child route error:", err);
-      req.flash("errors", [{ msg: "Unable to load child profile." }]);
-      return res.redirect("/parent/home");
-    }
-  },
-
-  requestPaymentCheckout: async (req, res) => {
-    try {
-      const parentDoc = await User.findOne(scopedIdQuery(req, req.user._id, { role: "parent" }));
-      if (!parentDoc) {
-        req.flash("errors", [{ msg: "Parent account not found." }]);
-        return res.redirect("/login");
-      }
-
-      const linkedStudents = await getLinkedStudentsForParent(req, parentDoc);
-      const linkedChildIds = new Set(linkedStudents.map((student) => String(student._id)));
-      const selectedChildId = req.body.childId ? String(req.body.childId) : "";
-
-      if (selectedChildId && !linkedChildIds.has(selectedChildId)) {
-        req.flash("errors", [{ msg: "You are not authorized for the selected student." }]);
+      const progress = await buildStudentProgressViewModel(req, req.params.id, {
+        includeTeacherInsights: false
+      });
+      if (!progress) {
+        req.flash("errors", [{ msg: "Child progress profile could not be loaded." }]);
         return res.redirect("/parent/home");
       }
 
-      const requestedAmount = Number(req.body.amount || 0);
-      let paymentDoc = null;
+      const relationshipEntry = (parentDoc?.parentInfo?.children || []).find(
+        (entry) => String(entry?.childID || "") === String(req.params.id)
+      );
 
-      if (req.body.paymentId) {
-        paymentDoc = await ParentPayment.findOne(
-          scopedIdQuery(req, req.body.paymentId, { parentId: parentDoc._id })
-        );
-        if (!paymentDoc) {
-          req.flash("errors", [{ msg: "Payment request not found." }]);
-          return res.redirect("/parent/home");
-        }
-      } else {
-        const monthlyAmount = Number(parentDoc?.parentInfo?.billingProfile?.monthlyTuitionAmount || 0);
-        if (!Number.isFinite(monthlyAmount) || monthlyAmount <= 0) {
-          req.flash("errors", [{ msg: "No billable amount is configured yet. Please contact the school office." }]);
-          return res.redirect("/parent/home");
-        }
-
-        const dueDate = computeNextRecurringDueDate(parentDoc, new Date());
-        paymentDoc = await ParentPayment.create({
-          schoolId: req.schoolId,
-          parentId: parentDoc._id,
-          studentId: selectedChildId || null,
-          title: "Monthly Tuition",
-          category: "Tuition",
-          expectedAmount: monthlyAmount,
-          paidAmount: 0,
-          currency: parentDoc?.parentInfo?.billingProfile?.currency || "USD",
-          dueDate,
-          status: "Due",
-          notes: "Created from parent portal billing profile.",
-          createdBy: {
-            _id: req.user._id,
-            name: buildDisplayName(req.user),
-            role: req.user.role
-          },
-          updatedBy: {
-            _id: req.user._id,
-            name: buildDisplayName(req.user),
-            role: req.user.role
-          }
-        });
-      }
-
-      const amountDue = Math.max(Number(paymentDoc.expectedAmount || 0) - Number(paymentDoc.paidAmount || 0), 0);
-      if (amountDue <= 0) {
-        req.flash("info", [{ msg: "This payment record is already settled." }]);
-        return res.redirect(selectedChildId ? `/parent/home?childId=${selectedChildId}` : "/parent/home");
-      }
-      const attemptAmount = Number.isFinite(requestedAmount) && requestedAmount > 0
-        ? Math.min(requestedAmount, amountDue || requestedAmount)
-        : amountDue;
-
-      paymentDoc.attempts.push({
-        requestedAmount: Math.max(0, attemptAmount),
-        requestedAt: new Date(),
-        status: "requested",
-        channel: "portal",
-        // TODO: Replace with real processor checkout session creation (Stripe/Adyen/etc).
-        note: "Checkout requested from parent portal. No funds captured."
+      return res.render("parent/childProgress.ejs", {
+        user: req.user,
+        activePage: "children",
+        progress,
+        relationshipLabel: String(relationshipEntry?.relationship || "Guardian"),
+        messages: req.flash()
       });
-
-      if (amountDue > 0) {
-        paymentDoc.status = "PendingProcessor";
-      }
-
-      paymentDoc.updatedBy = {
-        _id: req.user._id,
-        name: buildDisplayName(req.user),
-        role: req.user.role
-      };
-      await paymentDoc.save();
-
-      req.flash("success", "Payment request submitted. No charge has been made yet while processor integration is pending.");
-      return res.redirect(selectedChildId ? `/parent/home?childId=${selectedChildId}` : "/parent/home");
     } catch (err) {
-      console.error("Parent checkout request error:", err);
-      req.flash("errors", [{ msg: "Could not submit payment request right now." }]);
+      console.error("Parent child route error:", err);
+      req.flash("errors", [{ msg: "Unable to load child profile." }]);
       return res.redirect("/parent/home");
     }
   },

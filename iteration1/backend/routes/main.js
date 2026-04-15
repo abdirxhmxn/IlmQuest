@@ -1,14 +1,23 @@
+// Main application router. Groups public/auth routes and role-scoped portals
+// so access control boundaries remain explicit as the platform grows.
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/auth");
 const homeController = require("../controllers/home");
 const parentController = require("../controllers/parent");
 const announcementsController = require("../controllers/announcements");
+const teacherLibraryController = require("../controllers/teacherLibrary");
 const financeController = require("../controllers/finance");
 const postsController = require("../controllers/posts");
 const profileController = require("../controllers/profile");
 const upload = require("../middleware/multer");
-const { ensureAuth, requireTenant, requireRole } = require("../middleware/auth");
+const {
+  ensureAuth,
+  requireTenant,
+  requireRole,
+  enforcePasswordChange,
+  requirePendingPasswordChange
+} = require("../middleware/auth");
 const {
   loginLimiter,
   signupLimiter,
@@ -38,7 +47,7 @@ router.get("/forgot-password", authController.getForgotPassword);
 // =============================================
 // 2. AUTH ROUTES
 // =============================================
-router.post("/login", loginLimiter, requireFields(["email", "password"]), validateEmailField("email"), authController.postLogin);
+router.post("/login", loginLimiter, requireFields(["password"]), authController.postLogin);
 router.post(
   "/signup",
   signupLimiter,
@@ -64,19 +73,45 @@ router.post(
 // =============================================
 // 2a. AUTH ROUTES (Password Reset)
 // =============================================
-router.get("/reset-password", ensureAuth, requireTenant, requireRole(...ALL_ROLES), homeController.getResetPassword);
+router.get("/reset-password", ensureAuth, requireTenant, requireRole(...ALL_ROLES), enforcePasswordChange, homeController.getResetPassword);
 router.put(
   "/reset-password",
   ensureAuth,
   requireTenant,
   requireRole(...ALL_ROLES),
+  enforcePasswordChange,
   resetLimiter,
   requireFields(["new-password", "confirm-password"]),
   authController.putResetPassword
 );
+
+// =============================================
+// 2b. AUTH ROUTES (Forced Password Change)
+// =============================================
+router.get(
+  "/force-password-change",
+  ensureAuth,
+  requireTenant,
+  requireRole("teacher", "parent", "student"),
+  requirePendingPasswordChange,
+  authController.getForcePasswordChange
+);
+router.put(
+  "/force-password-change",
+  ensureAuth,
+  requireTenant,
+  requireRole("teacher", "parent", "student"),
+  requirePendingPasswordChange,
+  resetLimiter,
+  requireFields(["new-password", "confirm-password"]),
+  authController.putForcePasswordChange
+);
+
 // =============================================
 // 3. GLOBAL AUTHENTICATED ROUTES (All Roles)
 // =============================================
+router.use(ensureAuth, requireTenant, enforcePasswordChange);
+
 router.get("/profile", ensureAuth, requireTenant, requireRole(...ALL_ROLES), profileController.getProfile);
 router.post("/profile/update", ensureAuth, requireTenant, requireRole(...ALL_ROLES), profileController.updateProfile);
 router.post(
@@ -115,6 +150,7 @@ router.get("/admin/classes", homeController.getClasses);
 router.get("/admin/attendance", homeController.getAdminAttendance);
 router.get("/admin/announcements", announcementsController.getAdminAnnouncements);
 router.get("/admin/reports", homeController.getAdminReports);
+router.get("/admin/settings", homeController.getAdminSettings);
 router.get("/admin/finance", financeController.getAdminFinance);
 router.get("/admin/finance/summary", financeController.getAdminFinanceSummary);
 router.get("/admin/reports/stats", homeController.getAdminReportStats);
@@ -136,7 +172,6 @@ router.post("/admin/announcements/:id/pin", validateObjectIdParam("id"), announc
 router.post("/admin/announcements/:id/archive", validateObjectIdParam("id"), announcementsController.archiveAnnouncement);
 router.post("/admin/finance/categories", requireFields(["entryType", "label"]), financeController.createCategory);
 router.post("/admin/finance/entries", requireFields(["entryType", "amount", "occurredAt"]), financeController.createEntry);
-router.post("/admin/finance/payments", requireFields(["parentId", "expectedAmount", "dueDate"]), financeController.createManualPayment);
 router.post("/admin/finance/bank/link-token", financeController.createBankLinkToken);
 router.post("/admin/finance/bank/connect", financeSyncLimiter, requireFields(["publicToken"]), financeController.connectBankAccount);
 router.post("/admin/finance/bank/sync", financeSyncLimiter, financeController.syncBankTransactions);
@@ -176,14 +211,19 @@ router.use("/teacher", ensureAuth, requireTenant, requireRole("teacher"));
 // --- GET ---
 router.get("/teacher/home", homeController.getTeacher);
 router.get("/teacher/manage-grades", homeController.getTeacherGrades);
+router.get("/teacher/student-progress", homeController.getTeacherStudentProgressDirectory);
 router.get("/teacher/manage-missions", homeController.getTeacherMissions);
 router.get("/teacher/manage-attendance", homeController.getTeacherAttendance);
 router.get("/teacher/customize", homeController.getTeacherCustomization);
+router.get("/teacher/students/:id/progress", validateObjectIdParam("id"), homeController.getTeacherStudentProgress);
+router.get("/teacher/library", teacherLibraryController.getTeacherLibrary);
 
 // --- POST (Create) ---
 router.post("/teacher/manage-missions/create-mission", requireFields(["missionTitle", "missionDescription", "type", "category", "rank"]), postsController.createMission);
 router.post("/teacher/manage-attendance/save", requireFields(["classId", "studentId", "date", "status"]), postsController.createAttendance);
 router.post("/teacher/customize/:id", validateObjectIdParam("id"), postsController.updateTeacherClassCustomization);
+router.post("/teacher/students/:id/rank", validateObjectIdParam("id"), postsController.updateStudentRankOverride);
+router.post("/teacher/library", upload.single("resourceImage"), teacherLibraryController.createTeacherLibraryResource);
 
 // Grade Routes (both paths supported for now)
 router.post("/teacher/manage-grades/add", requireFields(["student", "classId", "subject", "quarter"]), postsController.createGrade);
@@ -195,6 +235,7 @@ router.post("/teacher/grades/add", requireFields(["student", "classId", "subject
 router.use("/student", ensureAuth, requireTenant, requireRole("student"));
 
 // --- GET ---
+router.get("/student", (_req, res) => res.redirect("/student/home"));
 router.get("/student/home", homeController.getMainPage);
 router.get("/student/grades", homeController.getGrades);
 router.get("/student/missions", homeController.getStudentMissions);
@@ -210,7 +251,6 @@ router.use("/parent", ensureAuth, requireTenant, requireRole("parent"));
 router.get("/parent/home", parentController.getDashboard);
 router.get("/parent/child/:id", validateObjectIdParam("id"), parentController.getChildDashboard);
 router.get("/parent/reports/:studentId/download", validateObjectIdParam("studentId"), parentController.downloadStudentReportPdf);
-router.post("/parent/payments/checkout", parentController.requestPaymentCheckout);
 
 // =============================================
 // 8. FUTURE: Split into separate route files (Recommended)

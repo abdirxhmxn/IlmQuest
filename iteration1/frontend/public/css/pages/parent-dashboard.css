@@ -1,228 +1,217 @@
+/*
+ * ============================================================
+ *  parent-dashboard.css
+ *  IlmQuest - Parent Dashboard Surfaces
+ * ============================================================
+ */
+
+.parent-dashboard-page {
+  gap: 12px;
+}
+
+.intro-card,
+.section-card,
+.child-switcher-card,
+.summary-card {
+  padding: 14px;
+}
+
 .intro-card {
-  padding: 0.95rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.88rem;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 1fr);
+  gap: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+}
+
+.intro-kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #6b8377;
 }
 
 .intro-headline h2 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #101827;
+  margin: 6px 0 0;
+  font-size: clamp(1.18rem, 1.02rem + 0.48vw, 1.42rem);
+  color: #12271d;
+  line-height: 1.12;
 }
 
 .intro-headline p {
-  margin: 0.3rem 0 0;
-  color: #62748a;
-  font-size: 0.92rem;
+  margin: 6px 0 0;
+  color: #5d7368;
+  font-size: 0.9rem;
+  max-width: 56ch;
 }
 
 .intro-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.58rem;
+  gap: 8px;
 }
 
-.intro-metrics article {
-  border: 1px solid #d9e2ec;
-  border-radius: 0.6rem;
-  padding: 0.66rem 0.76rem;
-  min-width: 150px;
-  background: #fff;
+.intro-metrics article,
+.attendance-summary-grid article {
+  border: 1px solid #d8e3dd;
+  border-radius: 11px;
+  padding: 9px 10px;
+  background: #ffffff;
 }
 
 .metric-label {
   margin: 0;
-  color: #75859b;
-  font-size: 0.74rem;
+  color: #70867c;
+  font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 800;
 }
 
 .metric-value {
-  margin: 0.34rem 0 0;
-  font-size: 1.72rem;
+  margin: 4px 0 0;
+  color: #10241b;
+  font-size: clamp(1.05rem, 0.95rem + 0.34vw, 1.28rem);
   font-weight: 800;
-  color: #111827;
-  line-height: 1.05;
+  line-height: 1.08;
 }
 
-.child-switcher-card,
-.section-card,
-.summary-card,
-.payment-card {
-  padding: 0.9rem;
+.section-head {
+  margin-bottom: 10px;
+  display: grid;
+  gap: 3px;
+}
+
+.section-head h3 {
+  margin: 0;
+  color: #10241b;
+  font-size: 1.02rem;
+  line-height: 1.14;
+}
+
+.section-head p {
+  margin: 0;
+  color: #61786d;
+  font-size: 0.86rem;
+}
+
+.parent-overview-grid,
+.parent-summary-grid,
+.parent-detail-grid {
+  gap: 12px;
 }
 
 .parent-announcement-list {
   display: grid;
-  gap: 0.58rem;
+  gap: 8px;
 }
 
 .parent-announcement-item {
-  border: 1px solid #d9e2ec;
-  border-radius: 0.64rem;
-  padding: 0.62rem 0.68rem;
-  background: #fff;
+  border: 1px solid #d8e3dd;
+  border-radius: 11px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  gap: 5px;
 }
 
 .parent-announcement-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .parent-announcement-head h4 {
   margin: 0;
-  font-size: 0.95rem;
-  color: #0f172a;
+  font-size: 0.92rem;
+  color: #12271d;
+  line-height: 1.2;
 }
 
 .parent-announcement-item p {
-  margin: 0.34rem 0 0;
-  color: #5f7088;
-  font-size: 0.86rem;
+  margin: 0;
+  color: #5b7368;
+  font-size: 0.84rem;
 }
 
 .parent-announcement-item small {
-  display: inline-block;
-  margin-top: 0.42rem;
-  color: #7b8ca3;
-  font-size: 0.78rem;
-}
-
-.section-head {
-  margin-bottom: 0.72rem;
-}
-
-.section-head h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #0f172a;
-}
-
-.section-head p {
-  margin: 0.28rem 0 0;
-  color: #66758d;
-  font-size: 0.9rem;
+  color: #799085;
+  font-size: 0.74rem;
 }
 
 .child-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 0.64rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 9px;
 }
 
 .child-card {
-  border: 1px solid #d9e2ec;
-  border-radius: 0.65rem;
-  background: #fff;
+  border: 1px solid #d8e3dd;
+  border-radius: 11px;
+  background: #ffffff;
   text-decoration: none;
-  padding: 0.72rem;
-  color: #0f172a;
+  color: #13281f;
+  padding: 10px;
+  display: grid;
+  gap: 5px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
 .child-card:hover {
-  border-color: #9eb0c7;
+  border-color: #9fc8b4;
+  box-shadow: 0 8px 18px rgba(17, 53, 38, 0.08);
+  transform: translateY(-1px);
 }
 
 .child-card.active {
-  border-color: #34d399;
-  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.4);
+  border-color: #54b38a;
+  box-shadow: inset 0 0 0 1px rgba(84, 179, 138, 0.42);
+  background: #f7fcf9;
 }
 
 .child-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 7px;
 }
 
 .child-card h4 {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: 0.92rem;
+  line-height: 1.2;
 }
 
 .child-card p {
-  margin: 0.34rem 0 0;
-  color: #5f7088;
-  font-size: 0.84rem;
+  margin: 0;
+  color: #5f776b;
+  font-size: 0.82rem;
 }
 
 .child-card-metrics {
-  margin-top: 0.54rem;
+  margin-top: 3px;
   display: flex;
   justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.81rem;
-  color: #475569;
-}
-
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.45rem;
-  padding: 0 0.5rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  border: 1px solid transparent;
-}
-
-.status-success,
-.status-paid {
-  color: #166534;
-  background: #f0fdf4;
-  border-color: #86efac;
-}
-
-.status-warning,
-.status-due {
-  color: #92400e;
-  background: #fff7ed;
-  border-color: #fdba74;
-}
-
-.status-danger,
-.status-overdue {
-  color: #b42318;
-  background: #fef2f2;
-  border-color: #fca5a5;
-}
-
-.status-neutral,
-.status-partial {
-  color: #334155;
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
-.status-pendingprocessor {
-  color: #1d4ed8;
-  background: #eff6ff;
-  border-color: #93c5fd;
-}
-
-.portal-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.74rem;
+  gap: 8px;
+  color: #475f54;
+  font-size: 0.78rem;
 }
 
 .summary-list {
   margin: 0;
   display: grid;
-  gap: 0.52rem;
+  gap: 7px;
 }
 
 .summary-list div {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.52rem;
-  border-bottom: 1px solid #eaf0f5;
-  padding-bottom: 0.42rem;
+  gap: 10px;
+  border-bottom: 1px solid #e8efea;
+  padding-bottom: 7px;
 }
 
 .summary-list div:last-child {
@@ -231,218 +220,188 @@
 }
 
 .summary-list dt {
-  color: #64748b;
-  font-size: 0.84rem;
+  color: #678176;
+  font-size: 0.81rem;
 }
 
 .summary-list dd {
   margin: 0;
-  color: #0f172a;
-  font-size: 0.9rem;
+  color: #12271d;
+  font-size: 0.84rem;
   font-weight: 700;
   text-align: right;
 }
 
-.payment-layout {
-  display: grid;
-  grid-template-columns: 245px minmax(0, 1fr);
-  gap: 0.9rem;
-}
-
-.payment-ring-wrap {
-  display: grid;
-  justify-items: center;
-  gap: 0.46rem;
-}
-
-.payment-ring {
-  position: relative;
-  width: 170px;
-  height: 170px;
-}
-
-.payment-ring svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.ring-track,
-.ring-progress {
-  fill: none;
-  stroke-width: 10;
-}
-
-.ring-track {
-  stroke: #e2e8f0;
-}
-
-.ring-progress {
-  stroke: #64748b;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.35s ease;
-}
-
-.payment-ring.state-paid .ring-progress {
-  stroke: #16a34a;
-}
-
-.payment-ring.state-overdue .ring-progress {
-  stroke: #dc2626;
-}
-
-.payment-ring.state-pending .ring-progress {
-  stroke: #2563eb;
-}
-
-.payment-ring.state-due .ring-progress {
-  stroke: #d97706;
-}
-
-.ring-center {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  text-align: center;
-  padding: 1rem;
-}
-
-.ring-amount {
-  margin: 0;
-  font-size: 1.06rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.ring-status {
-  margin: 0.28rem 0 0;
-  color: #64748b;
-  font-size: 0.77rem;
-  font-weight: 700;
-}
-
-.ring-due {
-  margin: 0;
-  color: #475569;
-  font-size: 0.84rem;
-  text-align: center;
-}
-
-.pay-now-form {
-  margin-top: 0.72rem;
-  display: grid;
-  gap: 0.42rem;
-}
-
-.pay-now-btn {
-  border: 1px solid #0f172a;
-  border-radius: 0.6rem;
-  min-height: 2.15rem;
-  padding: 0 0.8rem;
-  background: #0f172a;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.pay-now-btn:hover {
-  background: #1f2f4d;
-}
-
-.pay-note {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.77rem;
-}
-
 .table-wrap {
+  width: 100%;
   overflow-x: auto;
 }
 
 .portal-table {
   width: 100%;
-  min-width: 660px;
-  border-collapse: collapse;
+  min-width: 650px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .portal-table th,
 .portal-table td {
-  border-bottom: 1px solid #d9e2ec;
-  padding: 0.56rem 0.5rem;
+  border-bottom: 1px solid #e8efea;
+  padding: 8px 8px;
   text-align: left;
-  font-size: 0.84rem;
   vertical-align: middle;
+  font-size: 0.82rem;
+  color: #183026;
 }
 
 .portal-table th {
-  color: #7f8ea4;
-  font-size: 0.72rem;
+  color: #6f857a;
+  font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 800;
-}
-
-.row-overdue {
-  background: #fff5f5;
-}
-
-.report-download-link {
-  margin-bottom: 0.58rem;
-}
-
-.report-list {
-  list-style: none;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 0.44rem;
-}
-
-.report-list li {
-  border: 1px solid #d9e2ec;
-  border-radius: 0.58rem;
-  padding: 0.48rem 0.58rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  color: #334155;
-  font-size: 0.83rem;
+  background: #f3f7f4;
 }
 
 .attendance-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.58rem;
+  gap: 8px;
 }
 
-.attendance-summary-grid article {
-  border: 1px solid #d9e2ec;
-  border-radius: 0.64rem;
-  padding: 0.62rem;
-  background: #fff;
+.report-download-link {
+  margin-bottom: 8px;
 }
 
-@media (max-width: 1200px) {
-  .portal-grid {
-    grid-template-columns: 1fr;
-  }
+.section-card .parent-action-link {
+  border-color: #b8d9c9;
+  background: #f5fbf8;
+  color: #1f6f4b;
 }
 
-@media (max-width: 980px) {
+.section-card .parent-action-link:hover {
+  border-color: #95c4ad;
+  background: #edf7f1;
+}
+
+.report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.report-list li {
+  border: 1px solid #d8e3dd;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 8px 9px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #405b4f;
+  font-size: 0.8rem;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.status-success,
+.status-paid,
+.status-completed,
+.status-present {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.status-warning,
+.status-due,
+.status-late {
+  color: #92400e;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.status-danger,
+.status-overdue,
+.status-rejected,
+.status-absent {
+  color: #b42318;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.status-neutral,
+.status-partial,
+.status-assigned,
+.status-excused {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.status-started,
+.status-pending,
+.status-active,
+.status-pendingprocessor {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+@media (max-width: 1120px) {
   .intro-card {
     grid-template-columns: 1fr;
   }
 
-  .payment-layout {
-    grid-template-columns: 1fr;
+  .intro-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .attendance-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 720px) {
-  .attendance-summary-grid {
+@media (max-width: 840px) {
+  .intro-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .child-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-table {
+    min-width: 560px;
+  }
+}
+
+@media (max-width: 560px) {
+  .intro-card,
+  .section-card,
+  .child-switcher-card,
+  .summary-card {
+    padding: 12px;
+  }
+
+  .attendance-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-list li {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

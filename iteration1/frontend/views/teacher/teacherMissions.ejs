@@ -1,26 +1,25 @@
+<%
+  const teacherActivePage = 'missions';
+  const teacherPageTitle = 'Mission Management';
+  const teacherPageSubtitle = 'Create mission workflows and review assigned mission records.';
+%>
 <%- include('../partials/teacherHeader') -%>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/css/teacherDashboard.css">
-  <link rel="stylesheet" href="/css/teacherMissions.css">
-  <title>Teacher Missions - IlmQuest</title>
-</head>
 
-<body>
-  <div class="container">
-    <div class="header-section">
+<link rel="stylesheet" href="/css/teacherMissions.css">
+
+<main class="teacher-main teacher-missions-page">
+  <div class="teacher-page-shell">
+    <div class="teacher-page-hero header-section">
       <div class="welcome">
-        <h1>Teacher Dashboard</h1>
-        <p>Welcome back, <%= user.firstName %>! Create and manage missions.</p>
+        <h1>Mission Management</h1>
+        <p>Welcome back, <%= user.firstName %>. Create, assign, and monitor mission performance.</p>
       </div>
-       <div> <!--class="user-badge" -->
+      <div class="user-badge">
         <div class="role"><%= user.role %></div>
-        <!-- <div class="class-name">Classes: <%= classes ? classes.length : 0 %></div> -->
       </div>
     </div>
 
-    <div class="section">
+    <section class="section">
       <h2 class="section-title">Create Mission</h2>
       <div class="form-container">
         <form action="/teacher/manage-missions/create-mission" method="POST">
@@ -41,7 +40,6 @@
                 <option value="Ilm">Knowledge</option>
                 <option value="Adab & Akhlaq">Characters and Morals</option>
                 <option value="Ihsaan">Pursuit of Excellence</option>
-                <!-- <option value="Taqwa">Taqwa</option> -->
                 <option value="Amanah">Trust and Responsibility</option>
               </select>
             </div>
@@ -88,53 +86,50 @@
           <button type="submit" class="btn">Create Mission</button>
         </form>
       </div>
-    </div>
+    </section>
 
-    <div class="section">
+    <section class="section">
       <h2 class="section-title">Mission Records</h2>
       <div class="table-container">
-        <% if (missions && missions.length> 0) { %>
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Rank</th>
-              <th>Points</th>
-              <th>Time Limit / Due</th>
-              <th>Assigned Classes</th>
-              <th>Assigned Students</th>
-              <th>Created By</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% missions.forEach(mission=> { %>
-            <tr>
-              <td><%= mission.title %></td>
-              <td><%= mission.description %></td>
-              <td><%= mission.type %></td>
-              <td><%= mission.rank %></td>
-              <td><%= mission.pointsXP %></td>
-              <td><%= mission.timeLimit %> / <%= mission.dueDate ? mission.dueDate.toDateString() : '—' %></td>
-              <td>—</td>
-              <td>—</td>
-              <td><%= mission.createdBy?.name || 'Teacher' %></td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
+        <% if (missions && missions.length > 0) { %>
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Rank</th>
+                <th>Points</th>
+                <th>Time Limit / Due</th>
+                <th>Assigned Classes</th>
+                <th>Assigned Students</th>
+                <th>Created By</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% missions.forEach(mission => { %>
+                <tr>
+                  <td><%= mission.title %></td>
+                  <td><%= mission.description %></td>
+                  <td><%= mission.type %></td>
+                  <td><%= mission.rank %></td>
+                  <td><%= mission.pointsXP %></td>
+                  <td><%= mission.timeLimit %> / <%= mission.dueDate ? mission.dueDate.toDateString() : '—' %></td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><%= mission.createdBy?.name || 'Teacher' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
         <% } else { %>
-        <div class="empty-state">
-          <p>No missions yet. Create your first mission above.</p>
-        </div>
+          <div class="empty-state">
+            <p>No missions yet. Create your first mission above.</p>
+          </div>
         <% } %>
       </div>
-    </div>
-
+    </section>
   </div>
+</main>
 
-  <script src="/main.js"></script>
-  <script src="/edit.js"></script>
 <%- include('../partials/teacherFooter') -%>
-</body>

@@ -1,3 +1,18 @@
+/*
+ * ============================================================
+ *  admin-announcements.css
+ *  IlmQuest - Page Styles
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
 .announcements-layout {
   display: grid;
   grid-template-columns: minmax(340px, 0.98fr) minmax(0, 1.42fr);

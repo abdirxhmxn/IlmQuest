@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const School = require("../models/School");
 const Mission = require("../models/Missions");
 const Class = require("../models/Class");
 const Grade = require("../models/Grades");
@@ -34,7 +35,16 @@ const {
   getVisibleAnnouncementsForUser,
   toAnnouncementViewModel
 } = require("../utils/announcements");
-const { buildDashboardPaymentMetrics } = require("../utils/finance");
+const {
+  RANK_LADDER,
+  buildRankSummaryFromUser,
+  canStudentAccessMissionRank,
+  resolveStudentXp
+} = require("../utils/ranks");
+const {
+  buildTeacherStudentProgressDirectoryViewModel,
+  buildStudentProgressViewModel
+} = require("../utils/studentProgress");
 const { resolveSchoolId } = require("../utils/tenant");
 
 const ADMIN_ANALYTICS_CACHE_TTL_MS = Math.max(
@@ -713,9 +723,9 @@ function summarizeMissionRecords(missionDocs = []) {
 }
 
 async function buildAdminAnalytics(req) {
-  const [students, teachers, parents, classes, attendanceDocs, gradeDocs, missionDocs, reportStats, paymentMetrics] = await Promise.all([
+  const [students, teachers, parents, classes, attendanceDocs, gradeDocs, missionDocs, reportStats] = await Promise.all([
     User.find(scopedQuery(req, { role: "student" }))
-      .select("_id firstName lastName userName points studentInfo.programType")
+      .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled studentInfo.programType")
       .lean(),
     User.find(scopedQuery(req, { role: "teacher" }))
       .select("_id firstName lastName userName")
@@ -735,13 +745,12 @@ async function buildAdminAnalytics(req) {
     Mission.find(scopedQuery(req))
       .select("createdAt updatedAt active.studentInfo")
       .lean(),
-    buildReportGenerationStats(req),
-    buildDashboardPaymentMetrics(req)
+    buildReportGenerationStats(req)
   ]);
 
   const activeClasses = classes.filter((cls) => cls?.active !== false);
   const pointsByStudentId = new Map(
-    students.map((student) => [toIdString(student._id), Number(student?.points || 0)])
+    students.map((student) => [toIdString(student._id), Number(resolveStudentXp(student) || 0)])
   );
   const classNameByStudentId = new Map();
   classes.forEach((cls) => {
@@ -783,7 +792,7 @@ async function buildAdminAnalytics(req) {
       className: classNameByStudentId.get(studentId) || "Unassigned",
       avgGrade,
       attendanceRate,
-      points: Number(student?.points || 0),
+      points: Number(resolveStudentXp(student) || 0),
       missionsStarted: missionAgg.started,
       missionsCompleted: missionAgg.completed
     };
@@ -903,8 +912,6 @@ async function buildAdminAnalytics(req) {
     });
   }
 
-  const payments = paymentMetrics;
-
   return {
     students,
     teachers,
@@ -926,7 +933,6 @@ async function buildAdminAnalytics(req) {
       gradeRecordsCount: gradeSummary.gradeCount,
       attendanceRecordsCount: attendanceSummary.totalCount,
       missionCount: missionDocs.length,
-      payments,
       programDistribution,
       topStudents,
       bottomStudents,
@@ -1058,10 +1064,7 @@ async function buildClassReportPayload(req, classId) {
     Attendance.find(scopedQuery(req, { classId: classDoc._id })).lean(),
     Mission.find(
       scopedQuery(req, {
-        $or: [
-          { "assignedTo.classInfo": classDoc._id },
-          { "assignedTo.classInfo.type": classDoc._id }
-        ]
+        "assignedTo.classInfo": classDoc._id
       })
     ).lean()
   ]);
@@ -1086,7 +1089,7 @@ async function buildClassReportPayload(req, classId) {
       student: resolveStudentFullName(student || { firstName: studentRef?.name || "", userName: studentRef?.name || "Unknown Student" }),
       grade: toPercentLabel(avgGrade),
       attendance: toPercentLabel(attendanceRate),
-      points: Number(student?.points || 0)
+      points: Number(resolveStudentXp(student) || 0)
     };
   });
 
@@ -1173,26 +1176,114 @@ module.exports = {
   },
   getMainPage: async (req, res) => {
     try {
-      const [verses, reminders, studentAnnouncementsRaw] = await Promise.all([
+      const [verses, reminders, studentAnnouncementsRaw, classes, gradeDocs, attendanceDocs, currentStudentSnapshot] = await Promise.all([
         Verses.find().lean(),
         Reflection.find().lean(),
-        getVisibleAnnouncementsForUser(req, req.user, { limit: 8 })
+        getVisibleAnnouncementsForUser(req, req.user, { limit: 8 }),
+        Class.find(scopedQuery(req, { "students._id": req.user._id }))
+          .select("_id className classCode teachers")
+          .lean(),
+        Grade.find(scopedQuery(req, { "students._id": req.user._id }))
+          .select("_id students classInfo Assignment.grade Assignment.maxScore createdAt")
+          .lean(),
+        Attendance.find(scopedQuery(req, { "records.studentId": req.user._id }))
+          .select("_id records.studentId records.status classId date")
+          .lean(),
+        User.findOne(scopedQuery(req, { _id: req.user._id, role: "student" }))
+          .select("_id firstName lastName points xp rank manualRank rankOverrideEnabled")
+          .lean()
       ]);
-      const randomVerses = verses[Math.floor(Math.random() * verses.length)];
-      const randomReminders = reminders[Math.floor(Math.random() * reminders.length)]
+      const randomVerses = Array.isArray(verses) && verses.length
+        ? verses[Math.floor(Math.random() * verses.length)]
+        : null;
+      const randomReminders = Array.isArray(reminders) && reminders.length
+        ? reminders[Math.floor(Math.random() * reminders.length)]
+        : null;
       const studentAnnouncements = studentAnnouncementsRaw.map((announcement) =>
         toAnnouncementViewModel(announcement)
       );
-      res.render("student/student.ejs", {
-        user: req.user,
+
+      const currentStudent = currentStudentSnapshot || req.user;
+      const currentStudentRankSummary = buildRankSummaryFromUser(currentStudent);
+      const studentId = toIdString(currentStudent?._id || req.user?._id);
+
+      const teacherIds = Array.from(
+        new Set(
+          classes
+            .flatMap((cls) => (Array.isArray(cls?.teachers) ? cls.teachers : []))
+            .map((teacher) => toIdString(teacher?._id))
+            .filter(Boolean)
+        )
+      );
+
+      const missionScope = teacherIds.length
+        ? { "createdBy._id": { $in: teacherIds } }
+        : { _id: { $in: [] } };
+      const teacherMissions = await Mission.find(scopedQuery(req, missionScope))
+        .select("_id rank active.studentInfo dueDate")
+        .lean();
+
+      const visibleMissions = teacherMissions.filter((missionDoc) =>
+        canStudentAccessMissionRank(currentStudentRankSummary.displayRankKey, missionDoc?.rank, { accessMode: "exact" })
+      );
+      const missionStatusCounts = {
+        available: visibleMissions.length,
+        inProgress: 0,
+        completed: 0
+      };
+
+      visibleMissions.forEach((missionDoc) => {
+        const studentEntries = Array.isArray(missionDoc?.active?.studentInfo) ? missionDoc.active.studentInfo : [];
+        const studentRow = studentEntries.find((entry) => toIdString(entry?._id) === studentId);
+        const normalizedStatus = String(studentRow?.status || "").trim().toLowerCase();
+        if (normalizedStatus === "started" || normalizedStatus === "in-progress" || normalizedStatus === "active") {
+          missionStatusCounts.inProgress += 1;
+        }
+        if (normalizedStatus === "complete" || normalizedStatus === "completed" || normalizedStatus === "approved") {
+          missionStatusCounts.completed += 1;
+        }
+      });
+
+      const gradeSummary = summarizeGradeRecords(gradeDocs);
+      const attendanceSummary = summarizeAttendanceRecords(attendanceDocs);
+      const studentAttendanceAgg = attendanceSummary.studentAgg.get(studentId) || { present: 0, total: 0 };
+
+      const dashboardSummary = {
+        classCount: classes.length,
+        gradeCount: gradeSummary.gradeCount,
+        gradeAverage: gradeSummary.overallAverage,
+        attendanceRate: ratioPercent(studentAttendanceAgg.present, studentAttendanceAgg.total),
+        attendancePresent: Number(studentAttendanceAgg.present || 0),
+        attendanceTotal: Number(studentAttendanceAgg.total || 0),
+        announcementCount: studentAnnouncements.length,
+        missionCount: missionStatusCounts.available,
+        missionInProgress: missionStatusCounts.inProgress,
+        missionCompleted: missionStatusCounts.completed,
+        currentRankLabel: currentStudentRankSummary.displayRankLabel,
+        totalXp: currentStudentRankSummary.xp,
+        nextRankLabel: currentStudentRankSummary.nextRankLabel,
+        xpToNextRank: currentStudentRankSummary.xpToNextRank
+      };
+
+      const baseUserView = typeof req.user?.toObject === "function" ? req.user.toObject() : { ...req.user };
+      const userViewModel = {
+        ...baseUserView,
+        ...(currentStudentSnapshot || {}),
+        rank: currentStudentRankSummary.displayRankKey,
+        points: currentStudentRankSummary.xp
+      };
+
+      res.render("student/student", {
+        user: userViewModel,
         verses: randomVerses,
         reflections: randomReminders,
-        studentAnnouncements
+        studentAnnouncements,
+        dashboardSummary
       });
 
     } catch (err) {
       console.error(err);
-      res.send("Error loading reflection");
+      res.status(500).send("Error loading student dashboard");
     }
   },
   getAdmin: async (req, res) => {
@@ -1278,6 +1369,52 @@ module.exports = {
     } catch (err) {
       console.error("Admin reports page error:", err);
       res.status(500).send("Error loading admin reports");
+    }
+  },
+  // Renders a lightweight admin settings workspace while reusing cached analytics
+  // so this route does not trigger another full dashboard aggregation pass.
+  getAdminSettings: async (req, res) => {
+    try {
+      const [analytics, schoolDoc] = await Promise.all([
+        getCachedAdminAnalytics(req),
+        req.schoolId
+          ? School.findById(req.schoolId)
+            .select("schoolName schoolEmail adminUser address contactEmail contactPhone establishedDate createdAt")
+            .lean()
+          : Promise.resolve(null)
+      ]);
+
+      // Defensive date formatting keeps partially configured schools render-safe.
+      const formatDateLabel = (value, fallback = "Not set") => {
+        if (!value) return fallback;
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return fallback;
+        return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      };
+
+      const schoolProfile = schoolDoc
+        ? {
+          schoolName: schoolDoc.schoolName || "School",
+          schoolEmail: schoolDoc.schoolEmail || "",
+          adminUser: schoolDoc.adminUser || "",
+          address: schoolDoc.address || "",
+          contactEmail: schoolDoc.contactEmail || "",
+          contactPhone: schoolDoc.contactPhone || "",
+          establishedLabel: formatDateLabel(schoolDoc.establishedDate),
+          createdLabel: formatDateLabel(schoolDoc.createdAt)
+        }
+        : null;
+
+      return res.render("admin/settings.ejs", {
+        user: req.user,
+        activePage: "settings",
+        adminMetrics: analytics.metrics || {},
+        schoolProfile,
+        messages: req.flash()
+      });
+    } catch (err) {
+      console.error("Admin settings page error:", err);
+      return res.status(500).send("Error loading admin settings");
     }
   },
   getAdminReportStats: async (req, res) => {
@@ -1401,7 +1538,7 @@ module.exports = {
           }
         }).lean(),
         User.find(scopedQuery(req, { _id: { $in: students.map((student) => student._id) } }))
-          .select("_id firstName lastName points")
+          .select("_id firstName lastName points xp rank manualRank rankOverrideEnabled")
           .lean(),
         getVisibleAnnouncementsForUser(req, req.user, { limit: 8 })
       ]);
@@ -1461,7 +1598,7 @@ module.exports = {
             return {
               _id: student._id,
               name: student.name || `${matchedStudent?.firstName || ""} ${matchedStudent?.lastName || ""}`.trim(),
-              points: Number(matchedStudent?.points || 0)
+              points: Number(resolveStudentXp(matchedStudent) || 0)
             };
           })
           .sort((a, b) => b.points - a.points)
@@ -1511,14 +1648,86 @@ module.exports = {
       res.send("Error loading users");
     }
   },
+  getTeacherStudentProgress: async (req, res) => {
+    try {
+      const studentId = req.params.id;
+      const preferredClassId = String(req.query.classId || "").trim();
+      const redirectPath = "/teacher/student-progress";
+
+      const accessQuery = preferredClassId
+        ? { _id: preferredClassId, "teachers._id": req.user._id, "students._id": studentId }
+        : { "teachers._id": req.user._id, "students._id": studentId };
+
+      const teacherClass = await Class.findOne(scopedQuery(req, accessQuery))
+        .select("_id className classCode")
+        .lean();
+
+      if (!teacherClass) {
+        req.flash("error", "You are not authorized to view this student profile.");
+        return res.redirect(redirectPath);
+      }
+
+      const progress = await buildStudentProgressViewModel(req, studentId, {
+        preferredClassId: teacherClass._id,
+        includeTeacherInsights: true
+      });
+
+      if (!progress) {
+        req.flash("error", "Student profile could not be loaded.");
+        return res.redirect(redirectPath);
+      }
+
+      return res.render("teacher/teacherStudentProgress.ejs", {
+        user: req.user,
+        progress,
+        rankLadder: RANK_LADDER,
+        teacherClass,
+        messages: req.flash()
+      });
+    } catch (err) {
+      console.error("Teacher student progress page error:", err);
+      req.flash("error", "Unable to load student progress details.");
+      return res.redirect("/teacher/student-progress");
+    }
+  },
+  getTeacherStudentProgressDirectory: async (req, res) => {
+    try {
+      const directory = await buildTeacherStudentProgressDirectoryViewModel(req, req.user._id);
+
+      return res.render("teacher/teacherStudentDirectory.ejs", {
+        user: req.user,
+        directory,
+        messages: req.flash()
+      });
+    } catch (err) {
+      console.error("Teacher student progress directory error:", err);
+      req.flash("error", "Unable to load student progress directory.");
+      return res.redirect("/teacher/home");
+    }
+  },
   getTeacherGrades: async (req, res) => {
     try {
-      const missions = await Mission.find(scopedQuery(req)).lean();
+      const missions = await Mission.find(scopedQuery(req, { "createdBy._id": req.user._id })).lean();
       const rawClasses = await Class.find(scopedQuery(req, { 'teachers._id': req.user._id })).lean();
       const classes = rawClasses.map((cls) => prepareClassWithConfig(cls, req.user._id));
-      const students = classes.flatMap(cls => cls.students);
+      const students = classes.flatMap((cls) => (Array.isArray(cls.students) ? cls.students : []));
+      const uniqueStudentIds = [...new Set(students.map((student) => String(student._id)))];
       const classIds = classes.map(cls => cls._id);
-      const grades = await Grade.find(scopedQuery(req, { 'classInfo._id': { $in: classIds } })).lean();
+      const [grades, studentRankDocs] = await Promise.all([
+        Grade.find(scopedQuery(req, { 'classInfo._id': { $in: classIds } })).lean(),
+        User.find(scopedQuery(req, { role: "student", _id: { $in: uniqueStudentIds } }))
+          .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled rankOverrideReason rankOverrideSetAt")
+          .lean()
+      ]);
+
+      const rankSummaryByStudentId = {};
+      studentRankDocs.forEach((studentDoc) => {
+        rankSummaryByStudentId[String(studentDoc._id)] = {
+          ...buildRankSummaryFromUser(studentDoc),
+          rankOverrideReason: String(studentDoc.rankOverrideReason || "").trim(),
+          rankOverrideSetAt: studentDoc.rankOverrideSetAt || null
+        };
+      });
 
       const gradesByClass = new Map();
       grades.forEach((grade) => {
@@ -1544,6 +1753,9 @@ module.exports = {
         missions,
         students,
         grades,
+        rankSummaryByStudentId,
+        rankLadder: RANK_LADDER,
+        messages: req.flash(),
         getSubjectAverage,
         normalizeCategoryKey,
         getGradeSubjectKey,
@@ -1674,10 +1886,26 @@ module.exports = {
   },
   getTeacherMissions: async (req, res) => {
     try {
-      const students = await User.find(scopedQuery(req, { role: "student" })).lean()
-      const missions = await Mission.find(scopedQuery(req, { "createdBy._id": req.user._id })).lean();
       const classes = await Class.find(scopedQuery(req, { 'teachers._id': req.user._id })).lean();
-      const grades = await Grade.find(scopedQuery(req)).lean();
+      const classIds = classes.map((cls) => cls._id);
+      const classStudentIds = Array.from(
+        new Set(
+          classes
+            .flatMap((cls) => (Array.isArray(cls?.students) ? cls.students : []))
+            .map((student) => toIdString(student?._id))
+            .filter(Boolean)
+        )
+      );
+
+      const [students, missions, grades] = await Promise.all([
+        classStudentIds.length
+          ? User.find(scopedQuery(req, { role: "student", _id: { $in: classStudentIds } })).lean()
+          : Promise.resolve([]),
+        Mission.find(scopedQuery(req, { "createdBy._id": req.user._id })).lean(),
+        classIds.length
+          ? Grade.find(scopedQuery(req, { "classInfo._id": { $in: classIds } })).lean()
+          : Promise.resolve([])
+      ]);
       res.render("teacher/teacherMissions.ejs", {
         user: req.user,
         classes: classes,
@@ -1738,7 +1966,7 @@ module.exports = {
           const studentAnnouncements = studentAnnouncementsRaw.map((announcement) =>
             toAnnouncementViewModel(announcement)
           );
-          res.render("student/student.ejs", {
+          res.render("student/student", {
             user: req.user,
             verses: randomVerses,
             reflections: randomReminders,
@@ -1760,7 +1988,7 @@ module.exports = {
     //percentage to gpa calculation: (percentage/100)*4
     //get averge for all gpas and that is the final grade
     //get average for all subjects and that is the final grade
-    const rawClasses = await Class.find(scopedQuery(req, { 'students._id': { $in: req.user._id } })).lean();
+    const rawClasses = await Class.find(scopedQuery(req, { "students._id": req.user._id })).lean();
     const classes = rawClasses.map((cls) => prepareClassWithConfig(cls));
     // Get class IDs
     const classIds = classes.map(cls => cls._id);
@@ -1800,11 +2028,13 @@ module.exports = {
         displayCategories: catalog.categories
       };
     });
+    const gradesSummary = summarizeGradeRecords(grades);
 
     try {
-      res.render('student/grades.ejs', {
+      res.render('student/grades', {
         user: req.user,
         grades: grades,
+        gradesSummary,
         getSubjectAverage,
         classes: decoratedClasses,
         attendance: attendance,
@@ -1816,27 +2046,106 @@ module.exports = {
       })
     } catch (err) {
       console.log(err)
-      res.send("Error")
+      res.status(500).send("Error loading student grades")
     }
   },
   getMissions: async (req, res) => {
     try {
-      res.render('missions.ejs', {
+      res.render('student/missions', {
         user: req.user,
+        missions: [],
+        classes: [],
+        activeMissions: [],
+        students: [],
+        currentStudentRankSummary: buildRankSummaryFromUser(req.user)
       })
     } catch (err) {
       console.log(err)
-      res.send("Error")
+      res.status(500).send("Error loading student missions")
     }
   },
   getLibrary: async (req, res) => {
     try {
-      res.render('library.ejs', {
+      const [classes, studentAnnouncementsRaw] = await Promise.all([
+        Class.find(scopedQuery(req, { "students._id": req.user._id }))
+          .select("_id className classCode teachers")
+          .lean(),
+        getVisibleAnnouncementsForUser(req, req.user, { limit: 30 })
+      ]);
+
+      const teacherIds = Array.from(
+        new Set(
+          classes
+            .flatMap((classDoc) => (Array.isArray(classDoc?.teachers) ? classDoc.teachers : []))
+            .map((teacher) => toIdString(teacher?._id))
+            .filter(Boolean)
+        )
+      );
+
+      const teacherDocs = teacherIds.length
+        ? await User.find(scopedQuery(req, { role: "teacher", _id: { $in: teacherIds } }))
+          .select("_id firstName lastName userName")
+          .lean()
+        : [];
+      const teacherNameById = new Map(
+        teacherDocs.map((teacherDoc) => {
+          const displayName = `${teacherDoc?.firstName || ""} ${teacherDoc?.lastName || ""}`.trim() || teacherDoc?.userName || "Teacher";
+          return [toIdString(teacherDoc?._id), displayName];
+        })
+      );
+
+      const teacherNameSet = new Set();
+      const classRows = classes.map((classDoc) => {
+        const teacherNames = (Array.isArray(classDoc?.teachers) ? classDoc.teachers : [])
+          .map((teacher) => {
+            const embeddedName = String(teacher?.name || "").trim();
+            if (embeddedName) return embeddedName;
+            return teacherNameById.get(toIdString(teacher?._id)) || "";
+          })
+          .filter(Boolean);
+        teacherNames.forEach((teacherName) => teacherNameSet.add(teacherName));
+        return {
+          id: toIdString(classDoc?._id),
+          className: String(classDoc?.className || "Class").trim(),
+          classCode: String(classDoc?.classCode || "").trim(),
+          teacherNames
+        };
+      });
+      const classNameById = new Map(
+        classRows.map((classRow) => [String(classRow.id), classRow.className || "Class"])
+      );
+      const allLibraryItems = studentAnnouncementsRaw.map((announcement) => {
+        const viewModel = toAnnouncementViewModel(announcement);
+        const classNames = (viewModel.targetClassIds || [])
+          .map((id) => classNameById.get(String(id)) || null)
+          .filter(Boolean);
+        return {
+          ...viewModel,
+          classNames
+        };
+      });
+      const studentLibraryResources = allLibraryItems.filter(
+        (item) => item.announcementType === "library_resource"
+      );
+      const studentAnnouncements = allLibraryItems.filter(
+        (item) => item.announcementType !== "library_resource"
+      );
+
+      res.render('student/library', {
         user: req.user,
+        classes: classRows,
+        studentLibraryResources,
+        studentAnnouncements,
+        librarySummary: {
+          classCount: classRows.length,
+          teacherCount: teacherNameSet.size,
+          updateCount: studentLibraryResources.length,
+          announcementCount: studentAnnouncements.length
+        }
       })
     } catch (err) {
       console.log(err)
-      res.send("Error")
+      res.status(500).send("Error loading student library")
     }
   },
   getProfile: async (req, res) => {
@@ -1885,7 +2194,7 @@ module.exports = {
 
       const studentsQuery = shouldLoadRole("student")
         ? User.find(scopedQuery(req, applyFilters({ role: "student" })))
-          .select("firstName lastName userName email DOB studentInfo teacherInfo parentInfo points rank role deletedAt")
+          .select("firstName lastName userName email DOB studentInfo teacherInfo parentInfo points xp rank manualRank rankOverrideEnabled rankOverrideReason rankOverrideSetAt role deletedAt")
           .sort({ firstName: 1, lastName: 1, userName: 1 })
         : null;
       if (studentsQuery && pagination.enabled) {
@@ -1938,6 +2247,7 @@ module.exports = {
       students.forEach(s => {
         s.studentInfo = s.studentInfo || {};
         s.studentInfo.parents = s.studentInfo.parents || [];
+        s.rankSummary = buildRankSummaryFromUser(s);
       });
 
       parents.forEach(p => {
@@ -1995,6 +2305,18 @@ module.exports = {
   },
   getClasses: async (req, res) => {
     try {
+      const searchRegex = buildSafeRegexQuery(req.query.q);
+      const pagination = parsePaginationParams(req.query, { defaultLimit: 60, maxLimit: 200 });
+      const classFilter = searchRegex
+        ? {
+          $or: [
+            { className: searchRegex },
+            { classCode: searchRegex },
+            { roomNumber: searchRegex }
+          ]
+        }
+        : {};
+
       const students = await User.find(scopedQuery(req, { role: "student" }))
         .select("_id firstName lastName userName studentInfo.gradeLevel studentInfo.programType")
         .sort({ firstName: 1, lastName: 1, userName: 1 })
@@ -2003,16 +2325,36 @@ module.exports = {
         .select("_id firstName lastName userName teacherInfo.subjects")
         .sort({ firstName: 1, lastName: 1, userName: 1 })
         .lean();
-      const classes = await Class.find(scopedQuery(req))
-        .sort({ className: 1 })
-        .lean();
+      const classesQuery = Class.find(scopedQuery(req, classFilter))
+        .sort({ className: 1 });
+      if (pagination.enabled) {
+        classesQuery.skip(pagination.skip).limit(pagination.limit);
+      }
+
+      const [classes, classTotal] = await Promise.all([
+        classesQuery.lean(),
+        pagination.enabled
+          ? Class.countDocuments(scopedQuery(req, classFilter))
+          : Promise.resolve(0)
+      ]);
       res.render("admin/class.ejs", {
         user: req.user,
         students,
         teachers,
         classes,
         activePage: "classes",
-        messages: req.flash()
+        messages: req.flash(),
+        classFilters: {
+          query: String(req.query.q || "").trim()
+        },
+        pagination: pagination.enabled
+          ? {
+            enabled: true,
+            page: pagination.page,
+            limit: pagination.limit,
+            classTotal
+          }
+          : { enabled: false }
       })
     } catch (err) {
       console.log(err)
@@ -2021,57 +2363,93 @@ module.exports = {
   },
   getStudentMissions: async (req, res) => {
     try {
-      const classes = await Class.find(scopedQuery(req, { 'students._id': req.user._id })).lean();
+      const [classes, currentStudentSnapshot] = await Promise.all([
+        Class.find(scopedQuery(req, { 'students._id': req.user._id })).lean(),
+        User.findOne(scopedQuery(req, { _id: req.user._id, role: "student" }))
+          .select("_id firstName lastName points xp rank manualRank rankOverrideEnabled")
+          .lean()
+      ]);
+      const currentStudentView = currentStudentSnapshot || req.user;
+      const currentStudentRankSummary = buildRankSummaryFromUser(currentStudentView);
+      const studentRankKey = String(currentStudentRankSummary.displayRankKey || "F").toUpperCase();
 
       const allStudentIds = classes
-        .flatMap(c => c.students.map(s => s._id.toString()));
+        .flatMap((c) => (Array.isArray(c.students) ? c.students : []))
+        .map((s) => String(s?._id || "").trim())
+        .filter(Boolean);
 
       const uniqueStudentIds = [...new Set(allStudentIds)];
 
-      const studentUsers = await User.find(scopedQuery(req, {
+      const studentUsersRaw = await User.find(scopedQuery(req, {
         _id: { $in: uniqueStudentIds }
-      })).sort({ points: -1 });
+      }))
+        .select("_id firstName lastName points xp rank manualRank rankOverrideEnabled")
+        .lean();
+      const studentUsers = studentUsersRaw
+        .map((studentDoc) => {
+          const rankSummary = buildRankSummaryFromUser(studentDoc);
+          return {
+            ...studentDoc,
+            points: rankSummary.xp,
+            rank: rankSummary.displayRankKey,
+            rankSummary
+          };
+        })
+        .sort((a, b) => Number(b.points || 0) - Number(a.points || 0));
 
-      console.log('Students:', studentUsers.length)
-      const fullName = `${req.user.firstName} ${req.user.lastName}`;
+      const studentFirstName = String(currentStudentView?.firstName || req.user?.firstName || "").trim();
+      const studentLastName = String(currentStudentView?.lastName || req.user?.lastName || "").trim();
+      const fullName = `${studentFirstName} ${studentLastName}`.trim();
 
-      let teacherNames = [];
-      classes.forEach(cls => {
-        if (cls.teachers && cls.teachers.length > 0) {
-          cls.teachers.forEach(t => {
-            teacherNames.push(t.name);
-          });
-        }
-      });
-
-      const missions = await Mission.find(scopedQuery(req, {
-        'createdBy.name': { $in: teacherNames }
-      })).lean();
-
-      console.log("classes:", classes.length);
-      console.log("missions found:", missions.length);
-
-      const activeMissions = missions.filter(m =>
-        m.active?.studentInfo?.some(s =>
-          s.name === fullName && s.status === "started"
+      const classTeacherIds = Array.from(
+        new Set(
+          classes
+            .flatMap((cls) => (Array.isArray(cls?.teachers) ? cls.teachers : []))
+            .map((teacher) => toIdString(teacher?._id))
+            .filter(Boolean)
         )
       );
 
-      console.log("activeMissions count:", activeMissions.length);
+      const missionScope = classTeacherIds.length
+        ? { "createdBy._id": { $in: classTeacherIds } }
+        : { _id: { $in: [] } };
+      const missions = await Mission.find(scopedQuery(req, missionScope)).lean();
+      const visibleMissions = missions.filter((missionDoc) =>
+        canStudentAccessMissionRank(studentRankKey, missionDoc?.rank, { accessMode: "exact" })
+      );
 
-      // FIXED: Only log if there are active missions
-      if (activeMissions.length > 0) {
-        console.log("First active mission:", activeMissions[0].title);
-      } else {
-        console.log("No active missions found for this student");
-      }
+      const activeMissions = visibleMissions.filter((missionDoc) => {
+        const studentEntries = Array.isArray(missionDoc?.active?.studentInfo) ? missionDoc.active.studentInfo : [];
+        return studentEntries.some((entry) => {
+          const sameId = toIdString(entry?._id) === toIdString(currentStudentView?._id || req.user?._id);
+          const sameName = String(entry?.name || "").trim() === fullName;
+          if (!sameId && !sameName) return false;
+          const normalizedStatus = String(entry?.status || "").trim().toLowerCase();
+          return normalizedStatus === "started" || normalizedStatus === "in-progress" || normalizedStatus === "active";
+        });
+      });
 
-      res.render("student/missions.ejs", {
-        user: req.user,
-        missions: missions,
+      const baseUserView = typeof req.user?.toObject === "function" ? req.user.toObject() : { ...req.user };
+      const userViewModel = {
+        ...baseUserView,
+        ...(currentStudentSnapshot || {}),
+        rank: currentStudentRankSummary.displayRankKey,
+        points: currentStudentRankSummary.xp
+      };
+
+      res.render("student/missions", {
+        user: userViewModel,
+        missions: visibleMissions,
         classes: classes,
         activeMissions: activeMissions,
-        students: studentUsers
+        students: studentUsers,
+        currentStudentRankSummary,
+        missionVisibilitySummary: {
+          classCount: classes.length,
+          totalTeacherMissions: missions.length,
+          totalVisibleMissions: visibleMissions.length,
+          studentRankLabel: currentStudentRankSummary.displayRankLabel
+        }
       });
 
     } catch (err) {

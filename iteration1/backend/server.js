@@ -16,8 +16,11 @@ const mainRoutes = require("./routes/main");
 const postRoutes = require("./routes/posts");
 const cookieParser = require("cookie-parser");
 const { rejectMongoOperators, isHtmlRequest } = require("./middleware/validate");
+const isProduction = env.NODE_ENV === "production";
+const staticRoot = path.join(__dirname, "../frontend/public");
+const fingerprintAssetPattern = /\.[0-9a-f]{8,}\./i;
 
-if (env.NODE_ENV === "production") {
+if (isProduction) {
   // Required behind TLS-terminating reverse proxies for secure session cookies.
   app.set("trust proxy", 1);
 }
@@ -32,9 +35,30 @@ connectDB();
 app.set("view engine", "ejs");
 // Point Express at the new frontend folder
 app.set("views", path.join(__dirname, "../frontend/views"));
+app.set("etag", "strong");
 
 //Static Folder
-app.use(express.static(path.join(__dirname, "../frontend/public")));
+app.use(
+  express.static(staticRoot, {
+    etag: true,
+    lastModified: true,
+    index: false,
+    maxAge: isProduction ? "1d" : 0,
+    setHeaders: (res, filePath) => {
+      if (!isProduction) {
+        res.setHeader("Cache-Control", "no-cache");
+        return;
+      }
+
+      const fileName = path.basename(filePath);
+      if (fingerprintAssetPattern.test(fileName)) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      } else {
+        res.setHeader("Cache-Control", "public, max-age=86400");
+      }
+    }
+  })
+);
 
 app.disable("x-powered-by");
 app.use(
@@ -65,7 +89,7 @@ app.use(methodOverride("_method"));
 app.use(cookieParser());
 app.use(
   session({
-    secret: env.SESSION_SECRET,
+    // secret: env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -75,7 +99,7 @@ app.use(
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "lax"
     },
   })

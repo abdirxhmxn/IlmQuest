@@ -1,20 +1,53 @@
-<%- include('../partials/inHeader') -%>
-    <link rel="stylesheet" href="/css/pages/student-grades.css">
-    <main>
-        <h1>My Grades</h1>
-        
-        <!-- Class Filter Buttons -->
-        <div class="class-filters">
-            <% classes.forEach((cls, index) => { %>
-                <button class="class-btn <%= index === 0 ? 'active' : '' %>" data-class-index="<%= index %>">
-                    <%= cls.className %>
-                </button>
-            <% }) %>
-        </div>
+<%- include('../partials/studentShellStart', {
+  pageTitle: 'IlmQuest Student Grades',
+  pageStyles: ['/css/pages/student-grades.css'],
+  activePage: 'grades',
+  user
+}) %>
+<% const safeClasses = Array.isArray(classes) ? classes : []; %>
+<% const gradeSummary = gradesSummary || {}; %>
+<% const publishedGradeCount = Number(gradeSummary.gradeCount || (Array.isArray(grades) ? grades.length : 0)); %>
 
-        <!-- Class Blocks -->
-        <% classes.forEach((cls, classIndex) => { %>
-            <div class="class-block <%= classIndex === 0 ? 'active' : '' %>" data-class-index="<%= classIndex %>">
+<section class="student-page-shell student-grades-page">
+  <header class="student-page-header">
+    <div class="student-page-title">
+      <h1>My Grades</h1>
+      <p>Review class schedules, subject performance, and assignment feedback by class.</p>
+    </div>
+    <div class="student-top-actions">
+      <a class="student-header-link" href="/student/home">Dashboard</a>
+      <a class="student-header-link" href="/student/missions">Missions</a>
+    </div>
+  </header>
+
+  <main>
+    <% if (!safeClasses.length) { %>
+      <section class="student-card student-grades-empty">
+        <h2>No Classes Assigned Yet</h2>
+        <p>Your grades will appear here once you are enrolled in a class with published assessments.</p>
+      </section>
+    <% } %>
+
+    <% if (safeClasses.length && !publishedGradeCount) { %>
+      <section class="student-card student-grades-empty">
+        <h2>No Published Grades Yet</h2>
+        <p>You are enrolled in class, but no graded assessments are published yet. Your teacher may still be setting up the grading categories or finalizing marks.</p>
+      </section>
+    <% } %>
+
+    <% if (safeClasses.length) { %>
+      <!-- Class Filter Buttons -->
+      <div class="class-filters">
+        <% safeClasses.forEach((cls, index) => { %>
+          <button class="class-btn <%= index === 0 ? 'active' : '' %>" data-class-index="<%= index %>">
+            <%= cls.className %>
+          </button>
+        <% }) %>
+      </div>
+
+      <!-- Class Blocks -->
+      <% safeClasses.forEach((cls, classIndex) => { %>
+        <div class="class-block <%= classIndex === 0 ? 'active' : '' %>" data-class-index="<%= classIndex %>">
                 <!-- Class Schedule Section -->
                 <div class="schedule-section">
                     <h3 class="schedule-heading">
@@ -244,35 +277,41 @@
                         </div>
                     <% }) %>
                 </div>
-            </div>
-        <% }) %>
+        </div>
+      <% }) %>
+    <% } %>
 
-    </main>
+  </main>
+</section>
 
-    <script>
-        // Class filter functionality
-        const classButtons = document.querySelectorAll('.class-btn');
-        const classBlocks = document.querySelectorAll('.class-block');
+<script>
+  // Class filter functionality
+  const classButtons = document.querySelectorAll('.class-btn');
+  const classBlocks = document.querySelectorAll('.class-block');
 
-        classButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetIndex = button.getAttribute('data-class-index');
-                
-                // Remove active class from all buttons
-                classButtons.forEach(btn => btn.classList.remove('active'));
-                
-                // Add active class to clicked button
-                button.classList.add('active');
-                
-                // Hide all class blocks
-                classBlocks.forEach(block => block.classList.remove('active'));
-                
-                // Show the selected class block
-                const targetBlock = document.querySelector(`.class-block[data-class-index="${targetIndex}"]`);
-                if (targetBlock) {
-                    targetBlock.classList.add('active');
-                }
-            });
-        });
-    </script>
-    <%- include('../partials/inFooter') -%>
+  if (!classButtons.length || !classBlocks.length) {
+    // Keep empty-state pages render-safe when there are no class records.
+  } else {
+    classButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetIndex = button.getAttribute('data-class-index');
+
+        // Remove active class from all buttons
+        classButtons.forEach(btn => btn.classList.remove('active'));
+
+        // Add active class to clicked button
+        button.classList.add('active');
+
+        // Hide all class blocks
+        classBlocks.forEach(block => block.classList.remove('active'));
+
+        // Show the selected class block
+        const targetBlock = document.querySelector(`.class-block[data-class-index="${targetIndex}"]`);
+        if (targetBlock) {
+          targetBlock.classList.add('active');
+        }
+      });
+    });
+  }
+</script>
+<%- include('../partials/studentShellEnd') -%>

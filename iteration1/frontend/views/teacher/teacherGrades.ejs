@@ -1,15 +1,38 @@
+<%
+  const teacherActivePage = 'grades';
+  const teacherPageTitle = 'Grade Management';
+  const teacherPageSubtitle = 'Review subjects, open student records, and capture assessment results.';
+%>
 <%- include('../partials/teacherHeader') %>
 
 <link rel="stylesheet" href="/css/teacherGrades.css">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-<main>
+<%
+    const rankLookup = rankSummaryByStudentId || {};
+    const rankTiers = Array.isArray(rankLadder) ? rankLadder : [];
+    const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+    const errorMessages = [
+        ...(Array.isArray(messages?.error) ? messages.error : []),
+        ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+    ];
+%>
+
+<main class="teacher-main teacher-grades-page">
+    <section class="teacher-page-shell">
+    <% if (successMessages.length > 0) { %>
+      <div class="flash-message success"><%= successMessages.join(' ') %></div>
+    <% } %>
+    <% if (errorMessages.length > 0) { %>
+      <div class="flash-message error"><%= errorMessages.join(' ') %></div>
+    <% } %>
+
     <!-- Header Card -->
-    <div class="page-card">
+    <div class="page-card teacher-page-hero">
         <div class="page-header">
             <div>
-                <h1><i data-lucide="graduation-cap"></i> Teacher Dashboard</h1>
-                <p>Welcome back, <span class="font-semibold"><%= user.firstName %></span>!</p>
+                <h1><i data-lucide="graduation-cap"></i> Grade Management</h1>
+                <p>Welcome back, <span class="font-semibold"><%= user.firstName %></span>. Review assessments and update student records.</p>
             </div>
             <div class="text-right">
                 <div class="badge"><%= user.role %></div>
@@ -23,7 +46,7 @@
     <!-- Class Tabs -->
     <div class="class-filters">
         <% classes.forEach((cls, i)=> { %>
-            <button class="class-btn <%= i === 0 ? 'active' : '' %>" data-class-index="<%= i %>">
+            <button type="button" class="class-btn <%= i === 0 ? 'active' : '' %>" data-class-index="<%= i %>">
                 <%= cls.className %> (<%= cls.students.length %>)
             </button>
         <% }) %>
@@ -71,6 +94,84 @@
                 <% } else { %>
                     <p class="schedule-empty">No schedule assigned yet</p>
                 <% } %>
+            </div>
+
+            <div class="rank-roster-section" id="student-progress">
+                <h3 class="schedule-heading">
+                    <i data-lucide="medal"></i> Student Rank Progression
+                </h3>
+                <div class="rank-roster-grid">
+                    <% cls.students.forEach(student => { %>
+                        <% const rankInfo = rankLookup[String(student._id)] || {}; %>
+                        <% const progressWidth = Math.max(0, Math.min(100, Number(rankInfo.progressPercent || 0))); %>
+                        <article class="rank-student-card <%= rankInfo.isManualOverride ? 'is-manual' : '' %>">
+                            <div class="rank-student-head">
+                                <div>
+                                    <h4><%= student.name %></h4>
+                                    <p class="rank-source">
+                                        <% if (rankInfo.isManualOverride) { %>
+                                            Manual override active
+                                        <% } else { %>
+                                            Automatic from XP
+                                        <% } %>
+                                    </p>
+                                </div>
+                                <span class="rank-pill"><%= rankInfo.displayRankLabel || 'F Rank' %></span>
+                            </div>
+
+                            <div class="rank-xp-row">
+                                <span>Total XP: <strong><%= Number(rankInfo.xp || 0).toLocaleString() %></strong></span>
+                                <span>Next: <strong><%= rankInfo.nextRankLabel || 'Max Rank' %></strong></span>
+                            </div>
+                            <div class="rank-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= progressWidth %>">
+                                <span style="width: <%= progressWidth %>%"></span>
+                            </div>
+                            <p class="rank-progress-copy">
+                                <%= rankInfo.progressLabel || '0 / 0 XP' %>
+                                <% if (rankInfo.nextRankKey) { %>
+                                    • <%= Number(rankInfo.xpToNextRank || 0).toLocaleString() %> XP to <%= rankInfo.nextRankLabel %>
+                                <% } %>
+                            </p>
+
+                            <form
+                                class="rank-override-form"
+                                action="/teacher/students/<%= student._id %>/rank"
+                                method="POST"
+                                onsubmit="return window.confirm('Apply this rank change?');"
+                            >
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                                <input type="hidden" name="classId" value="<%= cls._id %>" />
+                                <label for="rank-<%= cls._id %>-<%= student._id %>">Override Rank</label>
+                                <select id="rank-<%= cls._id %>-<%= student._id %>" name="manualRank">
+                                    <option value="">Automatic (XP Based)</option>
+                                    <% rankTiers.forEach((tier) => { %>
+                                        <option
+                                            value="<%= tier.key %>"
+                                            <%= rankInfo.isManualOverride && rankInfo.manualRankKey === tier.key ? 'selected' : '' %>
+                                        >
+                                            <%= tier.label %>
+                                        </option>
+                                    <% }) %>
+                                </select>
+
+                                <label for="rank-reason-<%= cls._id %>-<%= student._id %>">Reason (optional)</label>
+                                <input
+                                    id="rank-reason-<%= cls._id %>-<%= student._id %>"
+                                    type="text"
+                                    name="rankOverrideReason"
+                                    maxlength="180"
+                                    value="<%= rankInfo.rankOverrideReason || '' %>"
+                                    placeholder="Promotion, correction, intervention..."
+                                >
+
+                                <button type="submit" class="btn-secondary rank-apply-btn">Update Rank</button>
+                            </form>
+                            <a class="btn-outline rank-progress-link" href="/teacher/students/<%= student._id %>/progress?classId=<%= cls._id %>">
+                                Open Full Progress Dashboard
+                            </a>
+                        </article>
+                    <% }) %>
+                </div>
             </div>
 
             <% const quarterKey = { 'Quarter 1':'Q1','Quarter 2':'Q2','Quarter 3':'Q3','Quarter 4':'Q4' }; %>
@@ -288,6 +389,7 @@
         </div>
     </div>
     <% }) %>
+    </section>
 </main>
 
 <!-- Modal -->

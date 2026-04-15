@@ -1,0 +1,175 @@
+/*
+ * ============================================================
+ *  tables.css
+ *  IlmQuest - Table Structure, Density, and Mobile Handling
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+:root {
+  --table-header-bg: #f7faf8;
+  --table-row-hover: #f3f8f5;
+}
+
+/* 2. Base */
+.table-wrap,
+.table-shell,
+.reports-list-wrap,
+.sheet-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.table,
+table,
+.metrics-table,
+.finance-table,
+.reports-table,
+.portal-table,
+.missions-table,
+.sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td,
+.table th,
+.table td,
+.metrics-table th,
+.metrics-table td,
+.finance-table th,
+.finance-table td,
+.reports-table th,
+.reports-table td,
+.portal-table th,
+.portal-table td,
+.missions-table th,
+.missions-table td,
+.sheet-table th,
+.sheet-table td {
+  padding: 10px 10px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #e6edf5;
+}
+
+th,
+.table th,
+.metrics-table th,
+.finance-table th,
+.reports-table th,
+.portal-table th,
+.missions-table th,
+.sheet-table th {
+  background: var(--table-header-bg);
+  color: #64748b;
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* 3. Layout */
+.table tbody tr:last-child td,
+.metrics-table tbody tr:last-child td,
+.finance-table tbody tr:last-child td,
+.reports-table tbody tr:last-child td,
+.portal-table tbody tr:last-child td,
+.missions-table tbody tr:last-child td,
+.sheet-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* 4. Components */
+.empty-row,
+.table-empty,
+.reports-empty {
+  text-align: center;
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-sm);
+}
+
+.cell-actions,
+.action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.mono-cell {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 5. States */
+tbody tr:hover td,
+.table tbody tr:hover td,
+.metrics-table tbody tr:hover td,
+.finance-table tbody tr:hover td,
+.reports-table tbody tr:hover td,
+.portal-table tbody tr:hover td,
+.missions-table tbody tr:hover td,
+.sheet-table tbody tr:hover td {
+  background: var(--table-row-hover);
+}
+
+.row-overdue td,
+.ledger-row.is-overdue td {
+  background: #fff5f5;
+}
+
+/* 6. Responsive */
+@media (max-width: 768px) {
+  th,
+  td,
+  .table th,
+  .table td,
+  .metrics-table th,
+  .metrics-table td,
+  .finance-table th,
+  .finance-table td,
+  .reports-table th,
+  .reports-table td,
+  .portal-table th,
+  .portal-table td,
+  .missions-table th,
+  .missions-table td,
+  .sheet-table th,
+  .sheet-table td {
+    padding: 9px 8px;
+    font-size: var(--font-size-xs);
+  }
+
+  .metrics-table,
+  .finance-table,
+  .reports-table,
+  .portal-table,
+  .missions-table,
+  .sheet-table {
+    min-width: 560px;
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics-table,
+  .finance-table,
+  .reports-table,
+  .portal-table,
+  .missions-table,
+  .sheet-table {
+    min-width: 520px;
+  }
+}

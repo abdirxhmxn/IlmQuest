@@ -1,151 +1,176 @@
 <%- include('partials/header') -%>
 
-  <main class="landing-shell">
-    <section class="landing-hero">
-      <div class="hero-content">
-        <div class="hero-badge">
-          <i class="fas fa-star"></i>
-          IlmQuest • Learning & Growth Platform
-          <i class="fas fa-star"></i>
-        </div>
-        <h1 class="hero-title">
-          Empowering Learners Through
-          <span class="highlight">Personalized Education</span>
+<main class="landing-shell">
+    <svg class="landing-icon-sprite" aria-hidden="true" focusable="false">
+      <symbol id="icon-sparkle" viewBox="0 0 24 24">
+        <path d="M12 3 13.8 8.2 19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"></path>
+      </symbol>
+      <symbol id="icon-chevron-right" viewBox="0 0 24 24">
+        <path d="m9 18 6-6-6-6"></path>
+      </symbol>
+      <symbol id="icon-book-open" viewBox="0 0 24 24">
+        <path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"></path>
+        <path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"></path>
+      </symbol>
+      <symbol id="icon-graduation-cap" viewBox="0 0 24 24">
+        <path d="m2 10 10-5 10 5-10 5z"></path>
+        <path d="M6 12v5c3 2 9 2 12 0v-5"></path>
+      </symbol>
+      <symbol id="icon-users" viewBox="0 0 24 24">
+        <circle cx="8" cy="8" r="3"></circle>
+        <circle cx="16" cy="9" r="2.5"></circle>
+        <path d="M2.5 20a5.5 5.5 0 0 1 11 0"></path>
+        <path d="M12.5 20a4.5 4.5 0 0 1 9 0"></path>
+      </symbol>
+      <symbol id="icon-trophy" viewBox="0 0 24 24">
+        <path d="M8 21h8"></path>
+        <path d="M12 17v4"></path>
+        <path d="M7 4h10v4a5 5 0 0 1-10 0z"></path>
+        <path d="M5 6H3a2 2 0 0 0 0 4h2"></path>
+        <path d="M19 6h2a2 2 0 0 1 0 4h-2"></path>
+      </symbol>
+    </svg>
+
+    <section class="landing-hero" aria-labelledby="landing-hero-title">
+      <div class="landing-container hero-content">
+        <!-- <p class="hero-badge">
+          <i class="fas fa-star" aria-hidden="true"></i>
+          Al Bayaan Institute
+          <i class="fas fa-star" aria-hidden="true"></i>
+        </p> -->
+        <h1 class="hero-title" id="landing-hero-title">
+          Nurturing Hearts & Minds
+          <span class="highlight">Through Islamic Education</span>
         </h1>
         <p class="hero-text">
-          A calm, focused space for structured learning, skill-building, and academic progress.
-          Track achievements, stay motivated, and keep families informed every step of the way.
+          A comprehensive digital learning platform for Quran memorization, Islamic
+          studies, and academic excellence. Join thousands of students on their
+          journey to knowledge.
         </p>
-
-        <div class="cta-row">
-          <a class="primary-btn" href="/signup">Start Your Journey</a>
-          <a class="secondary-btn" href="/login">Log In</a>
-        </div>
-      </div>
-
-      <!-- <div class="hero-card glass">
-      <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" class="logo-img hero-logo">
-      <p class="card-text">Built for schools, learning centers, and homeschooling families.</p>
-      <ul class="hero-list">
-        <li><i class="fas fa-book-open"></i> Progress tracking and learning plans</li>
-        <li><i class="fas fa-user-graduate"></i> Academic performance, missions, and rewards</li>
-        <li><i class="fas fa-users"></i> Parent-ready updates and attendance</li>
-      </ul>
-      <div class="mini-cta">
-        <a class="primary-btn" href="/signup">Create Account</a>
-        <a class="secondary-btn" href="/login">Sign In</a>
-      </div>
-    </div> -->
-    </section>
-
-    <section class="stats">
-      <div class="stat-card">
-        <div class="stat-value">500+</div>
-        <div class="stat-label">Active Learners</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">30+</div>
-        <div class="stat-label">Experienced Educators</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">95%</div>
-        <div class="stat-label">Success Rate</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">10+</div>
-        <div class="stat-label">Years Experience</div>
-      </div>
-    </section>
-
-    <section class="features">
-      <div class="section-head">
-        <h2>Everything You Need to Excel</h2>
-        <p>Powerful tools for learners, teachers, and parents to stay aligned and informed.</p>
-      </div>
-      <div class="feature-grid">
-        <div class="feature-card">
-          <div class="icon-pill"><i class="fas fa-book-open"></i></div>
-          <h3>Progress Tracking</h3>
-          <p>Monitor learning journeys with personalized goals and structured plans.</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon-pill"><i class="fas fa-graduation-cap"></i></div>
-          <h3>Academic Excellence</h3>
-          <p>Organize subjects, assignments, and performance in one central dashboard.</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon-pill"><i class="fas fa-users"></i></div>
-          <h3>Parent Portal</h3>
-          <p>Share real-time updates on attendance, progress, and achievements.</p>
-        </div>
-        <div class="feature-card">
-          <div class="icon-pill"><i class="fas fa-trophy"></i></div>
-          <h3>Gamified Learning</h3>
-          <p>Earn badges, complete missions, and unlock rewards on the path to growth.</p>
+        <p class="hero-arabic" lang="ar" dir="rtl">خَيْرُكُم مَّن تَعَلَّمَ ٱلْقُرْآنَ وَعَلَّمَهُ</p>
+        <p class="hero-translation">"The best of you are those who learn the Quran and teach it" - Sahih Al-Bukhari</p>
+        <div class="cta-row" role="group" aria-label="Primary actions">
+          <a class="primary-btn" href="/signup">
+            Start Your Journey
+            <svg class="landing-icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg>
+          </a>
+          <a class="secondary-btn" href="/login">Learn More</a>
         </div>
       </div>
     </section>
 
-    <section class="audience">
-      <div class="section-head">
-        <h2>Designed for Everyone</h2>
-        <p>Tailored experiences for students, teachers, and parents.</p>
+    <section class="stats" aria-label="Platform statistics">
+      <div class="landing-container stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">500+</div>
+          <div class="stat-label">Partner Schools</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">30+</div>
+          <div class="stat-label">District Programs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">95%</div>
+          <div class="stat-label">School Retention</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">10+</div>
+          <div class="stat-label">Years Serving Schools</div>
+        </div>
       </div>
-      <div class="audience-grid">
-        <!-- Students -->
-        <div class="audience-card">
-          <div class="audience-icon">
-            <i data-lucide="graduation-cap"></i>
+    </section>
+
+    <section class="features" id="features" aria-labelledby="features-title">
+      <div class="landing-container">
+        <div class="section-head">
+          <h2 id="features-title">Everything You Need to Excel</h2>
+          <p>Our platform provides comprehensive tools for students, teachers, and parents to track progress and achieve educational goals.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="icon-pill" aria-hidden="true">
+              <svg class="landing-icon"><use href="#icon-book-open"></use></svg>
+            </div>
+            <h3>Quran Memorization</h3>
+            <p>Track your Hifz journey with personalized progress tracking and daily goals.</p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-pill" aria-hidden="true">
+              <svg class="landing-icon"><use href="#icon-graduation-cap"></use></svg>
+            </div>
+            <h3>Academic Excellence</h3>
+            <p>Comprehensive curriculum covering Islamic studies, Arabic, and core subjects.</p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-pill" aria-hidden="true">
+              <svg class="landing-icon"><use href="#icon-users"></use></svg>
+            </div>
+            <h3>Parent Portal</h3>
+            <p>Stay connected with your child's education through real-time updates.</p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-pill" aria-hidden="true">
+              <svg class="landing-icon"><use href="#icon-trophy"></use></svg>
+            </div>
+            <h3>Gamified Learning</h3>
+            <p>Earn achievements, complete missions, and unlock rewards as you learn.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="audience" aria-labelledby="audience-title">
+      <div class="landing-container">
+        <div class="section-head">
+          <h2 id="audience-title">Designed for Everyone</h2>
+          <p>Tailored experiences for every member of our educational community.</p>
+        </div>
+        <div class="audience-grid">
+          <article class="audience-card audience-card-students">
+            <div class="audience-icon" aria-hidden="true">
+              <svg class="landing-icon"><use href="#icon-graduation-cap"></use></svg>
+            </div>
+            <h3>Students</h3>
+            <p>Track your Quran progress, complete missions, and earn rewards.</p>
+            <a class="secondary-btn audience-btn" href="/login">View Dashboard</a>
+          </article>
+          <article class="audience-card audience-card-teachers">
+            <div class="audience-icon" aria-hidden="true">
+              <svg class="landing-icon"><use href="#icon-book-open"></use></svg>
+            </div>
+            <h3>Teachers</h3>
+            <p>Manage classes, track attendance, and monitor student performance.</p>
+            <a class="secondary-btn audience-btn" href="/login">View Dashboard</a>
+          </article>
+          <article class="audience-card audience-card-parents">
+            <div class="audience-icon" aria-hidden="true">
+              <svg class="landing-icon"><use href="#icon-users"></use></svg>
+            </div>
+            <h3>Parents</h3>
+            <p>Stay updated on your child's progress and communicate with teachers.</p>
+            <a class="secondary-btn audience-btn" href="/login">View Dashboard</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-final" aria-labelledby="final-cta-title">
+      <div class="landing-container">
+        <div class="cta-card">
+          <div class="stars" aria-hidden="true">
+            <svg class="landing-icon"><use href="#icon-sparkle"></use></svg>
+            <svg class="landing-icon"><use href="#icon-sparkle"></use></svg>
+            <svg class="landing-icon"><use href="#icon-sparkle"></use></svg>
           </div>
-          <h3>Students</h3>
-          <p>Track progress, complete missions, and stay motivated.</p>
-          <!-- <a class="secondary-btn" href="/login">View Dashboard</a> -->
-        </div>
-
-        <!-- Teachers -->
-        <div class="audience-card">
-          <div class="audience-icon">
-            <i data-lucide="book-open"></i>
-          </div>
-          <h3>Teachers</h3>
-          <p>Manage classes, attendance, and performance effortlessly.</p>
-          <!-- <a class="secondary-btn" href="/login">View Dashboard</a> -->
-        </div>
-
-        <!-- Parents -->
-        <div class="audience-card">
-          <div class="audience-icon">
-            <i data-lucide="heart-handshake"></i>
-          </div>
-          <h3>Parents</h3>
-          <p>Stay informed with real-time updates and communication tools.</p>
-          <!-- <a class="secondary-btn" href="/login">View Updates</a> -->
+          <h2 id="final-cta-title">Ready to Begin Your Journey?</h2>
+          <p>Join Al Bayaan Institute today and take the first step towards excellence in Islamic education.</p>
+          <a class="primary-btn" href="/signup">
+            Create Your Account
+            <svg class="landing-icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg>
+          </a>
         </div>
       </div>
     </section>
+</main>
 
-    <section class="cta-final">
-      <div class="cta-card">
-        <div class="stars">
-          <i class="fas fa-star"></i>
-          <i class="fas fa-star"></i>
-          <i class="fas fa-star"></i>
-        </div>
-        <h2>Ready to Begin Your Journey?</h2>
-        <p>Join IlmQuest today and take the first step toward a smarter, more organized learning experience.</p>
-        <div class="cta-row">
-          <a class="primary-btn" href="/signup">Create Your Account</a>
-          <a class="secondary-btn" href="/login">Log In</a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <%- include('partials/footer') -%>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script>
-      // Auto-render all icons on page load
-      document.addEventListener("DOMContentLoaded", () => {
-        lucide.createIcons();
-      });
-    </script>
+<%- include('partials/footer') -%>

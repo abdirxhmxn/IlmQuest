@@ -1,3 +1,18 @@
+/*
+ * ============================================================
+ *  admin-reports.css
+ *  IlmQuest - Page Styles
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
 .reports-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

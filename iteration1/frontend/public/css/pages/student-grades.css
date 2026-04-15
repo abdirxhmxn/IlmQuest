@@ -1,387 +1,327 @@
-:root {
-            --green-900: #0f3d2e;
-            --green-800: #145239;
-            --green-700: #1b6b46;
-            --green-100: #e5f3eb;
-            --green-050: #f4fbf5;
-            --card-bg: #f8fff6;
-        }
+/*
+ * ============================================================
+ *  student-grades.css
+ *  IlmQuest - Student Grades Experience
+ * ============================================================
+ */
 
-        body {
-            margin: 0;
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--green-050);
-            color: var(--green-900);
-        }
+.student-grades-page main {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
 
-        main {
-            max-width: 1200px;
-            margin: 2em auto;
-            padding: 0 1em;
-        }
+.student-grades-page .class-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
 
-        main h1 {
-            font-size: 1.8rem;
-            margin: 0 0 1.5rem 0;
-            color: var(--green-900);
-        }
+.student-grades-empty {
+  padding: 16px;
+}
 
-        /* Class Filter Buttons */
-        .class-filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-        }
+.student-grades-empty h2 {
+  margin: 0;
+  color: #184a36;
+  font-size: 1.08rem;
+}
 
-        .class-btn {
-            padding: 10px 20px;
-            background: #ffffff;
-            border: 2px solid #d1fae5;
-            border-radius: 10px;
-            color: var(--green-800);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+.student-grades-empty p {
+  margin: 6px 0 0;
+  color: #5e766a;
+  font-size: 0.9rem;
+}
 
-        .class-btn:hover {
-            background: #ecfdf5;
-            border-color: #a7f3d0;
-        }
+.student-grades-page .class-btn {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #b8d8c8;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #19533e;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
 
-        .class-btn.active {
-            background: var(--green-800);
-            color: #ffffff;
-            border-color: var(--green-800);
-        }
+.student-grades-page .class-btn:hover {
+  border-color: #8ebba5;
+  background: #f5faf7;
+}
 
-        /* Class Block */
-        .class-block {
-            display: none;
-        }
+.student-grades-page .class-btn.active {
+  border-color: #1f7852;
+  background: #e8f6ee;
+  color: #1a5b41;
+}
 
-        .class-block.active {
-            display: block;
-        }
+.student-grades-page .class-block {
+  display: none;
+  border: 1px solid #d6ded8;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(9, 39, 28, 0.08);
+  padding: 14px;
+}
 
-        /* Schedule Section */
-        .schedule-section {
-            border-top: 1px solid #d6e9dd;
-            padding-top: 1.5rem;
-            margin-bottom: 2rem;
-        }
+.student-grades-page .class-block.active {
+  display: block;
+}
 
-        .schedule-heading {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--green-800);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+.student-grades-page .schedule-section {
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #e2ebe5;
+}
 
-        .schedule-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.75rem;
-        }
+.student-grades-page .schedule-heading {
+  margin: 0 0 10px;
+  color: #1b5a42;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-        .schedule-item {
-            background: #f0fff4;
-            border: 1px solid #c8e0ca;
-            border-radius: 10px;
-            padding: 10px 12px;
-            display: flex;
-            justify-content: space-between;
-        }
+.student-grades-page .schedule-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
 
-        .schedule-item .day {
-            font-weight: 600;
-            color: var(--green-900);
-            font-size: 0.875rem;
-        }
+.student-grades-page .schedule-item {
+  border: 1px solid #d2e6da;
+  border-radius: 10px;
+  background: #f7fbf8;
+  padding: 9px 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.84rem;
+}
 
-        .schedule-item .time {
-            color: var(--green-700);
-            font-weight: 500;
-            font-size: 0.875rem;
-        }
+.student-grades-page .schedule-item .day {
+  color: #174634;
+  font-weight: 700;
+}
 
-        .schedule-empty {
-            color: #6b7280;
-            font-style: italic;
-            font-size: 0.875rem;
-        }
+.student-grades-page .schedule-item .time {
+  color: #2f6750;
+  font-weight: 600;
+}
 
-        /* Subject Blocks Container */
-        .subjects-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-        }
+.student-grades-page .schedule-empty {
+  margin: 0;
+  color: #61786e;
+  font-size: 0.86rem;
+}
 
-        .subject-block {
-            flex: 1 1 calc(50% - 0.75rem);
-            min-width: 400px;
-            border: 1px solid #d6e9dd;
-            border-radius: 14px;
-            overflow: hidden;
-            margin-top: 14px;
-        }
+.student-grades-page .subjects-wrapper {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
 
-        .subject-block header {
-            background: var(--green-800);
-            color: #fff;
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.125rem;
-            font-weight: 600;
-        }
+.student-grades-page .subject-block {
+  border: 1px solid #d6e4db;
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+}
 
-        .subject-block header .weight {
-            font-size: 0.75rem;
-            color: #d1fae5;
-            margin-left: 0.5rem;
-        }
+.student-grades-page .subject-block > header {
+  margin: 0;
+  padding: 11px 12px;
+  background: #16563f;
+  color: #eff9f4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
 
-        .subject-block .students {
-            padding: 12px 14px;
-            background: #f8fdf9;
-        }
+.student-grades-page .subject-block .weight {
+  font-size: 0.72rem;
+  color: #c5e8d7;
+}
 
-        /* Student Content Area */
-        .student-content {
-            background: rgba(236, 253, 245, 0.5);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid #d1fae5;
-        }
+.student-grades-page .students {
+  padding: 12px;
+  background: #f8fcf9;
+}
 
-        /* Subject Average Badge */
-        .subject-average {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: var(--green-900);
-            margin-bottom: 2.5rem;
-        }
+.student-grades-page .student-content {
+  border: 1px solid #d5e5dd;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 12px;
+}
 
-        .average-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 12px;
-            background: #ffffff;
-            color: #2f855a;
-            border: 1px solid #d1fae5;
-            border-radius: 999px;
-            font-size: 0.9rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
+.student-grades-page .subject-average {
+  margin-bottom: 14px;
+}
 
-        .average-badge i {
-            width: 1rem;
-            height: 1rem;
-            margin-right: 0.5rem;
-        }
+.student-grades-page .average-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #b9dbc8;
+  border-radius: 999px;
+  background: #edf8f1;
+  color: #1c6446;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 7px 11px;
+}
 
-        .average-badge .value {
-            font-weight: 600;
-            margin-left: 0.25rem;
-        }
+.student-grades-page .semester-section {
+  margin-bottom: 16px;
+}
 
-        /* Semester Sections */
-        .semester-section {
-            margin-bottom: 2.5rem;
-        }
+.student-grades-page .semester-header {
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #d9e8de;
+  color: #1f6749;
+  font-size: 0.96rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-        .semester-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--green-800);
-            border-bottom: 2px solid #a7f3d0;
-            padding-bottom: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
+.student-grades-page .semester-content {
+  display: grid;
+  gap: 10px;
+}
 
-        .semester-header i {
-            width: 1.75rem;
-            height: 1.75rem;
-        }
+.student-grades-page .quarter-summary,
+.student-grades-page .category-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
 
-        .semester-content {
-            margin-left: 1.5rem;
-        }
+.student-grades-page .quarter-summary {
+  border: 1px solid #d4e2da;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #20583f;
+  padding: 9px 11px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
 
-        /* Quarter Accordion */
-        .quarter-accordion {
-            margin-bottom: 1.25rem;
-        }
+.student-grades-page .quarter-summary:hover {
+  background: #f5faf7;
+}
 
-        .quarter-summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            list-style: none;
-            padding: 12px 20px;
-            background: #ffffff;
-            border: 1px solid #d1fae5;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            transition: background-color 0.2s;
-        }
+.student-grades-page .quarter-summary .label,
+.student-grades-page .category-summary .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 
-        .quarter-summary:hover {
-            background: #ecfdf5;
-        }
+.student-grades-page .quarter-content {
+  margin-top: 8px;
+  padding-left: 10px;
+  display: grid;
+  gap: 8px;
+}
 
-        .quarter-summary .label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #059669;
-        }
+.student-grades-page .category-summary {
+  border-radius: 10px;
+  background: #edf8f1;
+  color: #1f6445;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
 
-        .quarter-summary .label i {
-            width: 1rem;
-            height: 1rem;
-        }
+.student-grades-page .category-summary:hover {
+  background: #e4f3ea;
+}
 
-        .quarter-summary .chevron {
-            width: 1rem;
-            height: 1rem;
-            transition: transform 0.2s;
-        }
+.student-grades-page .category-content {
+  margin-top: 6px;
+  padding-left: 10px;
+  display: grid;
+  gap: 7px;
+}
 
-        details[open] .quarter-summary .chevron {
-            transform: rotate(180deg);
-        }
+.student-grades-page .grade-item {
+  border: 1px solid #d3e5da;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 9px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
 
-        .quarter-content {
-            margin-top: 1rem;
-            margin-left: 2rem;
-        }
+.student-grades-page .grade-item .name {
+  color: #123d2d;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
 
-        /* Category Accordion */
-        .category-accordion {
-            margin-bottom: 1rem;
-        }
+.student-grades-page .grade-item .feedback {
+  color: #4a6859;
+  font-size: 0.78rem;
+}
 
-        .category-summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            list-style: none;
-            padding: 10px 16px;
-            background: #ecfdf5;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
+.student-grades-page .grade-item .score {
+  text-align: right;
+}
 
-        .category-summary:hover {
-            background: #d1fae5;
-        }
+.student-grades-page .grade-item .points {
+  font-size: 0.97rem;
+  color: #174f39;
+  font-weight: 800;
+}
 
-        .category-summary .label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #065f46;
-        }
+.student-grades-page .grade-item .max,
+.student-grades-page .grade-item .meta,
+.student-grades-page .no-grades {
+  color: #668073;
+  font-size: 0.76rem;
+}
 
-        .category-summary .label i {
-            width: 1rem;
-            height: 1rem;
-        }
+.student-grades-page details summary::-webkit-details-marker {
+  display: none;
+}
 
-        .category-summary .weight {
-            font-size: 0.75rem;
-            color: #059669;
-            margin-left: 0.5rem;
-        }
+.student-grades-page details[open] .chevron {
+  transform: rotate(180deg);
+}
 
-        .category-summary .chevron {
-            width: 1rem;
-            height: 1rem;
-            transition: transform 0.2s;
-        }
+.student-grades-page .chevron {
+  transition: transform 0.2s ease;
+}
 
-        details[open] .category-summary .chevron {
-            transform: rotate(180deg);
-        }
+@media (max-width: 1100px) {
+  .student-grades-page .subjects-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
 
-        .category-content {
-            margin-top: 0.75rem;
-            margin-left: 2rem;
-        }
+@media (max-width: 720px) {
+  .student-grades-page .schedule-list {
+    grid-template-columns: 1fr;
+  }
 
-        /* Grade Items */
-        .grade-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 16px;
-            background: #d1fae5;
-            border: 1px solid #a7f3d0;
-            border-radius: 10px;
-            margin-bottom: 0.5rem;
-        }
+  .student-grades-page .grade-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-        .grade-item .info .name {
-            font-weight: 600;
-            color: var(--green-900);
-            margin-bottom: 0.25rem;
-        }
-
-        .grade-item .info .feedback {
-            font-size: 0.75rem;
-            color: #059669;
-        }
-
-        .grade-item .score {
-            text-align: right;
-        }
-
-        .grade-item .score .points {
-            font-weight: 700;
-            color: #065f46;
-            font-size: 1.125rem;
-        }
-
-        .grade-item .score .max {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-
-        .grade-item .score .meta {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-top: 0.125rem;
-        }
-
-        .no-grades {
-            color: #059669;
-            font-style: italic;
-            font-size: 0.875rem;
-        }
-
-        /* Hide default details marker */
-        details summary::-webkit-details-marker {
-            display: none;
-        }
-
-        details summary {
-            list-style: none;
-        }
+  .student-grades-page .grade-item .score {
+    text-align: left;
+  }
+}

@@ -1,0 +1,200 @@
+/*
+ * ============================================================
+ *  buttons.css
+ *  IlmQuest - Button Primitives and Interactive Controls
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
+/* 1. Tokens */
+:root {
+  --btn-height: 40px;
+  --btn-height-compact: 34px;
+}
+
+/* 2. Base */
+.btn,
+.submit-btn,
+.action-btn,
+.tab-btn,
+.badge-btn,
+.day-btn,
+.primary-btn,
+.secondary-btn,
+.pay-now-btn,
+.profile-btn,
+.admin-action-link,
+.parent-action-link,
+.ghost-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--btn-height);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-panel);
+  color: var(--color-text-main);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+/* 3. Layout */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* 4. Components */
+.primary-btn,
+.submit-btn,
+.btn-primary,
+.pay-now-btn,
+.action-btn.save-btn,
+.tab-btn.active,
+.day-btn.active {
+  background: var(--color-brand-900);
+  border-color: var(--color-brand-900);
+  color: #ffffff;
+  box-shadow: var(--shadow-xs);
+}
+
+.secondary-btn,
+.btn-ghost,
+.btn-outline,
+.action-btn.cancel-btn,
+.profile-btn-outline,
+.profile-btn-muted,
+.submit-btn.secondary {
+  background: var(--color-surface-panel);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-main);
+}
+
+.btn-danger,
+.action-btn.delete-btn,
+.profile-btn-danger,
+.cancel-btn.delete-btn,
+.action-btn-avatar-remove {
+  background: var(--color-danger-bg);
+  border-color: #efc4c4;
+  color: var(--color-danger-text);
+}
+
+.btn-link,
+.compact-link,
+.reports-link,
+.link-btn {
+  min-height: var(--btn-height-compact);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-xs);
+}
+
+/* 5. States */
+.btn:hover,
+.submit-btn:hover,
+.action-btn:hover,
+.tab-btn:hover,
+.badge-btn:hover,
+.day-btn:hover,
+.primary-btn:hover,
+.secondary-btn:hover,
+.pay-now-btn:hover,
+.profile-btn:hover,
+.admin-action-link:hover,
+.parent-action-link:hover,
+.ghost-action:hover {
+  border-color: color-mix(in srgb, var(--color-brand-900) 35%, var(--color-border-strong));
+  box-shadow: var(--shadow-sm);
+}
+
+.primary-btn:hover,
+.submit-btn:hover,
+.btn-primary:hover,
+.pay-now-btn:hover,
+.action-btn.save-btn:hover,
+.tab-btn.active:hover,
+.day-btn.active:hover {
+  background: var(--color-brand-800);
+  border-color: var(--color-brand-800);
+}
+
+.btn-danger:hover,
+.action-btn.delete-btn:hover,
+.profile-btn-danger:hover,
+.cancel-btn.delete-btn:hover,
+.action-btn-avatar-remove:hover {
+  background: #ffeaea;
+  border-color: #eab2b2;
+}
+
+/* Press animation is intentionally subtle to avoid distracting users. */
+.btn:active,
+.submit-btn:active,
+.action-btn:active,
+.tab-btn:active,
+.badge-btn:active,
+.day-btn:active,
+.primary-btn:active,
+.secondary-btn:active,
+.pay-now-btn:active,
+.profile-btn:active,
+.admin-action-link:active,
+.parent-action-link:active,
+.ghost-action:active {
+  transform: scale(0.985);
+}
+
+.btn:disabled,
+.submit-btn:disabled,
+.action-btn:disabled,
+.tab-btn:disabled,
+.badge-btn:disabled,
+.day-btn:disabled,
+.primary-btn:disabled,
+.secondary-btn:disabled,
+.pay-now-btn:disabled,
+.profile-btn:disabled,
+.admin-action-link:disabled,
+.parent-action-link:disabled,
+.ghost-action:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 6. Responsive */
+@media (max-width: 480px) {
+  .btn,
+  .submit-btn,
+  .action-btn,
+  .tab-btn,
+  .badge-btn,
+  .day-btn,
+  .primary-btn,
+  .secondary-btn,
+  .pay-now-btn,
+  .profile-btn,
+  .admin-action-link,
+  .parent-action-link,
+  .ghost-action {
+    width: 100%;
+  }
+
+  .tabs .tab-btn {
+    width: auto;
+  }
+}

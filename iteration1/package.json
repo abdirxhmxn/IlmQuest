@@ -13,6 +13,8 @@
     "test:admin-mutations": "node backend/scripts/admin-mutation-check.js",
     "test:password-selection": "node backend/scripts/password-selection-check.js",
     "test:attendance-dedupe": "node backend/scripts/attendance-dedupe-check.js",
+    "test:real-data-readiness": "node backend/scripts/real-data-readiness-check.js",
+    "test:real-data-readiness:strict": "node backend/scripts/real-data-readiness-check.js --strict",
     "test:user-uniqueness": "npm run db:indexes:apply && node backend/scripts/user-uniqueness-check.js",
     "db:indexes:dry": "node backend/scripts/sync-user-indexes.js --dry-run",
     "db:indexes:apply": "node backend/scripts/sync-user-indexes.js --apply",

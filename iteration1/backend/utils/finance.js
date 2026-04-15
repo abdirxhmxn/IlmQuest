@@ -3,14 +3,13 @@ const FinanceEntry = require("../models/FinanceEntry");
 const FinanceBankConnection = require("../models/FinanceBankConnection");
 const FinanceBankTransaction = require("../models/FinanceBankTransaction");
 const FinanceSyncLog = require("../models/FinanceSyncLog");
-const ParentPayment = require("../models/ParentPayment");
 const User = require("../models/User");
 const Class = require("../models/Class");
 const { scopedQuery } = require("./tenant");
 
 const DEFAULT_FINANCE_CATEGORIES = {
   income: [
-    { key: "tuition", label: "Tuition" },
+    { key: "program_fees", label: "Program Fees" },
     { key: "registration", label: "Registration" },
     { key: "food", label: "Food" },
     { key: "activities", label: "Activities / Fun" },
@@ -29,32 +28,8 @@ const DEFAULT_FINANCE_CATEGORIES = {
     { key: "marketing", label: "Marketing" },
     { key: "tax_reserve", label: "Tax Reserve" },
     { key: "misc_expense", label: "Miscellaneous Expense" }
-  ],
-  payment: [
-    { key: "tuition", label: "Tuition" },
-    { key: "registration", label: "Registration" },
-    { key: "materials", label: "Materials" },
-    { key: "meal", label: "Meal" },
-    { key: "transport", label: "Transport" },
-    { key: "other", label: "Other" }
   ]
 };
-
-const PAYMENT_CATEGORY_TO_KEY = {
-  Tuition: "tuition",
-  Registration: "registration",
-  Materials: "materials",
-  Meal: "meal",
-  Transport: "transport",
-  Other: "other"
-};
-
-function toIdString(value) {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "object" && value._id) return String(value._id);
-  return String(value);
-}
 
 function buildActorSnapshot(user) {
   return {
@@ -103,125 +78,6 @@ function monthBounds(now = new Date()) {
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   return { start, end };
-}
-
-function daysDiff(fromDate, toDate) {
-  const start = new Date(fromDate);
-  const end = new Date(toDate);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.ceil((end.getTime() - start.getTime()) / msPerDay);
-}
-
-function normalizeParentPaymentStatus(payment, now = new Date()) {
-  const expectedAmount = Number(payment.expectedAmount || 0);
-  const paidAmount = Number(payment.paidAmount || 0);
-  const amountDue = Math.max(expectedAmount - paidAmount, 0);
-  const dueDate = payment.dueDate ? new Date(payment.dueDate) : null;
-  const dueDateValid = dueDate && !Number.isNaN(dueDate.getTime());
-
-  let status = String(payment.status || "").trim() || "Due";
-  if (amountDue <= 0) status = "Paid";
-  else if (status === "PendingProcessor") status = "PendingProcessor";
-  else if (paidAmount > 0) status = "Partial";
-  else status = "Due";
-
-  if (amountDue > 0 && dueDateValid && dueDate < now && status !== "PendingProcessor") {
-    status = "Overdue";
-  }
-
-  const paidAt = payment.paidAt ? new Date(payment.paidAt) : null;
-  const paidAtValid = paidAt && !Number.isNaN(paidAt.getTime());
-  const daysRemaining = dueDateValid ? daysDiff(now, dueDate) : null;
-
-  return {
-    ...payment,
-    amountDue,
-    status,
-    daysRemaining,
-    dueDate,
-    dueDateLabel: dueDateValid ? formatDateLabel(dueDate) : "N/A",
-    paidAt,
-    paidAtValid,
-    paidAtLabel: paidAtValid ? formatDateLabel(paidAt) : "—",
-    currency: payment.currency || "USD"
-  };
-}
-
-function paymentStatusPriority(status) {
-  if (status === "Overdue") return 0;
-  if (status === "PendingProcessor") return 1;
-  if (status === "Partial") return 2;
-  if (status === "Due") return 3;
-  return 4;
-}
-
-function groupPaymentLedgerRows(normalizedPayments, parentLookup, studentLookup) {
-  const grouped = new Map();
-
-  normalizedPayments.forEach((payment) => {
-    const parentId = toIdString(payment.parentId);
-    if (!parentId) return;
-    const existing = grouped.get(parentId) || {
-      parentId,
-      parent: parentLookup.get(parentId) || "Unknown Parent",
-      studentNames: new Set(),
-      due: 0,
-      paid: 0,
-      status: "Paid",
-      lastPaymentAt: null,
-      currency: payment.currency || "USD"
-    };
-
-    existing.due += Number(payment.amountDue || 0);
-    existing.paid += Number(payment.paidAmount || 0);
-    existing.currency = payment.currency || existing.currency;
-
-    const studentId = toIdString(payment.studentId);
-    if (studentId) {
-      existing.studentNames.add(studentLookup.get(studentId) || "Student");
-    } else {
-      existing.studentNames.add("Family");
-    }
-
-    if (
-      paymentStatusPriority(payment.status) < paymentStatusPriority(existing.status) ||
-      (existing.status === "Paid" && payment.status !== "Paid")
-    ) {
-      existing.status = payment.status;
-    }
-
-    const dateCandidates = [payment.paidAt, payment.updatedAt, payment.createdAt]
-      .map((value) => new Date(value))
-      .filter((value) => !Number.isNaN(value.getTime()));
-    const candidate = dateCandidates[0] || null;
-    if (candidate && (!existing.lastPaymentAt || candidate > existing.lastPaymentAt)) {
-      existing.lastPaymentAt = candidate;
-    }
-
-    grouped.set(parentId, existing);
-  });
-
-  return Array.from(grouped.values())
-    .map((entry) => ({
-      parentId: entry.parentId,
-      parent: entry.parent,
-      students: Array.from(entry.studentNames).join(", "),
-      due: Number(entry.due || 0),
-      dueLabel: formatCurrencyLabel(entry.due, entry.currency),
-      paid: Number(entry.paid || 0),
-      paidLabel: formatCurrencyLabel(entry.paid, entry.currency),
-      status: entry.status,
-      overdue: entry.status === "Overdue",
-      lastPaymentAt: entry.lastPaymentAt,
-      lastPayment: entry.lastPaymentAt ? formatDateLabel(entry.lastPaymentAt) : "—"
-    }))
-    .sort((a, b) => {
-      const statusDiff = paymentStatusPriority(a.status) - paymentStatusPriority(b.status);
-      if (statusDiff !== 0) return statusDiff;
-      return Number(b.due || 0) - Number(a.due || 0);
-    });
 }
 
 function collectCategoryBreakdown(rows, totalAmount) {
@@ -288,9 +144,7 @@ async function fetchFinanceData(req, options = {}) {
 
   const [
     categories,
-    paymentDocs,
     entryDocs,
-    parentDocs,
     studentDocs,
     classDocs,
     bankConnections,
@@ -302,13 +156,9 @@ async function fetchFinanceData(req, options = {}) {
     FinanceCategory.find(scopedQuery(req, { active: true }))
       .sort({ entryType: 1, label: 1 })
       .lean(),
-    ParentPayment.find(scopedQuery(req)).sort({ dueDate: -1, createdAt: -1 }).lean(),
     FinanceEntry.find(scopedQuery(req, { deletedAt: null }))
       .sort({ occurredAt: -1, createdAt: -1 })
       .limit(500)
-      .lean(),
-    User.find(scopedQuery(req, { role: "parent" }))
-      .select("_id firstName lastName userName parentInfo.children")
       .lean(),
     User.find(scopedQuery(req, { role: "student" }))
       .select("_id firstName lastName userName")
@@ -324,12 +174,6 @@ async function fetchFinanceData(req, options = {}) {
     FinanceSyncLog.findOne(scopedQuery(req)).sort({ createdAt: -1 }).lean()
   ]);
 
-  const parentLookup = new Map(
-    parentDocs.map((parent) => [
-      String(parent._id),
-      `${parent.firstName || ""} ${parent.lastName || ""}`.trim() || parent.userName || "Parent"
-    ])
-  );
   const studentLookup = new Map(
     studentDocs.map((student) => [
       String(student._id),
@@ -339,33 +183,6 @@ async function fetchFinanceData(req, options = {}) {
   const classLookup = new Map(
     classDocs.map((classDoc) => [String(classDoc._id), classDoc.className || classDoc.classCode || "Class"])
   );
-
-  const normalizedPayments = paymentDocs.map((payment) => normalizeParentPaymentStatus(payment, now));
-  const paymentLedgerRows = groupPaymentLedgerRows(normalizedPayments, parentLookup, studentLookup);
-  const paymentMatchOptions = normalizedPayments.slice(0, 200).map((payment) => {
-    const parentName = parentLookup.get(String(payment.parentId)) || "Parent";
-    return {
-      id: String(payment._id),
-      label: `${parentName} • ${payment.title || "Payment"} • ${payment.dueDateLabel} • ${payment.status}`
-    };
-  });
-
-  const monthlyPaymentCollected = normalizedPayments.reduce((sum, payment) => {
-    if (!payment.paidAtValid) return sum;
-    if (payment.paidAt >= monthStart && payment.paidAt < monthEnd) {
-      return sum + Number(payment.paidAmount || 0);
-    }
-    return sum;
-  }, 0);
-
-  const outstanding = normalizedPayments.reduce((sum, payment) => sum + Number(payment.amountDue || 0), 0);
-
-  const familyOutstandingMap = new Map();
-  paymentLedgerRows.forEach((row) => {
-    familyOutstandingMap.set(row.parentId, Number(row.due || 0));
-  });
-  const paidFamilies = Array.from(familyOutstandingMap.values()).filter((value) => value <= 0).length;
-  const unpaidFamilies = Array.from(familyOutstandingMap.values()).filter((value) => value > 0).length;
 
   const entries = entryDocs.filter((entry) => !entry.deletedAt);
   const monthlyIncomeEntries = entries.reduce((sum, entry) => {
@@ -384,20 +201,10 @@ async function fetchFinanceData(req, options = {}) {
     return sum;
   }, 0);
 
-  const monthlyIncome = monthlyIncomeEntries + monthlyPaymentCollected;
+  const monthlyIncome = monthlyIncomeEntries;
   const netCashFlow = monthlyIncome - monthlyExpenseEntries;
 
   const revenueBreakdownMap = new Map();
-  normalizedPayments.forEach((payment) => {
-    if (!payment.paidAtValid) return;
-    if (payment.paidAt < monthStart || payment.paidAt >= monthEnd) return;
-    const key = PAYMENT_CATEGORY_TO_KEY[payment.category] || "other";
-    const label = payment.category || "Other";
-    const entry = revenueBreakdownMap.get(key) || { key, label, amount: 0 };
-    entry.amount += Number(payment.paidAmount || 0);
-    revenueBreakdownMap.set(key, entry);
-  });
-
   entries.forEach((entry) => {
     if (entry.entryType !== "income" || entry.status !== "posted") return;
     const occurredAt = new Date(entry.occurredAt);
@@ -430,7 +237,6 @@ async function fetchFinanceData(req, options = {}) {
     vendorOrPayer: entry.vendorOrPayer || "—",
     reference: entry.reference || "",
     memo: entry.memo || "",
-    linkedParentName: entry.linkedParentId ? parentLookup.get(String(entry.linkedParentId)) || "Parent" : "",
     linkedStudentName: entry.linkedStudentId ? studentLookup.get(String(entry.linkedStudentId)) || "Student" : "",
     linkedClassName: entry.linkedClassId ? classLookup.get(String(entry.linkedClassId)) || "Class" : "",
     bankTransactionId: entry.bankTransactionId ? String(entry.bankTransactionId) : "",
@@ -462,10 +268,6 @@ async function fetchFinanceData(req, options = {}) {
     expense: categories.filter((category) => category.entryType === "expense").map((category) => ({
       key: category.key,
       label: category.label
-    })),
-    payment: categories.filter((category) => category.entryType === "payment").map((category) => ({
-      key: category.key,
-      label: category.label
     }))
   };
 
@@ -490,16 +292,10 @@ async function fetchFinanceData(req, options = {}) {
     summary: {
       monthlyIncome,
       monthlyIncomeLabel: formatCurrencyLabel(monthlyIncome),
-      monthlyPaymentCollected,
-      monthlyPaymentCollectedLabel: formatCurrencyLabel(monthlyPaymentCollected),
       monthlyExpense: monthlyExpenseEntries,
       monthlyExpenseLabel: formatCurrencyLabel(monthlyExpenseEntries),
       netCashFlow,
       netCashFlowLabel: formatCurrencyLabel(netCashFlow),
-      outstanding,
-      outstandingLabel: formatCurrencyLabel(outstanding),
-      paidFamilies,
-      unpaidFamilies,
       unmatchedCount: Number(unmatchedCount || 0),
       matchedCount: Number(matchedCount || 0),
       lastSyncAt: newestSync?.lastSyncAt || latestSyncLog?.endedAt || null,
@@ -508,9 +304,6 @@ async function fetchFinanceData(req, options = {}) {
       lastSyncMessage: newestSync?.lastSyncMessage || latestSyncLog?.errorMessage || ""
     },
     categories: categoryOptions,
-    payments: {
-      rows: paymentLedgerRows.slice(0, limit)
-    },
     entries: {
       rows: entryRows,
       matchOptions: entryRows.map((entry) => ({
@@ -532,72 +325,7 @@ async function fetchFinanceData(req, options = {}) {
         }
         : null
     },
-    revenueBreakdown,
-    paymentMatchOptions
-  };
-}
-
-async function buildDashboardPaymentMetrics(req) {
-  const now = new Date();
-  const { start: monthStart, end: monthEnd } = monthBounds(now);
-  const [paymentDocs, parentDocs, studentDocs] = await Promise.all([
-    ParentPayment.find(scopedQuery(req)).sort({ dueDate: -1, createdAt: -1 }).lean(),
-    User.find(scopedQuery(req, { role: "parent" }))
-      .select("_id firstName lastName userName")
-      .lean(),
-    User.find(scopedQuery(req, { role: "student" }))
-      .select("_id firstName lastName userName")
-      .lean()
-  ]);
-
-  const parentLookup = new Map(
-    parentDocs.map((parent) => [
-      String(parent._id),
-      `${parent.firstName || ""} ${parent.lastName || ""}`.trim() || parent.userName || "Parent"
-    ])
-  );
-  const studentLookup = new Map(
-    studentDocs.map((student) => [
-      String(student._id),
-      `${student.firstName || ""} ${student.lastName || ""}`.trim() || student.userName || "Student"
-    ])
-  );
-
-  const normalizedPayments = paymentDocs.map((payment) => normalizeParentPaymentStatus(payment, now));
-  const ledgerRows = groupPaymentLedgerRows(normalizedPayments, parentLookup, studentLookup);
-
-  const monthlyCollected = normalizedPayments.reduce((sum, payment) => {
-    if (!payment.paidAtValid) return sum;
-    if (payment.paidAt >= monthStart && payment.paidAt < monthEnd) {
-      return sum + Number(payment.paidAmount || 0);
-    }
-    return sum;
-  }, 0);
-
-  const outstanding = normalizedPayments.reduce((sum, payment) => sum + Number(payment.amountDue || 0), 0);
-  const paidFamilies = ledgerRows.filter((row) => Number(row.due || 0) <= 0).length;
-  const unpaidFamilies = ledgerRows.filter((row) => Number(row.due || 0) > 0).length;
-
-  const revenueMap = new Map();
-  normalizedPayments.forEach((payment) => {
-    if (!payment.paidAtValid) return;
-    if (payment.paidAt < monthStart || payment.paidAt >= monthEnd) return;
-    const label = payment.category || "Other";
-    const key = PAYMENT_CATEGORY_TO_KEY[label] || "other";
-    const current = revenueMap.get(key) || { key, label, amount: 0 };
-    current.amount += Number(payment.paidAmount || 0);
-    revenueMap.set(key, current);
-  });
-  const revenueBreakdown = collectCategoryBreakdown(Array.from(revenueMap.values()), monthlyCollected);
-
-  return {
-    dataAvailable: true,
-    monthlyCollected,
-    outstanding,
-    paidFamilies,
-    unpaidFamilies,
-    revenueBreakdown: revenueBreakdown.slice(0, 5),
-    ledger: ledgerRows.slice(0, 12)
+    revenueBreakdown
   };
 }
 
@@ -606,9 +334,7 @@ module.exports = {
   normalizeFinanceCategoryKey,
   buildActorSnapshot,
   ensureDefaultFinanceCategories,
-  normalizeParentPaymentStatus,
   fetchFinanceData,
-  buildDashboardPaymentMetrics,
   formatDateLabel,
   formatDateTimeLabel,
   formatCurrencyLabel

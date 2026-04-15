@@ -1,0 +1,116 @@
+<%
+  const resolvedPageTitle = typeof pageTitle === "string" && pageTitle.trim().length
+    ? pageTitle.trim()
+    : "IlmQuest Student Portal";
+  const resolvedPageStyles = typeof pageStyles !== "undefined" && Array.isArray(pageStyles)
+    ? pageStyles
+    : [];
+  const resolvedActivePage = typeof activePage === "string" ? activePage : "home";
+  const studentDisplayName = `${user?.firstName || "Student"} ${user?.lastName || "User"}`.trim();
+  const studentInitials = `${(user?.firstName || "S").charAt(0)}${(user?.lastName || "U").charAt(0)}`.toUpperCase();
+  const studentAvatarUrl = String(user?.profileImage || user?.profilePic || "").trim();
+  const hasStudentAvatar = studentAvatarUrl.length > 0;
+  const studentRoleLabel = String(user?.role || user?.accountType || "Student")
+    .trim()
+    .replace(/_/g, " ")
+    .toUpperCase();
+
+  function iconSvg(iconName) {
+    const icons = {
+      dashboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>',
+      missions: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.9 5.88 6.5.95-4.7 4.57 1.1 6.46L12 17.9l-5.8 3.06 1.1-6.46L2.6 9.83l6.5-.95z"/></svg>',
+      grades: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="m7 16 3-4 3 2 4-6"/></svg>',
+      library: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2Z"/></svg>',
+      profile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>'
+    };
+
+    return icons[iconName] || icons.dashboard;
+  }
+
+  const navItems = [
+    { key: "home", href: "/student/home", label: "Dashboard", icon: "dashboard" },
+    { key: "missions", href: "/student/missions", label: "Missions", icon: "missions" },
+    { key: "grades", href: "/student/grades", label: "Grades", icon: "grades" },
+    { key: "library", href: "/student/library", label: "Library", icon: "library" },
+    { key: "profile", href: "/profile", label: "Profile", icon: "profile" }
+  ];
+%>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= resolvedPageTitle %></title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/layout.css" />
+    <link rel="stylesheet" href="/css/components.css" />
+    <% resolvedPageStyles.forEach((styleHref) => { %>
+      <link rel="stylesheet" href="<%= styleHref %>" />
+    <% }) %>
+    <link rel="stylesheet" href="/css/pages/app-shell.css" />
+  </head>
+  <body>
+    <div
+      class="student-app-shell role-app-shell"
+      id="studentShell"
+      data-role-shell="student"
+      data-shell-role="student"
+      data-shell-storage-key="ilmquest_student_sidebar_collapsed"
+      data-shell-user-name="<%= studentDisplayName %>"
+      data-shell-user-role="<%= studentRoleLabel %>"
+      data-shell-active-key="<%= resolvedActivePage %>"
+    >
+      <aside class="student-sidebar role-sidebar" id="studentSidebar" aria-label="Student Navigation" data-shell-toggle-surface>
+        <button
+          type="button"
+          class="student-sidebar-brand role-sidebar-brand"
+          data-sidebar-logo-toggle
+          aria-controls="studentSidebar"
+          aria-label="Toggle sidebar"
+        >
+          <div class="student-brand-icon role-brand-icon">
+            <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" />
+          </div>
+          <div class="student-brand-meta role-brand-meta">
+            <p class="student-brand-name role-brand-name">IlmQuest</p>
+            <p class="student-brand-role role-brand-role">Student Portal</p>
+          </div>
+        </button>
+
+        <nav class="student-sidebar-nav role-sidebar-nav">
+          <% navItems.forEach((item) => { %>
+            <a
+              href="<%= item.href %>"
+              class="student-sidebar-link role-sidebar-link <%= resolvedActivePage === item.key ? "active" : "" %>"
+              data-shell-nav-key="<%= item.key %>"
+              title="<%= item.label %>"
+            >
+              <span class="student-sidebar-icon role-sidebar-icon"><%- iconSvg(item.icon) %></span>
+              <span class="student-sidebar-label role-sidebar-label"><%= item.label %></span>
+            </a>
+          <% }) %>
+        </nav>
+
+        <a class="student-sidebar-profile role-sidebar-profile" href="/profile" aria-label="Open profile">
+          <div class="student-profile-avatar role-profile-avatar">
+            <% if (hasStudentAvatar) { %>
+              <img src="<%= studentAvatarUrl %>" alt="<%= studentDisplayName %> avatar" loading="lazy" />
+            <% } else { %>
+              <%= studentInitials %>
+            <% } %>
+          </div>
+          <div class="student-profile-meta role-profile-meta">
+            <p class="student-profile-name role-profile-name"><%= studentDisplayName %></p>
+            <p class="student-profile-role role-profile-role"><%= studentRoleLabel %></p>
+          </div>
+        </a>
+      </aside>
+
+      <button
+        type="button"
+        class="student-sidebar-scrim role-sidebar-scrim"
+        data-shell-scrim
+        aria-label="Close sidebar"
+      ></button>
+
+      <main class="student-main role-main-shell">

@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const Class = require("../models/Class");
-const ParentPayment = require("../models/ParentPayment");
 const FinanceCategory = require("../models/FinanceCategory");
 const FinanceEntry = require("../models/FinanceEntry");
 const FinanceBankConnection = require("../models/FinanceBankConnection");
@@ -17,11 +16,9 @@ const {
   normalizeFinanceCategoryKey,
   buildActorSnapshot,
   ensureDefaultFinanceCategories,
-  normalizeParentPaymentStatus,
   fetchFinanceData
 } = require("../utils/finance");
 
-const PAYMENT_STATUSES = new Set(["Due", "Partial", "Paid", "Overdue", "PendingProcessor"]);
 const ENTRY_TYPES = new Set(["income", "expense"]);
 
 function toSafeRedirect(req, fallback = "/admin/finance") {
@@ -145,46 +142,16 @@ async function resolveOrCreateCategory(req, actor, { entryType, categoryKey, cat
   };
 }
 
-function buildParentFormRows(parents = [], studentLookup = new Map()) {
-  return parents.map((parent) => {
-    const fullName = `${parent.firstName || ""} ${parent.lastName || ""}`.trim() || parent.userName || "Parent";
-    const children = Array.isArray(parent?.parentInfo?.children)
-      ? parent.parentInfo.children
-        .map((child) => {
-          const childId = child?.childID ? String(child.childID) : "";
-          if (!childId) return null;
-          return {
-            id: childId,
-            name: child.childName || studentLookup.get(childId) || "Student"
-          };
-        })
-        .filter(Boolean)
-      : [];
-
-    return {
-      id: String(parent._id),
-      name: fullName,
-      children
-    };
-  });
-}
-
 function buildEmptyFinanceState() {
   return {
     monthLabel: new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }),
     summary: {
       monthlyIncome: 0,
       monthlyIncomeLabel: "$0.00",
-      monthlyPaymentCollected: 0,
-      monthlyPaymentCollectedLabel: "$0.00",
       monthlyExpense: 0,
       monthlyExpenseLabel: "$0.00",
       netCashFlow: 0,
       netCashFlowLabel: "$0.00",
-      outstanding: 0,
-      outstandingLabel: "$0.00",
-      paidFamilies: 0,
-      unpaidFamilies: 0,
       unmatchedCount: 0,
       matchedCount: 0,
       lastSyncAt: null,
@@ -194,18 +161,15 @@ function buildEmptyFinanceState() {
     },
     categories: {
       income: [],
-      expense: [],
-      payment: []
+      expense: []
     },
-    payments: { rows: [] },
     entries: { rows: [], matchOptions: [] },
     bank: {
       connections: [],
       unmatchedRows: [],
       latestSync: null
     },
-    revenueBreakdown: [],
-    paymentMatchOptions: []
+    revenueBreakdown: []
   };
 }
 
@@ -219,12 +183,8 @@ async function buildFinancePagePayload(req) {
     financeLoadError = "Could not seed finance categories.";
   }
 
-  const [financeResult, parentResult, studentResult, classResult] = await Promise.allSettled([
+  const [financeResult, studentResult, classResult] = await Promise.allSettled([
     fetchFinanceData(req, { limit: 25 }),
-    User.find(scopedQuery(req, { role: "parent" }))
-      .select("_id firstName lastName userName parentInfo.children")
-      .sort({ firstName: 1, lastName: 1 })
-      .lean(),
     User.find(scopedQuery(req, { role: "student" }))
       .select("_id firstName lastName userName")
       .sort({ firstName: 1, lastName: 1 })
@@ -239,10 +199,6 @@ async function buildFinancePagePayload(req) {
     console.error("Finance aggregate load error:", financeResult.reason);
     financeLoadError = "Finance data is temporarily unavailable.";
   }
-  if (parentResult.status === "rejected") {
-    console.error("Finance parent lookup error:", parentResult.reason);
-    financeLoadError = financeLoadError || "Finance data is temporarily unavailable.";
-  }
   if (studentResult.status === "rejected") {
     console.error("Finance student lookup error:", studentResult.reason);
     financeLoadError = financeLoadError || "Finance data is temporarily unavailable.";
@@ -253,18 +209,9 @@ async function buildFinancePagePayload(req) {
   }
 
   const finance = financeResult.status === "fulfilled" ? financeResult.value : buildEmptyFinanceState();
-  const parentDocs = parentResult.status === "fulfilled" ? parentResult.value : [];
   const studentDocs = studentResult.status === "fulfilled" ? studentResult.value : [];
   const classDocs = classResult.status === "fulfilled" ? classResult.value : [];
 
-  const studentLookup = new Map(
-    studentDocs.map((student) => [
-      String(student._id),
-      `${student.firstName || ""} ${student.lastName || ""}`.trim() || student.userName || "Student"
-    ])
-  );
-
-  const parentsForForm = buildParentFormRows(parentDocs, studentLookup);
   const studentsForForm = studentDocs.map((student) => ({
     id: String(student._id),
     name: `${student.firstName || ""} ${student.lastName || ""}`.trim() || student.userName || "Student"
@@ -276,7 +223,6 @@ async function buildFinancePagePayload(req) {
 
   return {
     finance,
-    parentsForForm,
     studentsForForm,
     classesForForm,
     financeLoadError
@@ -334,7 +280,7 @@ module.exports = {
       const entryType = String(req.body.entryType || "").trim().toLowerCase();
       const label = String(req.body.label || "").trim();
 
-      if (!["income", "expense", "payment"].includes(entryType)) {
+      if (!["income", "expense"].includes(entryType)) {
         return sendMutationResult(req, res, {
           success: false,
           statusCode: 400,
@@ -463,7 +409,7 @@ module.exports = {
       }
 
       const allowedStatus = new Set(["posted", "pending", "void"]);
-      const allowedSource = new Set(["manual", "bank_sync", "payment_processor", "imported", "system"]);
+      const allowedSource = new Set(["manual", "bank_sync", "imported", "system"]);
       if (!allowedStatus.has(status) || !allowedSource.has(source)) {
         return sendMutationResult(req, res, {
           success: false,
@@ -480,22 +426,8 @@ module.exports = {
         categoryLabel: req.body.categoryLabel
       });
 
-      const linkedParentId = toNullableObjectId(req.body.linkedParentId);
       const linkedStudentId = toNullableObjectId(req.body.linkedStudentId);
       const linkedClassId = toNullableObjectId(req.body.linkedClassId);
-
-      if (linkedParentId) {
-        const parentDoc = await resolveScopedUser(req, linkedParentId, "parent");
-        if (!parentDoc) {
-          return sendMutationResult(req, res, {
-            success: false,
-            statusCode: 422,
-            message: "Linked parent is invalid for this school.",
-            errorCode: "FINANCE_ENTRY_PARENT_INVALID",
-            redirectPath: toSafeRedirect(req)
-          });
-        }
-      }
 
       if (linkedStudentId) {
         const studentDoc = await resolveScopedUser(req, linkedStudentId, "student");
@@ -536,7 +468,6 @@ module.exports = {
         vendorOrPayer: String(req.body.vendorOrPayer || "").trim(),
         reference: String(req.body.reference || "").trim(),
         memo: String(req.body.memo || "").trim(),
-        linkedParentId: linkedParentId || null,
         linkedStudentId: linkedStudentId || null,
         linkedClassId: linkedClassId || null,
         createdBy: actor,
@@ -607,164 +538,6 @@ module.exports = {
         statusCode: 500,
         message: "Could not archive finance entry.",
         errorCode: "FINANCE_ENTRY_ARCHIVE_FAILED",
-        redirectPath: toSafeRedirect(req)
-      });
-    }
-  },
-
-  createManualPayment: async (req, res) => {
-    try {
-      const actor = buildActorSnapshot(req.user);
-      const parentId = toNullableObjectId(req.body.parentId);
-      const studentId = toNullableObjectId(req.body.studentId);
-      const classId = toNullableObjectId(req.body.classId);
-      const expectedAmount = toPositiveAmount(req.body.expectedAmount);
-      const paidAmountRaw = Number(req.body.paidAmount || 0);
-      const paidAmount = Number.isFinite(paidAmountRaw) && paidAmountRaw >= 0 ? Number(paidAmountRaw.toFixed(2)) : 0;
-      const dueDate = toDateValue(req.body.dueDate);
-      const method = String(req.body.method || "").trim();
-
-      if (!parentId) {
-        return sendMutationResult(req, res, {
-          success: false,
-          statusCode: 400,
-          message: "Parent selection is required.",
-          errorCode: "FINANCE_PAYMENT_PARENT_REQUIRED",
-          redirectPath: toSafeRedirect(req)
-        });
-      }
-
-      if (!expectedAmount) {
-        return sendMutationResult(req, res, {
-          success: false,
-          statusCode: 400,
-          message: "Expected amount must be greater than zero.",
-          errorCode: "FINANCE_PAYMENT_AMOUNT_INVALID",
-          redirectPath: toSafeRedirect(req)
-        });
-      }
-
-      if (!dueDate) {
-        return sendMutationResult(req, res, {
-          success: false,
-          statusCode: 400,
-          message: "Due date is invalid.",
-          errorCode: "FINANCE_PAYMENT_DUE_DATE_INVALID",
-          redirectPath: toSafeRedirect(req)
-        });
-      }
-
-      const parentDoc = await resolveScopedUser(req, parentId, "parent");
-      if (!parentDoc) {
-        return sendMutationResult(req, res, {
-          success: false,
-          statusCode: 422,
-          message: "Selected parent is invalid for this school.",
-          errorCode: "FINANCE_PAYMENT_PARENT_INVALID",
-          redirectPath: toSafeRedirect(req)
-        });
-      }
-
-      if (studentId) {
-        const studentDoc = await resolveScopedUser(req, studentId, "student");
-        if (!studentDoc) {
-          return sendMutationResult(req, res, {
-            success: false,
-            statusCode: 422,
-            message: "Selected student is invalid for this school.",
-            errorCode: "FINANCE_PAYMENT_STUDENT_INVALID",
-            redirectPath: toSafeRedirect(req)
-          });
-        }
-
-        const parentChildren = Array.isArray(parentDoc?.parentInfo?.children)
-          ? parentDoc.parentInfo.children.map((child) => String(child?.childID || ""))
-          : [];
-        if (!parentChildren.includes(String(studentId))) {
-          return sendMutationResult(req, res, {
-            success: false,
-            statusCode: 422,
-            message: "Selected student is not linked to that parent.",
-            errorCode: "FINANCE_PAYMENT_STUDENT_PARENT_MISMATCH",
-            redirectPath: toSafeRedirect(req)
-          });
-        }
-      }
-
-      if (classId) {
-        const classDoc = await resolveScopedClass(req, classId);
-        if (!classDoc) {
-          return sendMutationResult(req, res, {
-            success: false,
-            statusCode: 422,
-            message: "Selected class is invalid for this school.",
-            errorCode: "FINANCE_PAYMENT_CLASS_INVALID",
-            redirectPath: toSafeRedirect(req)
-          });
-        }
-      }
-
-      const allowedCategories = new Set(["Tuition", "Registration", "Materials", "Meal", "Transport", "Other"]);
-      const category = String(req.body.category || "Tuition").trim();
-      const safeCategory = allowedCategories.has(category) ? category : "Other";
-
-      const normalized = normalizeParentPaymentStatus(
-        {
-          expectedAmount,
-          paidAmount,
-          dueDate,
-          status: "Due"
-        },
-        new Date()
-      );
-
-      let status = String(req.body.status || "").trim();
-      if (!PAYMENT_STATUSES.has(status)) {
-        status = normalized.status;
-      }
-
-      const created = await ParentPayment.create({
-        schoolId: req.schoolId,
-        parentId,
-        studentId: studentId || null,
-        classId: classId || null,
-        title: String(req.body.title || "Manual Payment").trim() || "Manual Payment",
-        category: safeCategory,
-        expectedAmount,
-        paidAmount: Math.min(paidAmount, expectedAmount),
-        currency: String(req.body.currency || "USD").trim().toUpperCase(),
-        dueDate,
-        paidAt: status === "Paid" || paidAmount > 0 ? toDateValue(req.body.paidAt) || new Date() : null,
-        status,
-        method,
-        processor: String(req.body.processor || "").trim(),
-        processorReference: String(req.body.processorReference || "").trim(),
-        receiptReference: String(req.body.receiptReference || "").trim(),
-        notes: String(req.body.notes || "").trim(),
-        createdBy: actor,
-        updatedBy: actor
-      });
-
-      await logAdminAction(req, {
-        action: "finance_payment_create",
-        targetType: "ParentPayment",
-        targetId: created._id,
-        before: {},
-        after: created.toObject()
-      });
-
-      return sendMutationResult(req, res, {
-        success: true,
-        message: "Manual payment record created.",
-        redirectPath: "/admin/finance#payments"
-      });
-    } catch (err) {
-      console.error("Finance manual payment error:", err);
-      return sendMutationResult(req, res, {
-        success: false,
-        statusCode: 500,
-        message: err?.message || "Could not create payment record.",
-        errorCode: err?.code || "FINANCE_PAYMENT_CREATE_FAILED",
         redirectPath: toSafeRedirect(req)
       });
     }
@@ -1266,42 +1039,6 @@ module.exports = {
         entry.bankTransactionId = transaction._id;
         entry.updatedBy = actor;
         await entry.save();
-      } else if (action === "match_payment") {
-        if (!targetId) {
-          return sendMutationResult(req, res, {
-            success: false,
-            statusCode: 422,
-            message: "Payment id is required for match.",
-            errorCode: "FINANCE_RECONCILE_PAYMENT_REQUIRED",
-            redirectPath: toSafeRedirect(req)
-          });
-        }
-
-        const payment = await ParentPayment.findOne(scopedIdQuery(req, targetId));
-        if (!payment) {
-          return sendMutationResult(req, res, {
-            success: false,
-            statusCode: 404,
-            message: "Payment not found.",
-            errorCode: "FINANCE_RECONCILE_PAYMENT_NOT_FOUND",
-            redirectPath: toSafeRedirect(req)
-          });
-        }
-
-        transaction.reconciliation = {
-          status: "matched",
-          matchedType: "parentPayment",
-          matchedId: payment._id,
-          method: "manual",
-          matchedAt: new Date(),
-          matchedBy: actor,
-          note
-        };
-        await transaction.save();
-
-        payment.bankTransactionId = transaction._id;
-        payment.updatedBy = actor;
-        await payment.save();
       } else {
         return sendMutationResult(req, res, {
           success: false,

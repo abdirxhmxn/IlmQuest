@@ -1,0 +1,324 @@
+/*
+ * ============================================================
+ *  teacher-student-directory.css
+ *  IlmQuest - Teacher Student Progress Directory
+ *
+ *  Sections:
+ *    1. Layout + Hero
+ *    2. Class Groups
+ *    3. Student Cards
+ *    4. Status Chips
+ *    5. Responsive
+ * ============================================================
+ */
+
+/* 1. Layout + Hero */
+.teacher-student-directory-page {
+  display: grid;
+  gap: 18px;
+}
+
+.student-directory-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.directory-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.directory-hero h1 {
+  margin: 0;
+  color: #132c21;
+  font-size: clamp(1.5rem, 1.2rem + 0.88vw, 2rem);
+  letter-spacing: -0.02em;
+}
+
+.directory-hero p {
+  margin: 8px 0 0;
+  color: #5b7166;
+  font-size: 0.95rem;
+}
+
+.directory-hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.directory-hero-metrics article {
+  border: 1px solid #d9e5dd;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px 11px;
+  min-width: 120px;
+}
+
+.directory-hero-metrics .metric-label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b8175;
+  font-weight: 800;
+}
+
+.directory-hero-metrics .metric-value {
+  margin: 7px 0 0;
+  color: #113628;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.directory-empty-state {
+  text-align: center;
+}
+
+.directory-empty-state h2 {
+  margin: 0;
+  font-size: 1.26rem;
+  color: #153226;
+}
+
+.directory-empty-state p {
+  margin-top: 8px;
+}
+
+/* 2. Class Groups */
+.directory-class-group {
+  display: grid;
+  gap: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 74%);
+}
+
+.directory-class-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #dce8df;
+  padding-bottom: 12px;
+}
+
+.directory-class-header h2 {
+  margin: 0;
+  color: #153328;
+  font-size: clamp(1.12rem, 1.02rem + 0.35vw, 1.34rem);
+}
+
+.directory-class-header p {
+  margin: 7px 0 0;
+  color: #60776b;
+  font-size: 0.88rem;
+}
+
+.directory-class-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border: 1px solid #d3e3d9;
+  border-radius: 999px;
+  background: #f3f9f5;
+  color: #2e5644;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0 11px;
+}
+
+.directory-class-empty {
+  border: 1px dashed #cbddd1;
+  border-radius: 11px;
+  background: #f8fbf9;
+  color: #5e7569;
+  padding: 12px;
+  font-weight: 600;
+}
+
+/* 3. Student Cards */
+.directory-student-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+}
+
+.directory-student-card {
+  border: 1px solid #dbe8e0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.directory-student-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.directory-student-head h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #122d22;
+}
+
+.directory-student-head p {
+  margin: 4px 0 0;
+  color: #60766a;
+  font-size: 0.8rem;
+}
+
+.directory-student-metrics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.directory-student-metrics li {
+  border: 1px solid #e0ebe4;
+  border-radius: 10px;
+  background: #f9fcfa;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.directory-student-metrics li span {
+  color: #6a8176;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.directory-student-metrics li strong {
+  color: #143225;
+  font-weight: 800;
+  font-size: 0.86rem;
+}
+
+.directory-rank-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: #dce8e1;
+  overflow: hidden;
+}
+
+.directory-rank-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f8b60, #4cb07f);
+}
+
+.directory-rank-copy {
+  margin: 0;
+  color: #5a7367;
+  font-size: 0.78rem;
+}
+
+.directory-mission-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.directory-view-link {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 10px;
+}
+
+/* 4. Status Chips */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0 9px;
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.status-chip strong {
+  margin-left: 4px;
+}
+
+.status-success,
+.status-completed,
+.status-present {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.status-warning,
+.status-late {
+  color: #92400e;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.status-danger,
+.status-absent,
+.status-rejected {
+  color: #b42318;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.status-neutral,
+.status-assigned {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.status-started,
+.status-active,
+.status-pending {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+/* 5. Responsive */
+@media (max-width: 900px) {
+  .directory-class-header {
+    align-items: stretch;
+  }
+
+  .directory-class-count {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .directory-hero {
+    flex-direction: column;
+  }
+
+  .directory-hero-metrics {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .directory-student-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .directory-student-metrics {
+    grid-template-columns: 1fr;
+  }
+}

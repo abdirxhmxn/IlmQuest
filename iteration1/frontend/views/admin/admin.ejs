@@ -1,3 +1,4 @@
+<%# Admin dashboard view: three-column analytical layout with KPI row, insight cards, and utility rail. %>
 <%- include('../partials/adminShellStart', {
   pageTitle: 'IlmQuest Admin Dashboard',
   pageStyles: ['/css/pages/admin-dashboard.css'],
@@ -7,11 +8,6 @@
 
 <%
   const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
-  const fmtCurrency = (value) => new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(Number(value || 0));
   const fmtNumber = (value) => new Intl.NumberFormat('en-US').format(Number(value || 0));
 
   const metrics = adminMetrics || {};
@@ -25,10 +21,6 @@
 
   const attendanceRate = Number.isFinite(Number(metrics.attendanceRate)) ? Number(metrics.attendanceRate) : null;
   const averageGrade = Number.isFinite(Number(metrics.averageGrade)) ? Number(metrics.averageGrade) : null;
-
-  const payments = metrics.payments || {};
-  const paymentDataAvailable = payments.dataAvailable === true;
-  const currentMonth = new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' });
 
   const smartAlerts = Array.isArray(metrics.alerts) && metrics.alerts.length
     ? metrics.alerts
@@ -45,17 +37,20 @@
     ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
   ];
 
+  // Maps alert tone to a stable icon so warning semantics stay consistent in the utility rail.
   function toneIconName(tone) {
-    if (tone === 'critical') return 'payments';
+    if (tone === 'critical') return 'reports';
     if (tone === 'warning') return 'attendance';
     return 'reports';
   }
 
+  // Normalizes percent labels from mixed data sources and protects against missing values.
   function pctLabel(value, digits = 1) {
     if (!Number.isFinite(Number(value))) return 'N/A';
     return `${Number(value).toFixed(digits)}%`;
   }
 
+  // Grade rows use a unified numeric format to avoid visual jitter in dense tables.
   function rowGradeLabel(value) {
     return Number.isFinite(Number(value)) ? `${Number(value).toFixed(1)}%` : 'N/A';
   }
@@ -76,8 +71,13 @@
     <%- icon('menu') %>
   </button>
   <div class="admin-page-title">
-    <h1>Dashboard</h1>
-    <p>Command center — performance, attendance, and finances at a glance.</p>
+    <p class="admin-breadcrumbs">Admin / Dashboard / Overview</p>
+    <h1>Dashboard Overview</h1>
+    <p>Monitor enrollment, classroom performance, and engagement health from one command surface.</p>
+  </div>
+  <div class="admin-icon-actions" aria-hidden="true">
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('activity') %></button>
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('bell') %></button>
   </div>
   <div class="topbar-actions admin-top-actions">
     <a class="ghost-action admin-action-link" href="/admin/users">Manage Users</a>
@@ -93,365 +93,261 @@
   <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
 <% } %>
 
-<section class="kpi-grid" aria-label="KPI summary">
-  <article class="kpi-card">
-    <div class="kpi-card-head">
-      <p class="kpi-label">TOTAL STUDENTS</p>
-      <span class="kpi-icon"><%- icon('students') %></span>
-    </div>
-    <p class="kpi-value"><%= fmtNumber(totalStudents) %></p>
-    <p class="kpi-meta">Across <%= fmtNumber(totalClasses) %> classes</p>
-  </article>
+<section class="dashboard-shell admin-page-grid">
+  <div class="admin-main-column">
+    <section class="kpi-grid" aria-label="KPI summary">
+      <article class="kpi-card">
+        <div class="kpi-card-head">
+          <p class="kpi-label">TOTAL STUDENTS</p>
+          <span class="kpi-icon"><%- icon('students') %></span>
+        </div>
+        <p class="kpi-value"><%= fmtNumber(totalStudents) %></p>
+        <p class="kpi-meta">Across <%= fmtNumber(totalClasses) %> classes</p>
+      </article>
 
-  <article class="kpi-card accent-success">
-    <div class="kpi-card-head">
-      <p class="kpi-label">ACTIVE CLASSES</p>
-      <span class="kpi-icon"><%- icon('classes') %></span>
-    </div>
-    <p class="kpi-value"><%= fmtNumber(activeClasses) %></p>
-    <p class="kpi-meta">All running</p>
-  </article>
+      <article class="kpi-card accent-success">
+        <div class="kpi-card-head">
+          <p class="kpi-label">ACTIVE CLASSES</p>
+          <span class="kpi-icon"><%- icon('classes') %></span>
+        </div>
+        <p class="kpi-value"><%= fmtNumber(activeClasses) %></p>
+        <p class="kpi-meta">All running cohorts</p>
+      </article>
 
-  <article class="kpi-card">
-    <div class="kpi-card-head">
-      <p class="kpi-label">MONTHLY REVENUE</p>
-      <span class="kpi-icon"><%- icon('payments') %></span>
-    </div>
-    <p class="kpi-value"><%= paymentDataAvailable && Number.isFinite(Number(payments.monthlyCollected)) ? fmtCurrency(payments.monthlyCollected) : 'N/A' %></p>
-    <p class="kpi-meta"><%= currentMonth %></p>
-  </article>
+      <article class="kpi-card">
+        <div class="kpi-card-head">
+          <p class="kpi-label">TOTAL TEACHERS</p>
+          <span class="kpi-icon"><%- icon('reports') %></span>
+        </div>
+        <p class="kpi-value"><%= fmtNumber(totalTeachers) %></p>
+        <p class="kpi-meta">Instruction team members</p>
+      </article>
 
-  <article class="kpi-card accent-warning" id="attendance-rate">
-    <div class="kpi-card-head">
-      <p class="kpi-label">ATTENDANCE RATE</p>
-      <span class="kpi-icon"><%- icon('attendance') %></span>
-    </div>
-    <p class="kpi-value"><%= pctLabel(attendanceRate) %></p>
-    <p class="kpi-meta">All attendance records</p>
-  </article>
+      <article class="kpi-card accent-critical">
+        <div class="kpi-card-head">
+          <p class="kpi-label">TOTAL PARENTS</p>
+          <span class="kpi-icon"><%- icon('announcements') %></span>
+        </div>
+        <p class="kpi-value"><%= fmtNumber(totalParents) %></p>
+        <p class="kpi-meta">Guardian accounts linked to students</p>
+      </article>
 
-  <article class="kpi-card">
-    <div class="kpi-card-head">
-      <p class="kpi-label">AVG GRADE</p>
-      <span class="kpi-icon"><%- icon('reports') %></span>
-    </div>
-    <p class="kpi-value"><%= pctLabel(averageGrade) %></p>
-    <p class="kpi-meta">Across recorded assessments</p>
-  </article>
+      <article class="kpi-card accent-warning" id="attendance-rate">
+        <div class="kpi-card-head">
+          <p class="kpi-label">ATTENDANCE RATE</p>
+          <span class="kpi-icon"><%- icon('attendance') %></span>
+        </div>
+        <p class="kpi-value"><%= pctLabel(attendanceRate) %></p>
+        <p class="kpi-meta">All attendance records</p>
+      </article>
 
-  <article class="kpi-card accent-critical">
-    <div class="kpi-card-head">
-      <p class="kpi-label">OUTSTANDING</p>
-      <span class="kpi-icon"><%- icon('payments') %></span>
-    </div>
-    <p class="kpi-value"><%= paymentDataAvailable && Number.isFinite(Number(payments.outstanding)) ? fmtCurrency(payments.outstanding) : 'N/A' %></p>
-    <p class="kpi-meta"><%= paymentDataAvailable && Number.isFinite(Number(payments.unpaidFamilies)) ? `${payments.unpaidFamilies} unpaid families` : 'Payment model not configured' %></p>
-  </article>
-</section>
+      <article class="kpi-card">
+        <div class="kpi-card-head">
+          <p class="kpi-label">AVERAGE GRADE</p>
+          <span class="kpi-icon"><%- icon('reports') %></span>
+        </div>
+        <p class="kpi-value"><%= pctLabel(averageGrade) %></p>
+        <p class="kpi-meta">Across recorded assessments</p>
+      </article>
+    </section>
 
-<section class="section-card" id="smart-alerts">
-  <header class="section-card-header">
-    <h2><span class="inline-section-icon"><%- icon('announcements') %></span> Smart Alerts</h2>
-    <span class="active-badge"><%= smartAlerts.length %> active</span>
-  </header>
-  <div class="alerts-list">
-    <% smartAlerts.forEach((alert) => { %>
-      <article class="alert-item tone-<%= alert.tone || 'info' %>">
-        <div class="alert-left">
-          <div class="alert-icon-wrap"><%- icon(toneIconName(alert.tone)) %></div>
-          <div>
-            <p class="alert-title"><%= alert.title %></p>
-            <p class="alert-detail"><%= alert.detail %></p>
-          </div>
+    <section class="overview-mosaic" id="performance-intelligence">
+      <article class="section-card compact-card insight-wide">
+        <header class="section-card-header">
+          <h3><span class="inline-section-icon"><%- icon('reports') %></span> Top 5 Students</h3>
+        </header>
+        <div class="table-shell">
+          <table class="metrics-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Grade</th>
+                <th>XP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (topStudents.length === 0) { %>
+                <tr><td colspan="5" class="empty-row">No student grade data available yet.</td></tr>
+              <% } %>
+              <% topStudents.forEach((row, index) => { %>
+                <tr>
+                  <td><span class="rank-badge rank-top">#<%= index + 1 %></span></td>
+                  <td class="strong-cell"><%= row.name %></td>
+                  <td><%= row.className %></td>
+                  <td class="grade-positive"><%= rowGradeLabel(row.avgGrade) %></td>
+                  <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
         </div>
       </article>
-    <% }) %>
-  </div>
-</section>
 
-<section class="section-card section-mini" id="admin-announcements">
-  <header class="section-card-header">
-    <h3><span class="inline-section-icon"><%- icon('announcements') %></span> Announcements</h3>
-    <a class="admin-mini-link" href="/admin/announcements">Manage</a>
-  </header>
-  <div class="mini-announcement-list">
-    <% if (dashboardAnnouncements.length === 0) { %>
-      <p class="distribution-empty">No published announcements yet.</p>
-    <% } %>
-    <% dashboardAnnouncements.forEach((item) => { %>
-      <article class="mini-announcement-item">
-        <div class="mini-announcement-head">
-          <strong><%= item.title %></strong>
-          <% if (item.isPinned) { %><span class="status-badge status-paid">Pinned</span><% } %>
+      <article class="section-card compact-card">
+        <header class="section-card-header">
+          <h3><span class="inline-section-icon"><%- icon('classes') %></span> Top 3 Classes</h3>
+        </header>
+        <div class="table-shell">
+          <table class="metrics-table">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Avg Grade</th>
+                <th>Attendance</th>
+                <th>Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (topClasses.length === 0) { %>
+                <tr><td colspan="4" class="empty-row">No class performance data available yet.</td></tr>
+              <% } %>
+              <% topClasses.forEach((row) => { %>
+                <tr>
+                  <td class="strong-cell"><%= row.className %></td>
+                  <td class="grade-positive"><%= rowGradeLabel(row.avgGrade) %></td>
+                  <td class="grade-positive"><%= pctLabel(row.attendanceRate) %></td>
+                  <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
         </div>
-        <p><%= item.summary || item.content || '' %></p>
-        <span class="mini-announcement-date">Published <%= item.publishLabel || item.createdAtLabel %></span>
       </article>
-    <% }) %>
-  </div>
-</section>
 
-<section class="section-stack" id="performance-intelligence">
-  <header class="section-heading">
-    <h2>Performance Intelligence</h2>
-  </header>
-
-  <div class="intelligence-grid">
-    <article class="section-card compact-card">
-      <header class="section-card-header">
-        <h3><span class="inline-section-icon"><%- icon('reports') %></span> Top 5 Students</h3>
-      </header>
-      <div class="table-shell">
-        <table class="metrics-table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Student</th>
-              <th>Class</th>
-              <th>Grade</th>
-              <th>XP</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (topStudents.length === 0) { %>
-              <tr><td colspan="5" class="empty-row">No student grade data available yet.</td></tr>
-            <% } %>
-            <% topStudents.forEach((row, index) => { %>
+      <article class="section-card compact-card">
+        <header class="section-card-header">
+          <h3><span class="inline-section-icon"><%- icon('attendance') %></span> Bottom 5 Students</h3>
+        </header>
+        <div class="table-shell">
+          <table class="metrics-table">
+            <thead>
               <tr>
-                <td><span class="rank-badge rank-top">#<%= index + 1 %></span></td>
-                <td class="strong-cell"><%= row.name %></td>
-                <td><%= row.className %></td>
-                <td class="grade-positive"><%= rowGradeLabel(row.avgGrade) %></td>
-                <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
+                <th>Rank</th>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Grade</th>
+                <th>XP</th>
               </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </article>
+            </thead>
+            <tbody>
+              <% if (bottomStudents.length === 0) { %>
+                <tr><td colspan="5" class="empty-row">No low-performing rows yet.</td></tr>
+              <% } %>
+              <% bottomStudents.forEach((row, index) => { %>
+                <tr>
+                  <td><span class="rank-badge rank-bottom">#<%= totalStudents - index %></span></td>
+                  <td class="strong-cell"><%= row.name %></td>
+                  <td><%= row.className %></td>
+                  <td class="grade-negative"><%= rowGradeLabel(row.avgGrade) %></td>
+                  <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </article>
 
-    <article class="section-card compact-card">
-      <header class="section-card-header">
-        <h3><span class="inline-section-icon"><%- icon('attendance') %></span> Bottom 5 Students</h3>
-      </header>
-      <div class="table-shell">
-        <table class="metrics-table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Student</th>
-              <th>Class</th>
-              <th>Grade</th>
-              <th>XP</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (bottomStudents.length === 0) { %>
-              <tr><td colspan="5" class="empty-row">No low-performing rows yet.</td></tr>
-            <% } %>
-            <% bottomStudents.forEach((row, index) => { %>
+      <article class="section-card compact-card insight-wide">
+        <header class="section-card-header">
+          <h3><span class="inline-section-icon"><%- icon('classes') %></span> Bottom 3 Classes</h3>
+        </header>
+        <div class="table-shell">
+          <table class="metrics-table">
+            <thead>
               <tr>
-                <td><span class="rank-badge rank-bottom">#<%= totalStudents - index %></span></td>
-                <td class="strong-cell"><%= row.name %></td>
-                <td><%= row.className %></td>
-                <td class="grade-negative"><%= rowGradeLabel(row.avgGrade) %></td>
-                <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
+                <th>Class</th>
+                <th>Avg Grade</th>
+                <th>Attendance</th>
+                <th>Points</th>
               </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </article>
+            </thead>
+            <tbody>
+              <% if (bottomClasses.length === 0) { %>
+                <tr><td colspan="4" class="empty-row">No underperforming classes found.</td></tr>
+              <% } %>
+              <% bottomClasses.forEach((row) => { %>
+                <tr>
+                  <td class="strong-cell"><%= row.className %></td>
+                  <td class="grade-negative"><%= rowGradeLabel(row.avgGrade) %></td>
+                  <td class="grade-warning"><%= pctLabel(row.attendanceRate) %></td>
+                  <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
 
-    <article class="section-card compact-card">
-      <header class="section-card-header">
-        <h3><span class="inline-section-icon"><%- icon('classes') %></span> Top 3 Classes</h3>
-      </header>
-      <div class="table-shell">
-        <table class="metrics-table">
-          <thead>
-            <tr>
-              <th>Class</th>
-              <th>Avg Grade</th>
-              <th>Attendance</th>
-              <th>Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (topClasses.length === 0) { %>
-              <tr><td colspan="4" class="empty-row">No class performance data available yet.</td></tr>
-            <% } %>
-            <% topClasses.forEach((row) => { %>
-              <tr>
-                <td class="strong-cell"><%= row.className %></td>
-                <td class="grade-positive"><%= rowGradeLabel(row.avgGrade) %></td>
-                <td class="grade-positive"><%= pctLabel(row.attendanceRate) %></td>
-                <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </article>
-
-    <article class="section-card compact-card">
-      <header class="section-card-header">
-        <h3><span class="inline-section-icon"><%- icon('classes') %></span> Bottom 3 Classes</h3>
-      </header>
-      <div class="table-shell">
-        <table class="metrics-table">
-          <thead>
-            <tr>
-              <th>Class</th>
-              <th>Avg Grade</th>
-              <th>Attendance</th>
-              <th>Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (bottomClasses.length === 0) { %>
-              <tr><td colspan="4" class="empty-row">No underperforming classes found.</td></tr>
-            <% } %>
-            <% bottomClasses.forEach((row) => { %>
-              <tr>
-                <td class="strong-cell"><%= row.className %></td>
-                <td class="grade-negative"><%= rowGradeLabel(row.avgGrade) %></td>
-                <td class="grade-warning"><%= pctLabel(row.attendanceRate) %></td>
-                <td class="mono-cell"><%= fmtNumber(row.points || 0) %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </article>
-  </div>
-</section>
-
-<section class="section-stack" id="payments-finance">
-  <header class="section-heading">
-    <h2>Payments &amp; Finance</h2>
-  </header>
-
-  <div class="finance-summary-grid">
-    <article class="kpi-card accent-success compact-kpi">
-      <div class="kpi-card-head">
-        <p class="kpi-label">COLLECTED (MAR)</p>
-        <span class="kpi-icon"><%- icon('payments') %></span>
-      </div>
-      <p class="kpi-value"><%= paymentDataAvailable && Number.isFinite(Number(payments.monthlyCollected)) ? fmtCurrency(payments.monthlyCollected) : 'N/A' %></p>
-    </article>
-
-    <article class="kpi-card accent-critical compact-kpi">
-      <div class="kpi-card-head">
-        <p class="kpi-label">OUTSTANDING</p>
-        <span class="kpi-icon"><%- icon('payments') %></span>
-      </div>
-      <p class="kpi-value"><%= paymentDataAvailable && Number.isFinite(Number(payments.outstanding)) ? fmtCurrency(payments.outstanding) : 'N/A' %></p>
-    </article>
-
-    <article class="kpi-card compact-kpi">
-      <div class="kpi-card-head">
-        <p class="kpi-label">PAID FAMILIES</p>
-        <span class="kpi-icon"><%- icon('students') %></span>
-      </div>
-      <p class="kpi-value"><%= paymentDataAvailable && Number.isFinite(Number(payments.paidFamilies)) ? fmtNumber(payments.paidFamilies) : 'N/A' %></p>
-    </article>
-
-    <article class="kpi-card accent-warning compact-kpi">
-      <div class="kpi-card-head">
-        <p class="kpi-label">UNPAID FAMILIES</p>
-        <span class="kpi-icon"><%- icon('students') %></span>
-      </div>
-      <p class="kpi-value"><%= paymentDataAvailable && Number.isFinite(Number(payments.unpaidFamilies)) ? fmtNumber(payments.unpaidFamilies) : 'N/A' %></p>
-    </article>
   </div>
 
-  <div class="finance-grid">
-    <article class="section-card ledger-card">
-      <header class="section-card-header ledger-head">
-        <h3>Payment Ledger</h3>
-        <p class="ledger-subtext">Parent payment status and latest activity.</p>
-      </header>
-      <div class="table-shell">
-        <table class="metrics-table ledger-table">
-          <thead>
-            <tr>
-              <th>Parent</th>
-              <th>Students</th>
-              <th>Due</th>
-              <th>Paid</th>
-              <th>Status</th>
-              <th>Last Payment</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (!paymentDataAvailable) { %>
-              <% /* TODO: Wire payment ledger rows once payment/invoice model is available in backend. */ %>
-              <tr>
-                <td colspan="6" class="empty-row">Payment ledger is unavailable because no payment model is configured in the current schema.</td>
-              </tr>
-            <% } %>
-            <% (payments.ledger || []).forEach((row) => { %>
-              <tr class="ledger-row <%= row.overdue ? 'is-overdue' : '' %>">
-                <td class="strong-cell"><%= row.parent %></td>
-                <td><%= row.students %></td>
-                <td class="mono-cell"><%= fmtCurrency(row.due) %></td>
-                <td class="mono-cell"><%= fmtCurrency(row.paid) %></td>
-                <td><span class="status-badge status-<%= String(row.status || '').toLowerCase() %>"><%= row.status %></span></td>
-                <td class="<%= row.overdue ? 'date-critical' : '' %>"><%= row.lastPayment %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </article>
-
-    <article class="section-card breakdown-card" id="revenue-breakdown">
+  <aside class="admin-side-column admin-utility-rail">
+    <section class="section-card" id="smart-alerts">
       <header class="section-card-header">
-        <h3>Revenue Breakdown</h3>
+        <h2><span class="inline-section-icon"><%- icon('announcements') %></span> Smart Alerts</h2>
+        <span class="active-badge"><%= smartAlerts.length %> active</span>
       </header>
-      <% if (!paymentDataAvailable) { %>
-        <% /* TODO: Wire revenue breakdown once payment categories (learning/food/fun) are persisted. */ %>
-        <div class="admin-empty-state breakdown-empty">Revenue category breakdown is unavailable until payment category data exists.</div>
-      <% } else { %>
-        <div class="breakdown-legend">
-          <% (payments.revenueBreakdown || []).forEach((row) => { %>
-            <div class="legend-row">
-              <div class="legend-label-group">
-                <span><%= row.label %></span>
-              </div>
-              <div class="legend-values">
-                <strong><%= fmtCurrency(row.amount || 0) %></strong>
-                <span><%= Number(row.percent || 0) %>%</span>
+      <div class="alerts-list">
+        <% smartAlerts.forEach((alert) => { %>
+          <article class="alert-item tone-<%= alert.tone || 'info' %>">
+            <div class="alert-left">
+              <div class="alert-icon-wrap"><%- icon(toneIconName(alert.tone)) %></div>
+              <div>
+                <p class="alert-title"><%= alert.title %></p>
+                <p class="alert-detail"><%= alert.detail %></p>
               </div>
             </div>
-          <% }) %>
-        </div>
-      <% } %>
-    </article>
-  </div>
-</section>
-
-<section class="section-card section-mini" id="admin-distribution">
-  <header class="section-card-header">
-    <h3><span class="inline-section-icon"><%- icon('students') %></span> Student Distribution</h3>
-  </header>
-  <div class="distribution-list">
-    <% if (programDistribution.length === 0) { %>
-      <p class="distribution-empty">No program distribution available yet.</p>
-    <% } %>
-    <% programDistribution.forEach((entry) => { %>
-      <div class="distribution-row">
-        <span><%= entry.program %></span>
-        <strong><%= fmtNumber(entry.count) %></strong>
+          </article>
+        <% }) %>
       </div>
-    <% }) %>
-  </div>
-</section>
+    </section>
 
-<section class="dashboard-footnote">
-  <p>Live totals: <strong><%= totalStudents %></strong> students, <strong><%= totalTeachers %></strong> teachers, <strong><%= totalParents %></strong> parents.</p>
-  <a href="/logout" class="logout-link">Logout</a>
+    <section class="section-card section-mini" id="admin-announcements">
+      <header class="section-card-header">
+        <h3><span class="inline-section-icon"><%- icon('announcements') %></span> Announcements</h3>
+        <a class="admin-mini-link" href="/admin/announcements">Manage</a>
+      </header>
+      <div class="mini-announcement-list">
+        <% if (dashboardAnnouncements.length === 0) { %>
+          <p class="distribution-empty">No published announcements yet.</p>
+        <% } %>
+        <% dashboardAnnouncements.forEach((item) => { %>
+          <article class="mini-announcement-item">
+            <div class="mini-announcement-head">
+              <strong><%= item.title %></strong>
+              <% if (item.isPinned) { %><span class="status-badge status-paid">Pinned</span><% } %>
+            </div>
+            <p><%= item.summary || item.content || '' %></p>
+            <span class="mini-announcement-date">Published <%= item.publishLabel || item.createdAtLabel %></span>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="section-card section-mini" id="admin-distribution">
+      <header class="section-card-header">
+        <h3><span class="inline-section-icon"><%- icon('students') %></span> Student Distribution</h3>
+      </header>
+      <div class="distribution-list">
+        <% if (programDistribution.length === 0) { %>
+          <p class="distribution-empty">No program distribution available yet.</p>
+        <% } %>
+        <% programDistribution.forEach((entry) => { %>
+          <div class="distribution-row">
+            <span><%= entry.program %></span>
+            <strong><%= fmtNumber(entry.count) %></strong>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="dashboard-footnote">
+      <p>Live totals: <strong><%= totalStudents %></strong> students, <strong><%= totalTeachers %></strong> teachers, <strong><%= totalParents %></strong> parents.</p>
+      <a href="/logout" class="logout-link">Logout</a>
+    </section>
+  </aside>
 </section>
 
 <%- include('../partials/adminShellEnd') %>

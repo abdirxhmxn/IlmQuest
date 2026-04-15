@@ -1,3 +1,18 @@
+/*
+ * ============================================================
+ *  profile.css
+ *  IlmQuest - Page Styles
+ *
+ *  Sections:
+ *    1. Tokens
+ *    2. Base
+ *    3. Layout
+ *    4. Components
+ *    5. States
+ *    6. Responsive
+ * ============================================================
+ */
+
 .profile-hub {
   --profile-canvas: #efe9de;
   --profile-card-bg: #ffffff;
@@ -89,6 +104,18 @@
   margin: 4px 0 0;
   color: var(--profile-text-muted);
   font-size: 0.84rem;
+}
+
+.profile-card-head-with-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-edit-toggle-btn[disabled] {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .profile-card-body {
@@ -429,6 +456,7 @@
 .profile-form-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .profile-security-actions,
@@ -550,6 +578,11 @@
 @media (max-width: 820px) {
   .profile-hero-card {
     grid-template-columns: 1fr;
+  }
+
+  .profile-card-head-with-action {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .profile-form-grid.two-col {

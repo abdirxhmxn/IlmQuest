@@ -9,6 +9,21 @@ const School = require("../models/School");
 
 dotenv.config({ path: path.join(__dirname, "../config/.env") });
 
+async function connectWithRetry(uri, attempts = 4, delayMs = 1200) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await mongoose.connect(uri);
+      return;
+    } catch (err) {
+      lastError = err;
+      if (attempt === attempts) break;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
+}
+
 async function main() {
   const dbString = process.env.DB_STRING || process.argv[2];
   if (!dbString) {
@@ -22,7 +37,7 @@ async function main() {
   const explicitSelectionCount = (passportSource.match(/\.select\("\+password"\)/g) || []).length;
   assert.ok(explicitSelectionCount >= 2, "Passport must explicitly select +password in login flow.");
 
-  await mongoose.connect(dbString);
+  await connectWithRetry(dbString);
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const school = await School.create({
@@ -64,4 +79,3 @@ main().catch((err) => {
   console.error("Password selection check failed:", err.message);
   process.exit(1);
 });
-

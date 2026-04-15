@@ -5,7 +5,8 @@ const User = require("../models/User");
 const {
   ANNOUNCEMENT_ROLES,
   ANNOUNCEMENT_PRIORITIES,
-  ANNOUNCEMENT_STATUSES
+  ANNOUNCEMENT_STATUSES,
+  ANNOUNCEMENT_TYPES
 } = require("../models/Announcement");
 const { getLinkedStudentsForParent } = require("./parentLinks");
 
@@ -537,12 +538,22 @@ function toAnnouncementViewModel(announcement, lookup = {}) {
   const expiresLabel = announcement.expiresAt ? formatDateLabel(announcement.expiresAt) : "";
   const audienceSummary = summarizeScopeLabels(announcement, lookup);
   const priority = String(announcement.priority || "info");
+  const announcementType = ANNOUNCEMENT_TYPES.includes(String(announcement.announcementType || ""))
+    ? String(announcement.announcementType)
+    : "announcement";
+  const creatorName = String(announcement?.createdBy?.name || "").trim() || "School Team";
+  const creatorRole = String(announcement?.createdBy?.role || "").trim().toLowerCase() || "admin";
 
   return {
     id: String(announcement._id),
     title: announcement.title,
     content: announcement.content,
     summary: announcement.summary || announcement.content?.slice(0, 220) || "",
+    announcementType,
+    imageUrl: String(announcement.imageUrl || "").trim(),
+    externalUrl: String(announcement.externalUrl || "").trim(),
+    createdByName: creatorName,
+    createdByRole: creatorRole,
     priority,
     tone: priority === "urgent" ? "critical" : priority === "warning" ? "warning" : "success",
     status: String(announcement.status || ""),
@@ -568,6 +579,7 @@ module.exports = {
   ANNOUNCEMENT_ROLES,
   ANNOUNCEMENT_PRIORITIES,
   ANNOUNCEMENT_STATUSES,
+  ANNOUNCEMENT_TYPES,
   buildActorSnapshot,
   formatDateLabel,
   isAnnouncementExpired,

@@ -1,3 +1,4 @@
+<%# Admin classes view: class builder, schedule composition, and class roster management table. %>
 <%- include('../partials/adminShellStart', {
   pageTitle: 'IlmQuest Admin Classes',
   pageStyles: ['/css/pages/admin-class.css'],
@@ -7,7 +8,14 @@
 
 <%
   const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+  const activeClassCount = Array.isArray(classes) ? classes.filter((item) => item && item.active).length : 0;
 %>
+
 <header class="admin-page-header">
   <button
     type="button"
@@ -20,8 +28,13 @@
     <%- icon('menu') %>
   </button>
   <div class="admin-page-title">
+    <p class="admin-breadcrumbs">Admin / Operations / Classes</p>
     <h1>Class Management</h1>
-    <p>Create classes, set schedules, and review all cohorts.</p>
+    <p>Create classes, assign teachers and students, and keep schedules organized.</p>
+  </div>
+  <div class="admin-icon-actions" aria-hidden="true">
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('activity') %></button>
+    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('bell') %></button>
   </div>
   <div class="admin-top-actions">
     <a class="admin-action-link" href="/admin/users">User Administration</a>
@@ -29,13 +42,6 @@
   </div>
 </header>
 
-<%
-  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
-  const errorMessages = [
-    ...(Array.isArray(messages?.error) ? messages.error : []),
-    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
-  ];
-%>
 <% if (successMessages.length > 0) { %>
   <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
 <% } %>
@@ -43,211 +49,255 @@
   <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
 <% } %>
 
-  <section class="classes-page">
+<section class="class-stats admin-stat-grid" aria-label="Class summary">
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Total Classes</p>
+    <p class="admin-stat-value"><%= classes.length %></p>
+    <p class="admin-stat-meta">All classrooms tracked</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Active Classes</p>
+    <p class="admin-stat-value"><%= activeClassCount %></p>
+    <p class="admin-stat-meta">Currently active cohorts</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Teachers</p>
+    <p class="admin-stat-value"><%= teachers.length %></p>
+    <p class="admin-stat-meta">Available for assignment</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-stat-eyebrow">Students</p>
+    <p class="admin-stat-value"><%= students.length %></p>
+    <p class="admin-stat-meta">Eligible for scheduling</p>
+  </article>
+</section>
 
-    <section class="form-grid">
-      <article class="card" id="classForm">
-        <div class="card-header">
-          <h2>Create Class</h2>
-          <p>Name the class, assign teachers/students, then add schedule details.</p>
-        </div>
-
-        <form action="/admin/classes/add" method="POST">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <div class="field-row">
-            <div>
-              <label class="required">Class Name</label>
-              <input type="text" name="className" placeholder="Grade 3 - Tahfiidh A" required />
-            </div>
-            <div>
-              <label>Room Number</label>
-              <input type="text" name="roomNumber" placeholder="Room 4A" />
-            </div>
-            <div>
-              <label>Capacity</label>
-              <input type="number" name="capacity" placeholder="20" />
-            </div>
+<section class="classes-page">
+  <div class="classes-layout admin-page-grid">
+    <div class="admin-main-column">
+      <section class="form-grid">
+        <article class="card" id="classForm">
+          <div class="card-header">
+            <h2>Create Class</h2>
+            <p>Name the class, assign teachers/students, then add schedule details.</p>
           </div>
 
-          <div class="assign-row">
-            <div class="assign-col">
-              <label class="required">Assign Teacher(s)</label>
-              <select name="teachers" multiple required>
-                <% teachers.forEach(t=> { %>
-                  <option value="<%= t._id %>">
-                    <%= t.firstName %>
-                      <%= t.lastName %>
-                  </option>
+          <form action="/admin/classes/add" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="field-row">
+              <div>
+                <label class="required">Class Name</label>
+                <input type="text" name="className" placeholder="Grade 3 - Tahfiidh A" required />
+              </div>
+              <div>
+                <label>Room Number</label>
+                <input type="text" name="roomNumber" placeholder="Room 4A" />
+              </div>
+              <div>
+                <label>Capacity</label>
+                <input type="number" name="capacity" placeholder="20" />
+              </div>
+            </div>
+
+            <div class="assign-row">
+              <div class="assign-col">
+                <label class="required">Assign Teacher(s)</label>
+                <select name="teachers" multiple required>
+                  <% teachers.forEach(t=> { %>
+                    <option value="<%= t._id %>">
+                      <%= t.firstName %>
+                        <%= t.lastName %>
+                    </option>
                   <% }) %>
-              </select>
-              <span class="helper-text">Hold Ctrl / Cmd while clicking to select multiple</span>
-            </div>
+                </select>
+                <span class="helper-text">Hold Ctrl / Cmd while clicking to select multiple</span>
+              </div>
 
-            <div class="assign-col">
-              <label class="required">Assign student(s)</label>
-              <select name="students" multiple required>
-                <% students.forEach(student=> { %>
-                  <option value="<%= student._id %>">
-                    <%= student.firstName %>
-                      <%= student.lastName %>
-                  </option>
+              <div class="assign-col">
+                <label class="required">Assign student(s)</label>
+                <select name="students" multiple required>
+                  <% students.forEach(student=> { %>
+                    <option value="<%= student._id %>">
+                      <%= student.firstName %>
+                        <%= student.lastName %>
+                    </option>
                   <% }) %>
-              </select>
-              <span class="helper-text">Hold Ctrl / Cmd while clicking to select multiple</span>
+                </select>
+                <span class="helper-text">Hold Ctrl / Cmd while clicking to select multiple</span>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label class="required">Subjects</label>
-            <div id="subjects-container"></div>
-            <button type="button" class="badge-btn add-subject-btn" id="addSubjectBtn">+ Add Subject</button>
-            <input type="hidden" name="subjects" id="subjectsInput" />
-          </div>
+            <div>
+              <label class="required">Subjects</label>
+              <div id="subjects-container"></div>
+              <button type="button" class="badge-btn add-subject-btn" id="addSubjectBtn">+ Add Subject</button>
+              <input type="hidden" name="subjects" id="subjectsInput" />
+            </div>
 
-          <div>
-            <label class="required">Select Days & Set Times</label>
-            <div id="day-buttons" class="day-buttons-row">
-              <% const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]; %>
+            <div>
+              <label class="required">Select Days & Set Times</label>
+              <div id="day-buttons" class="day-buttons-row">
+                <% const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]; %>
                 <% days.forEach(day=> { %>
                   <button type="button" class="day-btn day-btn-fixed" data-value="<%= day %>">
                     <%= day %>
                   </button>
-                  <% }) %>
+                <% }) %>
+              </div>
+              <div id="day-schedules-container"></div>
+              <input type="hidden" name="schedule" id="scheduleInput" />
             </div>
-            <div id="day-schedules-container"></div>
-            <input type="hidden" name="schedule" id="scheduleInput" />
-          </div>
 
-          <div class="field-row">
-            <div>
-              <label>Semester</label>
-              <select name="semester">
-                <option value="Semester 1">Semester 1</option>
-                <option value="Semester 2">Semester 2</option>
-              </select>
+            <div class="field-row">
+              <div>
+                <label>Semester</label>
+                <select name="semester">
+                  <option value="Semester 1">Semester 1</option>
+                  <option value="Semester 2">Semester 2</option>
+                </select>
+              </div>
+              <div>
+                <label>Quarter</label>
+                <select name="quarter">
+                  <option value="Q1">Q1</option>
+                  <option value="Q2">Q2</option>
+                  <option value="Q3">Q3</option>
+                  <option value="Q4">Q4</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label>Quarter</label>
-              <select name="quarter">
-                <option value="Q1">Q1</option>
-                <option value="Q2">Q2</option>
-                <option value="Q3">Q3</option>
-                <option value="Q4">Q4</option>
-              </select>
-            </div>
-          </div>
 
-          <button class="submit-btn" type="submit">Create Class</button>
-        </form>
-      </article>
-    </section>
-
-    <section class="panel">
-      <div class="panel-header">
-        <h2>All Classes</h2>
-      </div>
-      <div class="table-wrap">
-        <table id="classTable">
-          <thead>
-            <tr>
-              <th>Class Code</th>
-              <th>Class Name</th>
-              <th>Grade Level</th>
-              <th>Program Type</th>
-              <th>Teachers</th>
-              <th>Students</th>
-              <th>Schedule</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <% classes.forEach(c=> { %>
-              <tr class="class-row" data-id="<%= c._id %>" data-class-name="<%= c.className || '' %>" data-active="<%= c.active ? 'true' : 'false' %>">
-                <td>
-                  <%= c.classCode %>
-                </td>
-                <td class="cell-class-name">
-                  <%= c.className %>
-                </td>
-                <td>
-                  <%= c.gradeLevel || "—" %>
-                </td>
-                <td>
-                  <%= c.programType || "—" %>
-                </td>
-                <td>
-                  <% if (c.teachers && c.teachers.length> 0) { %>
-                    <%= c.teachers.map(t=> t.name).join(", ") %>
-                      <% } else { %>
-                        No teachers assigned
-                        <% } %>
-                </td>
-                <td>
-                  <% if (c.students && c.students.length> 0) { %>
-                    <%= c.students.length %> student(s)
-                      <% } else { %>
-                        0
-                        <% } %>
-                </td>
-                <td>
-                  <% if (c.schedule && c.schedule.length>0) { %>
-                    <%= c.schedule.map(s=> `${s.day}: ${s.startTime || ''} - ${s.endTime || ''}`).join(" | ") %>
-                      <% } else { %>
-                        No schedule
-                        <% } %>
-                </td>
-                <td class="cell-status">
-                  <%= c.active ? "Active" : "Inactive" %>
-                </td>
-                <td>
-                  <div class="action-cell">
-                    <button class="action-btn js-edit-trigger" type="button">Edit</button>
-                    <button class="action-btn js-save-trigger hidden" type="button">Save</button>
-                    <button class="action-btn js-cancel-trigger hidden" type="button">Cancel</button>
-                    <% if(user.role==="admin" ) { %>
-                      <button class="action-btn js-delete-trigger" type="button">Delete</button>
-                    <% } %>
-                  </div>
-                  <div class="inline-error" aria-live="polite"></div>
-                </td>
-              </tr>
-              <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </section>
-
-  <dialog id="deleteClassDialog" class="dialog" aria-labelledby="deleteClassDialogTitle">
-    <div class="dialog-card">
-      <h3 id="deleteClassDialogTitle" data-dialog-title>Confirm Delete</h3>
-      <p data-dialog-message>Are you sure?</p>
-      <div class="dialog-actions">
-        <button class="action-btn" type="button" data-dialog-cancel>Cancel</button>
-        <button class="action-btn" type="button" data-dialog-confirm>Delete</button>
-      </div>
+            <button class="submit-btn" type="submit">Create Class</button>
+          </form>
+        </article>
+      </section>
     </div>
-  </dialog>
 
-  <script src="/js/adminViewEdit.js"></script>
-  <script>
-    const csrfToken = "<%= csrfToken %>";
-    /* =========================
-       SUBJECT BUILDER
-    ========================== */
-    const subjects = [];
-    const subjectsContainer = document.getElementById("subjects-container");
-    const subjectsInput = document.getElementById("subjectsInput");
+    <aside class="admin-side-column admin-utility-rail">
+      <article class="card class-utility-card">
+        <div class="card-header">
+          <h3>Scheduling Checklist</h3>
+          <p>Keep each class ready for teacher workflows.</p>
+        </div>
+        <ol class="class-checklist">
+          <li>Assign at least one teacher and one student.</li>
+          <li>Add subjects before publishing schedules.</li>
+          <li>Set all selected weekdays with start/end times.</li>
+          <li>Review status and class code after creation.</li>
+        </ol>
+      </article>
 
-    document.getElementById("addSubjectBtn").addEventListener("click", () => {
-      const index = subjects.length;
-      subjects.push({ name: "", gradeLevel: "" });
+      <article class="card class-utility-card">
+        <div class="card-header">
+          <h3>Quick Totals</h3>
+          <p>Current catalog coverage.</p>
+        </div>
+        <div class="class-quick-metrics">
+          <div class="class-quick-row"><span>Total Classes</span><strong><%= classes.length %></strong></div>
+          <div class="class-quick-row"><span>Active Classes</span><strong><%= activeClassCount %></strong></div>
+          <div class="class-quick-row"><span>Assignable Teachers</span><strong><%= teachers.length %></strong></div>
+          <div class="class-quick-row"><span>Assignable Students</span><strong><%= students.length %></strong></div>
+        </div>
+      </article>
+    </aside>
+  </div>
 
-      const div = document.createElement("div");
-      div.className = "subject-entry";
-      div.innerHTML = `
+  <section class="panel class-table-panel">
+    <div class="panel-header">
+      <h2>All Classes</h2>
+    </div>
+    <div class="table-wrap">
+      <table id="classTable">
+        <thead>
+          <tr>
+            <th>Class Code</th>
+            <th>Class Name</th>
+            <th>Grade Level</th>
+            <th>Program Type</th>
+            <th>Teachers</th>
+            <th>Students</th>
+            <th>Schedule</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% classes.forEach(c=> { %>
+            <tr class="class-row" data-id="<%= c._id %>" data-class-name="<%= c.className || '' %>" data-active="<%= c.active ? 'true' : 'false' %>">
+              <td><%= c.classCode %></td>
+              <td class="cell-class-name"><%= c.className %></td>
+              <td><%= c.gradeLevel || "—" %></td>
+              <td><%= c.programType || "—" %></td>
+              <td>
+                <% if (c.teachers && c.teachers.length> 0) { %>
+                  <%= c.teachers.map(t=> t.name).join(", ") %>
+                <% } else { %>
+                  No teachers assigned
+                <% } %>
+              </td>
+              <td>
+                <% if (c.students && c.students.length> 0) { %>
+                  <%= c.students.length %> student(s)
+                <% } else { %>
+                  0
+                <% } %>
+              </td>
+              <td>
+                <% if (c.schedule && c.schedule.length>0) { %>
+                  <%= c.schedule.map(s=> `${s.day}: ${s.startTime || ''} - ${s.endTime || ''}`).join(" | ") %>
+                <% } else { %>
+                  No schedule
+                <% } %>
+              </td>
+              <td class="cell-status"><%= c.active ? "Active" : "Inactive" %></td>
+              <td>
+                <div class="action-cell">
+                  <button class="action-btn js-edit-trigger" type="button">Edit</button>
+                  <button class="action-btn js-save-trigger hidden" type="button">Save</button>
+                  <button class="action-btn js-cancel-trigger hidden" type="button">Cancel</button>
+                  <% if(user.role==="admin" ) { %>
+                    <button class="action-btn js-delete-trigger" type="button">Delete</button>
+                  <% } %>
+                </div>
+                <div class="inline-error" aria-live="polite"></div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+<dialog id="deleteClassDialog" class="dialog" aria-labelledby="deleteClassDialogTitle">
+  <div class="dialog-card">
+    <h3 id="deleteClassDialogTitle" data-dialog-title>Confirm Delete</h3>
+    <p data-dialog-message>Are you sure?</p>
+    <div class="dialog-actions">
+      <button class="action-btn" type="button" data-dialog-cancel>Cancel</button>
+      <button class="action-btn" type="button" data-dialog-confirm>Delete</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="/js/adminViewEdit.js"></script>
+<script>
+  const csrfToken = "<%= csrfToken %>";
+  /* =========================
+     SUBJECT BUILDER
+  ========================== */
+  const subjects = [];
+  const subjectsContainer = document.getElementById("subjects-container");
+  const subjectsInput = document.getElementById("subjectsInput");
+
+  document.getElementById("addSubjectBtn").addEventListener("click", () => {
+    const index = subjects.length;
+    subjects.push({ name: "", gradeLevel: "" });
+
+    const div = document.createElement("div");
+    div.className = "subject-entry";
+    div.innerHTML = `
       <label>Subject Name</label>
       <input type="text" class="subject-name" data-index="${index}" placeholder="e.g., Islamic Studies"/>
 
@@ -264,52 +314,52 @@
       </select>
     `;
 
-      subjectsContainer.appendChild(div);
-    });
+    subjectsContainer.appendChild(div);
+  });
 
-    document.addEventListener("input", e => {
-      const i = e.target.dataset.index;
-      if (e.target.classList.contains("subject-name")) {
-        subjects[i].name = e.target.value;
-      }
-      if (e.target.classList.contains("subject-grade")) {
-        subjects[i].gradeLevel = e.target.value;
-      }
-      subjectsInput.value = JSON.stringify(subjects);
-    });
-
-    /* =========================
-       SCHEDULE BUILDER
-    ========================== */
-
-    const schedule = {};
-    const scheduleInput = document.getElementById("scheduleInput");
-    const schedulesContainer = document.getElementById("day-schedules-container");
-
-    function updateScheduleInput() {
-      scheduleInput.value = JSON.stringify(schedule);
+  document.addEventListener("input", e => {
+    const i = e.target.dataset.index;
+    if (e.target.classList.contains("subject-name")) {
+      subjects[i].name = e.target.value;
     }
-
-    function removeDay(day) {
-      delete schedule[day];
-      document.getElementById(`schedule-${day}`)?.remove();
-      document.querySelector(`.day-btn[data-value="${day}"]`).classList.remove("active");
-      updateScheduleInput();
+    if (e.target.classList.contains("subject-grade")) {
+      subjects[i].gradeLevel = e.target.value;
     }
+    subjectsInput.value = JSON.stringify(subjects);
+  });
 
-    document.querySelectorAll(".day-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const day = btn.dataset.value;
+  /* =========================
+     SCHEDULE BUILDER
+  ========================== */
 
-        if (schedule[day]) return removeDay(day);
+  const schedule = {};
+  const scheduleInput = document.getElementById("scheduleInput");
+  const schedulesContainer = document.getElementById("day-schedules-container");
 
-        schedule[day] = { startTime: "", endTime: "" };
-        btn.classList.add("active");
+  function updateScheduleInput() {
+    scheduleInput.value = JSON.stringify(schedule);
+  }
 
-        const div = document.createElement("div");
-        div.className = "day-schedule";
-        div.id = `schedule-${day}`;
-        div.innerHTML = `
+  function removeDay(day) {
+    delete schedule[day];
+    document.getElementById(`schedule-${day}`)?.remove();
+    document.querySelector(`.day-btn[data-value="${day}"]`).classList.remove("active");
+    updateScheduleInput();
+  }
+
+  document.querySelectorAll(".day-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const day = btn.dataset.value;
+
+      if (schedule[day]) return removeDay(day);
+
+      schedule[day] = { startTime: "", endTime: "" };
+      btn.classList.add("active");
+
+      const div = document.createElement("div");
+      div.className = "day-schedule";
+      div.id = `schedule-${day}`;
+      div.innerHTML = `
         <div class="day-schedule-header">
           <span>${day}</span>
           <button type="button" class="remove-day" data-day="${day}">Remove</button>
@@ -325,40 +375,40 @@
           </div>
         </div>
       `;
-        schedulesContainer.appendChild(div);
+      schedulesContainer.appendChild(div);
 
-        div.querySelector(`#start-${day}`).addEventListener("change", e => {
-          schedule[day].startTime = e.target.value;
-          updateScheduleInput();
-        });
-
-        div.querySelector(`#end-${day}`).addEventListener("change", e => {
-          schedule[day].endTime = e.target.value;
-          updateScheduleInput();
-        });
-
-        div.querySelector(".remove-day").addEventListener("click", () => removeDay(day));
+      div.querySelector(`#start-${day}`).addEventListener("change", e => {
+        schedule[day].startTime = e.target.value;
         updateScheduleInput();
       });
+
+      div.querySelector(`#end-${day}`).addEventListener("change", e => {
+        schedule[day].endTime = e.target.value;
+        updateScheduleInput();
+      });
+
+      div.querySelector(".remove-day").addEventListener("click", () => removeDay(day));
+      updateScheduleInput();
     });
+  });
 
-    const deleteClassDialog = document.getElementById("deleteClassDialog");
-    const classRows = document.querySelectorAll(".class-row");
-    const classSnapshots = new Map();
+  const deleteClassDialog = document.getElementById("deleteClassDialog");
+  const classRows = document.querySelectorAll(".class-row");
+  const classSnapshots = new Map();
 
-    function renderClassView(row) {
-      row.querySelector(".cell-class-name").textContent = row.dataset.className || "N/A";
-      row.querySelector(".cell-status").textContent = row.dataset.active === "true" ? "Active" : "Inactive";
-      row.querySelector(".inline-error").textContent = "";
-    }
+  function renderClassView(row) {
+    row.querySelector(".cell-class-name").textContent = row.dataset.className || "N/A";
+    row.querySelector(".cell-status").textContent = row.dataset.active === "true" ? "Active" : "Inactive";
+    row.querySelector(".inline-error").textContent = "";
+  }
 
-    function renderClassEdit(row, snapshot) {
-      row.querySelector(".cell-class-name").innerHTML = `
+  function renderClassEdit(row, snapshot) {
+    row.querySelector(".cell-class-name").innerHTML = `
         <div class="row-edit-inputs">
           <input type="text" name="className" value="${AdminViewEdit.esc(snapshot.className)}" required />
         </div>
       `;
-      row.querySelector(".cell-status").innerHTML = `
+    row.querySelector(".cell-status").innerHTML = `
         <div class="row-edit-inputs">
           <select name="active" required>
             <option value="true" ${snapshot.active === "true" ? "selected" : ""}>Active</option>
@@ -366,123 +416,123 @@
           </select>
         </div>
       `;
-    }
+  }
 
-    function toggleClassButtons(row, isEditMode) {
-      row.querySelector(".js-edit-trigger")?.classList.toggle("hidden", isEditMode);
-      row.querySelector(".js-save-trigger")?.classList.toggle("hidden", !isEditMode);
-      row.querySelector(".js-cancel-trigger")?.classList.toggle("hidden", !isEditMode);
-      row.querySelector(".js-delete-trigger")?.classList.toggle("hidden", isEditMode);
-    }
+  function toggleClassButtons(row, isEditMode) {
+    row.querySelector(".js-edit-trigger")?.classList.toggle("hidden", isEditMode);
+    row.querySelector(".js-save-trigger")?.classList.toggle("hidden", !isEditMode);
+    row.querySelector(".js-cancel-trigger")?.classList.toggle("hidden", !isEditMode);
+    row.querySelector(".js-delete-trigger")?.classList.toggle("hidden", isEditMode);
+  }
 
-    function closeOtherClassEditors(exceptRow) {
-      classRows.forEach(row => {
-        if (row === exceptRow) return;
-        if (!classSnapshots.has(row.dataset.id)) return;
-        const snapshot = classSnapshots.get(row.dataset.id);
-        row.dataset.className = snapshot.className;
-        row.dataset.active = snapshot.active;
-        renderClassView(row);
-        toggleClassButtons(row, false);
-        classSnapshots.delete(row.dataset.id);
-      });
-    }
-
+  function closeOtherClassEditors(exceptRow) {
     classRows.forEach(row => {
-      const editBtn = row.querySelector(".js-edit-trigger");
-      const saveBtn = row.querySelector(".js-save-trigger");
-      const cancelBtn = row.querySelector(".js-cancel-trigger");
-      const deleteBtn = row.querySelector(".js-delete-trigger");
+      if (row === exceptRow) return;
+      if (!classSnapshots.has(row.dataset.id)) return;
+      const snapshot = classSnapshots.get(row.dataset.id);
+      row.dataset.className = snapshot.className;
+      row.dataset.active = snapshot.active;
+      renderClassView(row);
+      toggleClassButtons(row, false);
+      classSnapshots.delete(row.dataset.id);
+    });
+  }
 
-      editBtn?.addEventListener("click", () => {
-        closeOtherClassEditors(row);
-        const snapshot = Object.freeze({
-          className: row.dataset.className || "",
-          active: row.dataset.active || "false"
-        });
-        classSnapshots.set(row.dataset.id, snapshot);
-        renderClassEdit(row, snapshot);
-        toggleClassButtons(row, true);
-        row.querySelector('input[name="className"]')?.focus();
+  classRows.forEach(row => {
+    const editBtn = row.querySelector(".js-edit-trigger");
+    const saveBtn = row.querySelector(".js-save-trigger");
+    const cancelBtn = row.querySelector(".js-cancel-trigger");
+    const deleteBtn = row.querySelector(".js-delete-trigger");
+
+    editBtn?.addEventListener("click", () => {
+      closeOtherClassEditors(row);
+      const snapshot = Object.freeze({
+        className: row.dataset.className || "",
+        active: row.dataset.active || "false"
       });
+      classSnapshots.set(row.dataset.id, snapshot);
+      renderClassEdit(row, snapshot);
+      toggleClassButtons(row, true);
+      row.querySelector('input[name="className"]')?.focus();
+    });
 
-      cancelBtn?.addEventListener("click", () => {
-        const snapshot = classSnapshots.get(row.dataset.id);
-        if (!snapshot) return;
-        row.dataset.className = snapshot.className;
-        row.dataset.active = snapshot.active;
-        renderClassView(row);
-        toggleClassButtons(row, false);
-        classSnapshots.delete(row.dataset.id);
-        editBtn?.focus();
+    cancelBtn?.addEventListener("click", () => {
+      const snapshot = classSnapshots.get(row.dataset.id);
+      if (!snapshot) return;
+      row.dataset.className = snapshot.className;
+      row.dataset.active = snapshot.active;
+      renderClassView(row);
+      toggleClassButtons(row, false);
+      classSnapshots.delete(row.dataset.id);
+      editBtn?.focus();
+    });
+
+    saveBtn?.addEventListener("click", async () => {
+      const snapshot = classSnapshots.get(row.dataset.id);
+      if (!snapshot) return;
+      const draft = {
+        className: row.querySelector('input[name="className"]')?.value?.trim() || "",
+        active: row.querySelector('select[name="active"]')?.value || "false"
+      };
+      const changed = {};
+      Object.keys(draft).forEach((key) => {
+        if (String(draft[key]) !== String(snapshot[key])) changed[key] = draft[key];
       });
+      if (Object.keys(changed).length === 0) {
+        cancelBtn?.click();
+        return;
+      }
 
-      saveBtn?.addEventListener("click", async () => {
-        const snapshot = classSnapshots.get(row.dataset.id);
-        if (!snapshot) return;
-        const draft = {
-          className: row.querySelector('input[name="className"]')?.value?.trim() || "",
-          active: row.querySelector('select[name="active"]')?.value || "false"
-        };
-        const changed = {};
-        Object.keys(draft).forEach((key) => {
-          if (String(draft[key]) !== String(snapshot[key])) changed[key] = draft[key];
+      row.querySelector(".inline-error").textContent = "";
+      AdminViewEdit.setLoading(saveBtn, true, "Saving...");
+      try {
+        const { response, payload } = await AdminViewEdit.jsonFetch(`/admin/classes/${row.dataset.id}`, {
+          method: "PATCH",
+          csrfToken,
+          data: changed
         });
-        if (Object.keys(changed).length === 0) {
-          cancelBtn?.click();
+
+        if (response.status === 200 && payload?.data) {
+          row.dataset.className = payload.data.className || "";
+          row.dataset.active = payload.data.active ? "true" : "false";
+          renderClassView(row);
+          toggleClassButtons(row, false);
+          classSnapshots.delete(row.dataset.id);
+          editBtn?.focus();
           return;
         }
 
-        row.querySelector(".inline-error").textContent = "";
-        AdminViewEdit.setLoading(saveBtn, true, "Saving...");
-        try {
-          const { response, payload } = await AdminViewEdit.jsonFetch(`/admin/classes/${row.dataset.id}`, {
-            method: "PATCH",
-            csrfToken,
-            data: changed
+        if (response.status === 403) {
+          row.dataset.className = snapshot.className;
+          row.dataset.active = snapshot.active;
+          renderClassView(row);
+          toggleClassButtons(row, false);
+          classSnapshots.delete(row.dataset.id);
+          row.querySelector(".inline-error").textContent = "Not authorized.";
+          return;
+        }
+
+        const errors = payload?.errors ? Object.values(payload.errors) : [AdminViewEdit.extractMessage(payload, "Update failed.")];
+        row.querySelector(".inline-error").textContent = errors.join(" ");
+      } finally {
+        AdminViewEdit.setLoading(saveBtn, false);
+      }
+    });
+
+    deleteBtn?.addEventListener("click", () => {
+      AdminViewEdit.openConfirmDialog(deleteClassDialog, {
+        title: "Delete Class",
+        message: "This class will be soft-deleted. You can restore later.",
+        onConfirm: async () => {
+          const { response } = await AdminViewEdit.jsonFetch(`/admin/classes/delete/${row.dataset.id}`, {
+            method: "DELETE",
+            csrfToken
           });
-
-          if (response.status === 200 && payload?.data) {
-            row.dataset.className = payload.data.className || "";
-            row.dataset.active = payload.data.active ? "true" : "false";
-            renderClassView(row);
-            toggleClassButtons(row, false);
-            classSnapshots.delete(row.dataset.id);
-            editBtn?.focus();
-            return;
-          }
-
-          if (response.status === 403) {
-            row.dataset.className = snapshot.className;
-            row.dataset.active = snapshot.active;
-            renderClassView(row);
-            toggleClassButtons(row, false);
-            classSnapshots.delete(row.dataset.id);
-            row.querySelector(".inline-error").textContent = "Not authorized.";
-            return;
-          }
-
-          const errors = payload?.errors ? Object.values(payload.errors) : [AdminViewEdit.extractMessage(payload, "Update failed.")];
-          row.querySelector(".inline-error").textContent = errors.join(" ");
-        } finally {
-          AdminViewEdit.setLoading(saveBtn, false);
+          if (response.ok) row.remove();
         }
       });
-
-      deleteBtn?.addEventListener("click", () => {
-        AdminViewEdit.openConfirmDialog(deleteClassDialog, {
-          title: "Delete Class",
-          message: "This class will be soft-deleted. You can restore later.",
-          onConfirm: async () => {
-            const { response } = await AdminViewEdit.jsonFetch(`/admin/classes/delete/${row.dataset.id}`, {
-              method: "DELETE",
-              csrfToken
-            });
-            if (response.ok) row.remove();
-          }
-        });
-      });
     });
-  </script>
+  });
+</script>
 
-  <%- include('../partials/adminShellEnd') %>
+<%- include('../partials/adminShellEnd') %>

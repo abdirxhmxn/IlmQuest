@@ -1,3 +1,8 @@
+/**
+ * Admin shell controller.
+ * Keeps sidebar behavior and lightweight header identity injection consistent
+ * across all admin pages without coupling templates to repeated UI logic.
+ */
 (function initAdminShell() {
   const shell = document.getElementById("adminShell");
   if (!shell) return;
@@ -5,11 +10,15 @@
   const toggleButtons = document.querySelectorAll("[data-sidebar-toggle]");
   const logoButtons = document.querySelectorAll("[data-sidebar-logo-toggle]");
   const scrim = document.querySelector("[data-admin-sidebar-scrim]");
-  const mobileQuery = window.matchMedia("(max-width: 1120px)");
+  const mobileQuery = window.matchMedia("(max-width: 1024px)");
   const STORAGE_KEY = "ilmquest_admin_sidebar_collapsed";
   const headerUserName = shell.dataset.shellUserName || "Admin User";
   const headerUserRole = shell.dataset.shellUserRole || "ADMIN";
 
+  /**
+   * Escapes user-derived strings before they are inserted into innerHTML.
+   * This prevents accidental markup injection in the header identity block.
+   */
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, "&amp;")
@@ -19,6 +28,10 @@
       .replace(/'/g, "&#39;");
   }
 
+  /**
+   * Adds a compact profile identity chip to each admin page header.
+   * The chip is injected once to preserve existing server-rendered structures.
+   */
   function injectHeaderIdentity() {
     const headers = document.querySelectorAll(".admin-page-header");
     headers.forEach((header) => {
@@ -37,12 +50,19 @@
     });
   }
 
+  /**
+   * Synchronizes aria-expanded state for accessibility on all sidebar toggles.
+   */
   function setButtonsExpanded(expanded) {
     toggleButtons.forEach((button) => {
       button.setAttribute("aria-expanded", expanded ? "true" : "false");
     });
   }
 
+  /**
+   * Applies persisted desktop collapse preference from localStorage.
+   * We skip this path on mobile because sidebar interaction is drawer-based.
+   */
   function applyDesktopPreference() {
     if (mobileQuery.matches) return;
     const collapsed = window.localStorage.getItem(STORAGE_KEY) === "1";
@@ -50,6 +70,9 @@
     setButtonsExpanded(!collapsed);
   }
 
+  /**
+   * Handles sidebar state transition for both desktop (collapse) and mobile (drawer).
+   */
   function toggleSidebar() {
     if (mobileQuery.matches) {
       const nextOpen = !shell.classList.contains("sidebar-open");
@@ -63,6 +86,9 @@
     setButtonsExpanded(!collapsed);
   }
 
+  /**
+   * Resets incompatible sidebar states when the viewport crosses breakpoints.
+   */
   function syncForViewport() {
     if (mobileQuery.matches) {
       shell.classList.remove("sidebar-collapsed");

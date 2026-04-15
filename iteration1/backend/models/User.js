@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const {
   normalizeEmail,
+  normalizeUserName,
+  deriveUserNameCandidate,
   normalizeIdentifier,
   normalizeStudentNumber
 } = require("../utils/userIdentifiers");
@@ -56,6 +58,7 @@ const UserSchema = new mongoose.Schema({
 
   // Login
   userName: { type: String, required: true, trim: true },
+  userNameNormalized: { type: String, default: undefined },
   email: { type: String, required: true, lowercase: true, trim: true },
   emailNormalized: { type: String, default: undefined },
   password: { type: String, required: true, select: false },
@@ -109,12 +112,26 @@ const UserSchema = new mongoose.Schema({
   employeeIdNormalized: { type: String, default: undefined },
 
   // GAMIFICATION
-  points: { type: Number, default: 0 },
+  xp: { type: Number, default: 0, min: 0 },
+  points: { type: Number, default: 0, min: 0 },
   rank: {
     type: String,
     enum: ["F", "E", "D", "C", "B", "A", "S"],
     default: "F"
   },
+  manualRank: {
+    type: String,
+    enum: ["F", "E", "D", "C", "B", "A", "S"],
+    default: undefined
+  },
+  rankOverrideEnabled: { type: Boolean, default: false },
+  rankOverrideReason: { type: String, trim: true, default: "" },
+  rankOverrideSetBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  rankOverrideSetAt: { type: Date, default: null },
+  mustChangePassword: { type: Boolean, default: false },
+  isFirstLogin: { type: Boolean, default: false },
+  temporaryPasswordIssued: { type: Boolean, default: false },
+  passwordChangedAt: { type: Date, default: null },
   resetPasswordTokenHash: { type: String, default: null, select: false, index: true },
   resetPasswordExpiresAt: { type: Date, default: null, select: false },
   deletedAt: { type: Date, default: null, index: true },
@@ -122,12 +139,23 @@ const UserSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-UserSchema.index({ schoolId: 1, userName: 1 });
+UserSchema.index({ schoolId: 1, userNameNormalized: 1, deletedAt: 1 });
 UserSchema.index({ emailNormalized: 1, deletedAt: 1 });
 UserSchema.index({ schoolId: 1, role: 1, deletedAt: 1, createdAt: -1 });
 UserSchema.index({ schoolId: 1, "studentInfo.classId": 1, role: 1, deletedAt: 1 });
 UserSchema.index({ schoolId: 1, "parentInfo.children.childID": 1, role: 1, deletedAt: 1 });
 UserSchema.index({ schoolId: 1, "studentInfo.parents.parentID": 1, role: 1, deletedAt: 1 });
+UserSchema.index(
+  { schoolId: 1, userNameNormalized: 1 },
+  {
+    name: "school_username_active_unique",
+    unique: true,
+    partialFilterExpression: {
+      deletedAt: null,
+      userNameNormalized: { $type: "string", $gt: "" }
+    }
+  }
+);
 UserSchema.index(
   { schoolId: 1, emailNormalized: 1 },
   {
@@ -167,10 +195,32 @@ UserSchema.index(
 // PASSWORD LOGIC
 //
 UserSchema.pre("validate", function (next) {
+  const normalizedUserName = deriveUserNameCandidate({
+    preferred: this.userName,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    email: this.email
+  });
+  this.userName = normalizeUserName(normalizedUserName) || "user";
+  this.userNameNormalized = this.userName || undefined;
+
   this.email = normalizeEmail(this.email);
   this.emailNormalized = this.email || undefined;
   this.employeeIdNormalized = normalizeIdentifier(this.teacherInfo?.employeeId) || undefined;
   this.studentNumberNormalized = normalizeStudentNumber(this.studentInfo?.studentNumber) || undefined;
+  if (this.role === "student") {
+    const xpParsed = Number(this.xp);
+    const pointsParsed = Number(this.points);
+    const hasXp = Number.isFinite(xpParsed);
+    const hasPoints = Number.isFinite(pointsParsed);
+    const resolvedXp = hasXp
+      ? Math.max(0, Math.floor(xpParsed))
+      : hasPoints
+        ? Math.max(0, Math.floor(pointsParsed))
+        : 0;
+    this.xp = resolvedXp;
+    this.points = resolvedXp;
+  }
   next();
 });
 

@@ -1,10 +1,15 @@
+<%
+  const teacherActivePage = 'customize';
+  const teacherPageTitle = 'Class Customization';
+  const teacherPageSubtitle = 'Configure class dashboard layout, subject visibility, and grading categories.';
+%>
 <%- include('../partials/teacherHeader') %>
 
 <link rel="stylesheet" href="/css/pages/teacher-customization.css">
 
-<main class="teacher-customization-page">
-  <section class="settings-shell">
-    <header class="settings-header">
+<main class="teacher-main teacher-customization-page">
+  <section class="teacher-page-shell settings-shell">
+    <header class="teacher-page-hero settings-header">
       <div>
         <h1>Class Customization</h1>
         <p>Configure your dashboard layout, subjects, and grading structure for each class.</p>

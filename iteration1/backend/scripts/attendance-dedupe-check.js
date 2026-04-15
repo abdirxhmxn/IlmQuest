@@ -9,6 +9,21 @@ const { dedupeAttendance } = require("./dedupe-attendance");
 
 dotenv.config({ path: path.join(__dirname, "../config/.env") });
 
+async function connectWithRetry(uri, attempts = 4, delayMs = 1200) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await mongoose.connect(uri);
+      return;
+    } catch (err) {
+      lastError = err;
+      if (attempt === attempts) break;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
+}
+
 function utcDate(iso) {
   return new Date(iso);
 }
@@ -19,7 +34,7 @@ async function main() {
     throw new Error("DB_STRING is required.");
   }
 
-  await mongoose.connect(dbString);
+  await connectWithRetry(dbString);
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const school = await School.create({
@@ -112,4 +127,3 @@ main().catch((err) => {
   console.error("Attendance dedupe check failed:", err.message);
   process.exit(1);
 });
-

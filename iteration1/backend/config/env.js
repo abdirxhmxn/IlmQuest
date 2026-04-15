@@ -27,7 +27,7 @@ function validateEnv() {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: process.env.PORT,
     DB_STRING: process.env.DB_STRING,
-    SESSION_SECRET: process.env.SESSION_SECRET || 'dev-only-session-secret',
+    // SESSION_SECRET: process.env.SESSION_SECRET || 'dev-only-session-secret',
     APP_BASE_URL: appBaseUrl || null,
     SMTP_HOST: process.env.SMTP_HOST || '',
     SMTP_SERVICE: process.env.SMTP_SERVICE || '',

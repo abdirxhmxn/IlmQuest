@@ -4,10 +4,14 @@ const isAdmin = role === "admin";
 const isTeacher = role === "teacher";
 const isStudent = role === "student";
 const isParent = role === "parent";
-const usesShell = isAdmin || isParent;
+const usesShell = isAdmin || isParent || isStudent;
 
 const profile = profileModel || {};
 const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Profile";
+const schoolName = String(profile.schoolName || "").trim() || "Unknown School";
+const usernameDisplay = String(user?.userName || "").trim()
+  || `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
+  || (String(user?.email || "").split("@")[0] || "user");
 const roleLabel = profile.roleLabel || ({ admin: "Administrator", teacher: "Teacher", student: "Student", parent: "Parent" }[role] || "User");
 const dashboardPath = profile.dashboardPath || (isAdmin ? "/admin/home" : isTeacher ? "/teacher/home" : isParent ? "/parent/home" : "/student/home");
 const avatarSrc = profile.avatarUrl || user?.profileImage || user?.profilePic || "";
@@ -24,7 +28,6 @@ const quickStats = Array.isArray(profile.quickStats) ? profile.quickStats : [];
 const quickActions = Array.isArray(profile.quickActions) ? profile.quickActions : [];
 const classRows = Array.isArray(profile.classRows) ? profile.classRows : [];
 const recentReports = Array.isArray(profile.recentReports) ? profile.recentReports : [];
-const parentPaymentSummary = profile.parentPaymentSummary || {};
 const editable = profile.editable || {};
 const canManageAvatar = profile.canManageAvatar === true;
 const canUploadAvatar = profile.canUploadAvatar === true;
@@ -60,6 +63,13 @@ function statToneClass(tone) {
 <% } else if (isTeacher) { %>
   <%- include('partials/teacherHeader') %>
   <link rel="stylesheet" href="/css/pages/profile.css" />
+<% } else if (isStudent) { %>
+  <%- include('partials/studentShellStart', {
+    pageTitle: 'IlmQuest | Profile Center',
+    pageStyles: ['/css/pages/profile.css'],
+    activePage: 'profile',
+    user
+  }) %>
 <% } else { %>
   <%- include('partials/inHeader') %>
   <link rel="stylesheet" href="/css/pages/profile.css" />
@@ -109,6 +119,17 @@ function statToneClass(tone) {
         <a class="parent-action-link" href="/logout">Logout</a>
       </div>
     </header>
+  <% } else if (isStudent) { %>
+    <header class="student-page-header profile-shell-header">
+      <div class="student-page-title profile-title-wrap">
+        <h1>Profile Center</h1>
+        <p>Manage your account profile, personal learning identity, and security settings.</p>
+      </div>
+      <div class="student-top-actions">
+        <a class="student-header-link" href="<%= dashboardPath %>">Dashboard</a>
+        <a class="student-header-link" href="/logout">Logout</a>
+      </div>
+    </header>
   <% } else { %>
     <header class="profile-legacy-header">
       <h1>Profile Center</h1>
@@ -136,9 +157,9 @@ function statToneClass(tone) {
         <p class="profile-role-badge"><%= roleLabel %></p>
         <h2><%= fullName %></h2>
         <p class="profile-hero-sub">
-          <span>@<%= user?.userName || 'username' %></span>
+          <span>@<%= usernameDisplay %></span>
           <span>•</span>
-          <span><%= user?.email || 'No email' %></span>
+          <span><%= schoolName %></span>
         </p>
         <div class="profile-completeness">
           <div class="profile-completeness-head">
@@ -216,13 +237,47 @@ function statToneClass(tone) {
         </div>
       </article>
 
-      <article class="profile-card">
-        <header class="profile-card-head">
-          <h3>Contact & Personal Information</h3>
-          <p>Update your basic account details.</p>
+      <article class="profile-card" data-profile-edit-card>
+        <header class="profile-card-head profile-card-head-with-action">
+          <div>
+            <h3>Contact & Personal Information</h3>
+            <p>View your details, then switch to edit mode when you need to make updates.</p>
+          </div>
+          <button type="button" class="profile-btn profile-btn-outline profile-edit-toggle-btn" data-profile-edit-toggle>
+            Edit Profile
+          </button>
         </header>
         <div class="profile-card-body">
-          <form action="/profile/update" method="POST" class="profile-edit-form">
+          <div class="profile-contact-view" data-profile-contact-view>
+            <dl class="profile-overview-list">
+              <div>
+                <dt>First Name</dt>
+                <dd><%= editable.firstName || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Last Name</dt>
+                <dd><%= editable.lastName || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Username</dt>
+                <dd>@<%= editable.userName || usernameDisplay %></dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd><%= editable.email || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Date of Birth</dt>
+                <dd><%= editable.DOB || "Not provided" %></dd>
+              </div>
+              <div>
+                <dt>Gender</dt>
+                <dd><%= editable.gender ? editable.gender.charAt(0).toUpperCase() + editable.gender.slice(1) : "Not provided" %></dd>
+              </div>
+            </dl>
+          </div>
+
+          <form action="/profile/update" method="POST" class="profile-edit-form" data-profile-edit-form hidden>
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
             <div class="profile-form-grid two-col">
@@ -264,6 +319,7 @@ function statToneClass(tone) {
             </div>
 
             <div class="profile-form-actions">
+              <button type="button" class="profile-btn profile-btn-muted" data-profile-edit-cancel>Cancel</button>
               <button type="submit" class="profile-btn profile-btn-primary">Save Profile Changes</button>
             </div>
           </form>
@@ -359,36 +415,6 @@ function statToneClass(tone) {
         </div>
       </article>
 
-      <% if (isParent) { %>
-        <article class="profile-card">
-          <header class="profile-card-head">
-            <h3>Payment Snapshot</h3>
-            <p>Family-level billing visibility.</p>
-          </header>
-          <div class="profile-card-body">
-            <dl class="profile-overview-list compact">
-              <div>
-                <dt>Outstanding</dt>
-                <dd>
-                  <%= new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: String(parentPaymentSummary.currency || 'USD').toUpperCase()
-                  }).format(Number(parentPaymentSummary.outstanding || 0)) %>
-                </dd>
-              </div>
-              <div>
-                <dt>Next Due Date</dt>
-                <dd><%= parentPaymentSummary.nextDueDate ? new Date(parentPaymentSummary.nextDueDate).toLocaleDateString('en-US') : 'No upcoming due date' %></dd>
-              </div>
-              <div>
-                <dt>Open Invoices</dt>
-                <dd><%= parentPaymentSummary.count || 0 %></dd>
-              </div>
-            </dl>
-          </div>
-        </article>
-      <% } %>
-
       <article class="profile-card">
         <header class="profile-card-head">
           <h3>Recent Report Activity</h3>
@@ -428,12 +454,16 @@ function statToneClass(tone) {
   </article>
 </section>
 
+<script src="/js/profile.js"></script>
+
 <% if (isAdmin) { %>
   <%- include('partials/adminShellEnd') %>
 <% } else if (isParent) { %>
   <%- include('partials/parentShellEnd') %>
 <% } else if (isTeacher) { %>
   <%- include('partials/teacherFooter') %>
+<% } else if (isStudent) { %>
+  <%- include('partials/studentShellEnd') %>
 <% } else { %>
   <%- include('partials/inFooter') %>
 <% } %>

@@ -1,40 +1,92 @@
 const LocalStrategy = require("passport-local").Strategy;
+const mongoose = require("mongoose");
 const User = require("../models/User");
-const { normalizeEmail } = require("../utils/userIdentifiers");
+const School = require("../models/School");
+const { normalizeEmail, normalizeUserName } = require("../utils/userIdentifiers");
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function resolveSchoolIdFromLoginContext(req) {
+  const directSchoolId = String(req.body?.schoolId || "").trim();
+  if (directSchoolId) {
+    if (mongoose.Types.ObjectId.isValid(directSchoolId)) {
+      return { schoolId: directSchoolId, scoped: true };
+    }
+    return { schoolId: "", scoped: true };
+  }
+
+  const schoolNameInput = String(req.body?.schoolName || req.body?.school || "").trim();
+  if (!schoolNameInput) return { schoolId: "", scoped: false };
+
+  const schoolDoc = await School.findOne({
+    schoolName: { $regex: `^${escapeRegex(schoolNameInput)}$`, $options: "i" }
+  })
+    .select("_id")
+    .lean();
+
+  return {
+    schoolId: schoolDoc?._id ? String(schoolDoc._id) : "",
+    scoped: true
+  };
+}
 
 module.exports = function (passport) {
-  const genericAuthFailure = "Invalid email or password. If needed, sign in with your school code.";
+  const genericAuthFailure = "Invalid credentials. Please check your email/username, password, and school name (if used).";
 
   // Local Login Strategy
   passport.use(
     new LocalStrategy(
-      { usernameField: "email", passReqToCallback: true },
-      async (req, email, password, done) => {
+      { usernameField: "identifier", passReqToCallback: true },
+      async (req, identifierInput, password, done) => {
         try {
-          const emailNormalized = normalizeEmail(email);
-          const schoolId = req.body?.schoolId ? String(req.body.schoolId).trim() : "";
+          const identifier = String(identifierInput || req.body?.email || "").trim();
+          if (!identifier) {
+            return done(null, false, { msg: genericAuthFailure });
+          }
+          const isEmailIdentifier = identifier.includes("@");
+          const emailNormalized = isEmailIdentifier ? normalizeEmail(identifier) : "";
+          const userNameNormalized = !isEmailIdentifier ? normalizeUserName(identifier) : "";
+          const { schoolId, scoped } = await resolveSchoolIdFromLoginContext(req);
           let user = null;
 
+          if (scoped && !schoolId) {
+            return done(null, false, { msg: genericAuthFailure });
+          }
+
           if (schoolId) {
-            user = await User.findOne({
+            const schoolQuery = {
               schoolId,
-              emailNormalized,
               deletedAt: null
-            }).select("+password");
+            };
+            if (isEmailIdentifier) {
+              schoolQuery.emailNormalized = emailNormalized;
+            } else {
+              schoolQuery.userNameNormalized = userNameNormalized;
+            }
+            user = await User.findOne(schoolQuery).select("+password");
           } else {
-            const candidates = await User.find({
-              emailNormalized,
+            const globalQuery = {
               deletedAt: null
-            }).select("+password").limit(2);
+            };
+            if (isEmailIdentifier) {
+              globalQuery.emailNormalized = emailNormalized;
+            } else {
+              globalQuery.userNameNormalized = userNameNormalized;
+            }
+
+            const candidates = await User.find(globalQuery).select("+password").limit(2);
 
             if (candidates.length === 1) {
               user = candidates[0];
             } else if (candidates.length > 1) {
               const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-              console.warn("[AUTH_AMBIGUOUS_EMAIL]", {
+              console.warn("[AUTH_AMBIGUOUS_IDENTIFIER]", {
                 requestId,
                 ip: req.ip,
-                emailHashHint: emailNormalized.slice(0, 3)
+                identifierHashHint: (isEmailIdentifier ? emailNormalized : userNameNormalized).slice(0, 3),
+                identifierType: isEmailIdentifier ? "email" : "username"
               });
             }
           }

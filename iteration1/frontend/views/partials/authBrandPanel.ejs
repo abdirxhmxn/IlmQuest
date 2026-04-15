@@ -1,0 +1,58 @@
+<%
+  const authEyebrow = typeof eyebrow === "string" && eyebrow.trim().length
+    ? eyebrow.trim()
+    : "WELCOME BACK";
+  const authHeadingTop = typeof headingTop === "string" && headingTop.trim().length
+    ? headingTop.trim()
+    : "Illuminate your";
+  const authHeadingAccent = typeof headingAccent === "string" && headingAccent.trim().length
+    ? headingAccent.trim()
+    : "path of knowledge";
+  const authSupportingText = typeof supportingText === "string" && supportingText.trim().length
+    ? supportingText.trim()
+    : "Join students on their journey through Quran memorization, Islamic studies, and academic excellence.";
+%>
+
+<aside class="auth-brand-panel">
+  <a href="/" class="auth-brand-lockup" aria-label="Return to home page">
+    <span class="auth-brand-mark">
+      <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" class="auth-brand-logo" />
+    </span>
+    <span class="auth-brand-name">IlmQuest</span>
+  </a>
+
+  <div class="auth-brand-content">
+    <p class="auth-brand-eyebrow"><%= authEyebrow %></p>
+    <h2 class="auth-brand-title">
+      <span><%= authHeadingTop %></span>
+      <span class="auth-brand-accent"><%= authHeadingAccent %></span>
+    </h2>
+    <p class="auth-brand-copy"><%= authSupportingText %></p>
+
+    <dl class="auth-brand-stats" aria-label="Platform statistics">
+      <div>
+        <dt>500+</dt>
+        <dd>Schools</dd>
+      </div>
+      <div>
+        <dt>30+</dt>
+        <dd>Districts</dd>
+      </div>
+      <div>
+        <dt>98%</dt>
+        <dd>Renewal</dd>
+      </div>
+    </dl>
+  </div>
+
+  <article class="auth-testimonial" aria-label="Parent testimonial">
+    <p class="auth-testimonial-quote">"IlmQuest transformed my child&apos;s relationship with the Qur&apos;an. The progress tracking keeps us motivated every day."</p>
+    <div class="auth-testimonial-author">
+      <span class="auth-avatar">SA</span>
+      <div class="auth-author-meta">
+        <strong>Sarah Ahmed</strong>
+        <span>Parent of 3 students</span>
+      </div>
+    </div>
+  </article>
+</aside>

@@ -17,8 +17,7 @@
     monthlyIncome: document.getElementById("financeMonthlyIncomeValue"),
     monthlyExpense: document.getElementById("financeMonthlyExpenseValue"),
     netCashFlow: document.getElementById("financeNetCashFlowValue"),
-    outstanding: document.getElementById("financeOutstandingValue"),
-    unpaidFamilies: document.getElementById("financeUnpaidFamiliesValue"),
+    entryCount: document.getElementById("financeEntryCountValue"),
     unmatchedCount: document.getElementById("financeUnmatchedCountValue"),
     matchedCount: document.getElementById("financeMatchedCountValue"),
     lastSyncAt: document.getElementById("financeLastSyncAtValue"),
@@ -27,7 +26,6 @@
   };
 
   const tableBodies = {
-    payments: document.getElementById("financePaymentsBody"),
     entries: document.getElementById("financeEntriesBody"),
     unmatched: document.getElementById("financeUnmatchedBody")
   };
@@ -74,27 +72,6 @@
       payload = {};
     }
     return { response, payload };
-  }
-
-  function renderPaymentRows(rows) {
-    if (!tableBodies.payments) return;
-    if (!Array.isArray(rows) || rows.length === 0) {
-      tableBodies.payments.innerHTML = '<tr><td colspan="6" class="empty-row">No payment records found.</td></tr>';
-      return;
-    }
-
-    tableBodies.payments.innerHTML = rows
-      .map((row) => `
-        <tr class="${row.overdue ? "row-overdue" : ""}">
-          <td class="strong-cell">${escapeHtml(row.parent || "Parent")}</td>
-          <td>${escapeHtml(row.students || "Family")}</td>
-          <td class="mono-cell">${escapeHtml(row.dueLabel || "$0.00")}</td>
-          <td class="mono-cell">${escapeHtml(row.paidLabel || "$0.00")}</td>
-          <td><span class="status-chip status-${escapeHtml(String(row.status || "").toLowerCase())}">${escapeHtml(row.status || "Due")}</span></td>
-          <td>${escapeHtml(row.lastPayment || "—")}</td>
-        </tr>
-      `)
-      .join("");
   }
 
   function renderEntryRows(rows) {
@@ -148,7 +125,6 @@
               <select name="action" required>
                 <option value="ignore">Ignore</option>
                 <option value="match_entry">Match Entry</option>
-                <option value="match_payment">Match Payment</option>
               </select>
               <input type="text" name="targetId" placeholder="Optional match id" />
               <button type="submit" class="table-action">Apply</button>
@@ -169,16 +145,14 @@
       summaryEls.netCashFlow.classList.toggle("is-positive", numericNet >= 0);
       summaryEls.netCashFlow.classList.toggle("is-negative", numericNet < 0);
     }
-    if (summaryEls.outstanding) summaryEls.outstanding.textContent = summary.outstandingLabel || "$0.00";
-    if (summaryEls.unpaidFamilies) summaryEls.unpaidFamilies.textContent = String(Number(summary.unpaidFamilies || 0));
     if (summaryEls.unmatchedCount) summaryEls.unmatchedCount.textContent = String(Number(summary.unmatchedCount || 0));
     if (summaryEls.matchedCount) summaryEls.matchedCount.textContent = String(Number(summary.matchedCount || 0));
     if (summaryEls.lastSyncAt) summaryEls.lastSyncAt.textContent = summary.lastSyncAtLabel || "Never";
     if (summaryEls.lastSyncStatus) summaryEls.lastSyncStatus.textContent = summary.lastSyncStatus || "never";
     if (summaryEls.lastSyncMessage) summaryEls.lastSyncMessage.textContent = summary.lastSyncMessage || "No issues reported.";
-
-    renderPaymentRows(finance?.payments?.rows || []);
-    renderEntryRows(finance?.entries?.rows || []);
+    const entryRows = finance?.entries?.rows || [];
+    if (summaryEls.entryCount) summaryEls.entryCount.textContent = String(entryRows.length);
+    renderEntryRows(entryRows);
     renderUnmatchedRows(finance?.bank?.unmatchedRows || []);
   }
 

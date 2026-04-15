@@ -72,6 +72,10 @@ async function main() {
     "Canonical email normalized unique index is missing."
   );
   assert(
+    hasCanonicalUnique(indexes, "school_username_active_unique", { schoolId: 1, userNameNormalized: 1 }, "userNameNormalized"),
+    "Canonical username normalized unique index is missing."
+  );
+  assert(
     hasCanonicalUnique(indexes, "school_employee_active_unique", { schoolId: 1, employeeIdNormalized: 1 }, "employeeIdNormalized"),
     "Canonical employeeId normalized unique index is missing."
   );
@@ -121,21 +125,24 @@ async function main() {
 
     const u2 = await User.create({
       schoolId: schoolB._id,
-      userName: "x",
+      userName: "dupname",
       email: "test@email.com",
       password: "Password123!",
       role: "parent"
     });
     cleanupUserIds.push(u2._id);
 
-    const dupUsername = await User.create({
-      schoolId: schoolA._id,
-      userName: "dupname",
-      email: `dupname-${runId}@schoola.test`,
-      password: "Password123!",
-      role: "parent"
-    });
-    cleanupUserIds.push(dupUsername._id);
+    await expectDuplicate(
+      () =>
+        User.create({
+          schoolId: schoolA._id,
+          userName: "dupname",
+          email: `dupname-${runId}@schoola.test`,
+          password: "Password123!",
+          role: "parent"
+        }),
+      "userNameNormalized"
+    );
 
     const conflictTarget = await User.create({
       schoolId: schoolA._id,
