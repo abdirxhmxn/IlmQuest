@@ -89,7 +89,7 @@ app.use(methodOverride("_method"));
 app.use(cookieParser());
 app.use(
   session({
-    // secret: env.SESSION_SECRET,
+    secret: env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
