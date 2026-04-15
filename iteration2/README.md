@@ -73,7 +73,7 @@ npm start
 
 Required environment variables:
 - `DB_STRING`
-- `SESSION_SECRET`
+- `SESSION_SECRET` (preferred; legacy `SESSION_SECRET_KEY` is accepted)
 - `NODE_ENV=production`
 - `PORT` is injected automatically by Render
 

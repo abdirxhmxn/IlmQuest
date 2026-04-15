@@ -11,6 +11,19 @@ function requireEnv(name) {
   return value;
 }
 
+function readFirstEnv(keys) {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value && String(value).trim() !== "") {
+      return {
+        key,
+        value: String(value).trim()
+      };
+    }
+  }
+  return { key: null, value: "" };
+}
+
 function validateEnv() {
   requireEnv('DB_STRING');
 
@@ -20,17 +33,26 @@ function validateEnv() {
 
   const nodeEnv = String(process.env.NODE_ENV || 'development').trim().toLowerCase();
   const isProduction = nodeEnv === 'production';
-  let sessionSecret = String(process.env.SESSION_SECRET || '').trim();
+  const resolvedSessionSecret = readFirstEnv(["SESSION_SECRET", "SESSION_SECRET_KEY"]);
+  let sessionSecret = resolvedSessionSecret.value;
 
   if (!sessionSecret) {
     if (isProduction) {
       throw new Error(
         'Missing required environment variable: SESSION_SECRET. ' +
-        'Set SESSION_SECRET in your deployment environment (for Render: Service > Environment).'
+        'Set SESSION_SECRET (or legacy SESSION_SECRET_KEY) in your deployment environment ' +
+        '(for Render: Service > Environment).'
       );
     }
     sessionSecret = crypto.randomBytes(48).toString('hex');
     console.warn('[env] SESSION_SECRET is not set. Using an ephemeral development secret.');
+  } else if (resolvedSessionSecret.key !== "SESSION_SECRET") {
+    // Normalize to one canonical env name for downstream consumers.
+    process.env.SESSION_SECRET = sessionSecret;
+    console.warn(
+      `[env] Using ${resolvedSessionSecret.key} as session secret source. ` +
+      "Rename it to SESSION_SECRET to remove this warning."
+    );
   }
 
   const appBaseUrl = String(process.env.APP_BASE_URL || '').trim();
