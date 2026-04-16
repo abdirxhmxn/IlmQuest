@@ -1,4 +1,5 @@
 const path = require('path');
+const crypto = require('crypto');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -10,6 +11,19 @@ function requireEnv(name) {
   return value;
 }
 
+function readFirstEnv(keys) {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value && String(value).trim() !== '') {
+      return {
+        key,
+        value: String(value).trim()
+      };
+    }
+  }
+  return { key: null, value: '' };
+}
+
 function validateEnv() {
   requireEnv('DB_STRING');
 
@@ -17,17 +31,37 @@ function validateEnv() {
     process.env.PORT = '2121';
   }
 
-  if (process.env.NODE_ENV === 'production') {
-    requireEnv('SESSION_SECRET');
+  const nodeEnv = String(process.env.NODE_ENV || 'development').trim().toLowerCase();
+  const isProduction = nodeEnv === 'production';
+  const resolvedSessionSecret = readFirstEnv(['SESSION_SECRET', 'SESSION_SECRET_KEY']);
+  let sessionSecret = resolvedSessionSecret.value;
+
+  if (!sessionSecret) {
+    if (isProduction) {
+      throw new Error(
+        'Missing required environment variable: SESSION_SECRET. ' +
+        'Set SESSION_SECRET (or legacy SESSION_SECRET_KEY) in your deployment environment ' +
+        '(for Render: Service > Environment).'
+      );
+    }
+    sessionSecret = crypto.randomBytes(48).toString('hex');
+    console.warn('[env] SESSION_SECRET is not set. Using an ephemeral development secret.');
+  } else if (resolvedSessionSecret.key !== 'SESSION_SECRET') {
+    // Normalize legacy alias into the canonical runtime key for consumers.
+    process.env.SESSION_SECRET = sessionSecret;
+    console.warn(
+      `[env] Using ${resolvedSessionSecret.key} as session secret source. ` +
+      'Rename it to SESSION_SECRET to remove this warning.'
+    );
   }
 
   const appBaseUrl = String(process.env.APP_BASE_URL || '').trim();
 
   return {
-    NODE_ENV: process.env.NODE_ENV || 'development',
+    NODE_ENV: nodeEnv,
     PORT: process.env.PORT,
     DB_STRING: process.env.DB_STRING,
-    SESSION_SECRET: process.env.SESSION_SECRET || 'dev-only-session-secret',
+    SESSION_SECRET: sessionSecret,
     APP_BASE_URL: appBaseUrl || null,
     SMTP_HOST: process.env.SMTP_HOST || '',
     SMTP_SERVICE: process.env.SMTP_SERVICE || '',

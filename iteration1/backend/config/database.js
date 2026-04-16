@@ -6,7 +6,7 @@ const connectDB = async () => {
   mongoose.set("strictQuery", true);
 
   try {
-    const conn = await mongoose.connect(process.env.DB_STRING, {
+    const conn = await mongoose.connect(env.DB_STRING, {
       maxPoolSize: isProd ? 50 : 10,
       minPoolSize: isProd ? 5 : 1,
       serverSelectionTimeoutMS: 10000,

@@ -40,6 +40,19 @@ function sendMutationResult(req, res, {
   });
 }
 
+function renderTeacherLibrary(req, res, viewModel) {
+  return res.render("teacher/teacherLibrary", viewModel, (err, html) => {
+    if (err) {
+      console.error("Teacher library render error:", err);
+      if (!res.headersSent) {
+        return res.status(500).send("Error loading teacher library.");
+      }
+      return null;
+    }
+    return res.send(html);
+  });
+}
+
 function toArray(value) {
   if (Array.isArray(value)) return value;
   if (value === undefined || value === null || value === "") return [];
@@ -158,9 +171,9 @@ module.exports = {
         };
       });
 
-      return res.render("teacher/teacherLibrary.ejs", {
+      return renderTeacherLibrary(req, res, {
         user: req.user,
-        messages: req.flash(),
+        messages: typeof req.flash === "function" ? req.flash() : {},
         teacherClasses: teacherClasses.map((classDoc) => ({
           id: String(classDoc._id),
           className: classDoc.className || "Class",

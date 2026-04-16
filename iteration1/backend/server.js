@@ -93,7 +93,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl: process.env.DB_STRING,
+      mongoUrl: env.DB_STRING,
       collectionName: "sessions",
     }),
     cookie: {

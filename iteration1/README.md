@@ -58,8 +58,24 @@ npm install
 4. Set `APP_BASE_URL` so reset links point to your deployed app URL.
 5. Start dev server:
 ```bash
+npm run dev
+```
+
+6. Start production server locally:
+```bash
 npm run start
 ```
+
+## Render Deployment
+- Root Directory: `iteration1`
+- Build Command: `npm install`
+- Start Command: `npm run start`
+
+Required environment variables:
+- `DB_STRING`
+- `SESSION_SECRET` (preferred; legacy `SESSION_SECRET_KEY` is accepted)
+- `NODE_ENV=production`
+- `PORT` is injected automatically by Render
 
 ## Index Sync Scripts
 Dry run conflict report:
