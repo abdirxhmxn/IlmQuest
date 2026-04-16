@@ -37,7 +37,7 @@
 
     <section class="teacher-library-form-card">
       <h2>Publish New Resource</h2>
-      <form action="/teacher/library" method="POST" enctype="multipart/form-data" class="teacher-library-form">
+      <form action="/teacher/library?_csrf=<%= encodeURIComponent(csrfToken) %>" method="POST" enctype="multipart/form-data" class="teacher-library-form">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
         <label for="resourceTitle">
