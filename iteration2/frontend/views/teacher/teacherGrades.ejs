@@ -13,7 +13,7 @@
 %>
 <%- include('../partials/teacherHeader') %>
 
-<link rel="stylesheet" href="/css/pages/teacher-gradebook-v1.css">
+<link rel="stylesheet" href="/css/pages/teacher-gradebook-v1.css?v=<%= assetVersion %>">
 
 <main
   class="teacher-main gradebook-v1-page"
@@ -80,7 +80,7 @@
 </main>
 
 <script id="teacherGradebookPayload" type="application/json"><%- JSON.stringify({ csrfToken, classes, activeClassId, focusDateKey: page.focusDateKey || '' }).replace(/</g, '\\u003c') %></script>
-<script src="/js/shared-calculations.bundle.js"></script>
-<script src="/js/teacher-gradebook-app.js"></script>
+<script src="/js/shared-calculations.bundle.js?v=<%= assetVersion %>"></script>
+<script src="/js/teacher-gradebook-app.js?v=<%= assetVersion %>"></script>
 
 <%- include('../partials/teacherFooter') %>

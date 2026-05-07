@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const app = express();
@@ -80,7 +81,9 @@ app.use(
       useDefaults: true,
       directives: {
         "script-src": ["'self'", "'unsafe-inline'"],
-        "style-src": ["'self'", "'unsafe-inline'"],
+        // https: required — app loads fonts from fonts.googleapis.com and icons from cdnjs/jsdelivr
+        "style-src": ["'self'", "https:", "'unsafe-inline'"],
+        "font-src": ["'self'", "https:", "data:"],
         "img-src": ["'self'", "data:", "https:"]
       }
     }
@@ -93,7 +96,7 @@ app.use(express.json());
 app.use(rejectMongoOperators);
 
 //Logging
-app.use(logger("dev"));
+app.use(logger(isProduction ? "combined" : "dev"));
 
 //Use forms for put / delete
 app.use(methodOverride("_method"));
@@ -131,6 +134,14 @@ app.use(passport.authenticate("session"));
 app.use(csrf());
 app.use((req, res, next) => {
   res.locals.csrfToken = req.csrfToken();
+  return next();
+});
+
+// Asset version injected into every view for cache-busting query params.
+// Changes on each deploy (new process = new startup timestamp).
+const ASSET_VERSION = Date.now().toString(36);
+app.use((_req, res, next) => {
+  res.locals.assetVersion = ASSET_VERSION;
   return next();
 });
 
@@ -191,6 +202,22 @@ app.use((err, req, res, next) => {
 });
 
 //Server Running
+const KEY_STATIC_FILES = [
+  "css/base.css",
+  "css/pages/teacher-shell.css",
+  "css/pages/app-shell.css",
+  "css/pages/teacher-gradebook-v1.css",
+  "js/teacher-gradebook-app.js",
+  "js/shared-calculations.bundle.js"
+];
+
 app.listen(env.PORT, () => {
   console.log("Server is running, you better catch it!");
+  console.log(`[startup] NODE_ENV:      ${env.NODE_ENV || "development"}`);
+  console.log(`[startup] static root:   ${staticRoot}`);
+  console.log(`[startup] ASSET_VERSION: ${ASSET_VERSION}`);
+  KEY_STATIC_FILES.forEach((rel) => {
+    const ok = fs.existsSync(path.join(staticRoot, rel));
+    console.log(`[startup] static ${ok ? "OK     " : "MISSING"} /${rel}`);
+  });
 });

@@ -1,0 +1,6 @@
+[build]
+buildCommand = "npm install && npm run build:grading-assets"
+
+[deploy]
+startCommand = "node backend/server.js"
+healthcheckPath = "/"

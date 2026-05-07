@@ -50,17 +50,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= resolvedPageTitle %></title>
-    <script src="/js/theme-toggle.js"></script>
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/layout.css" />
-    <link rel="stylesheet" href="/css/components.css" />
-    <link rel="stylesheet" href="/css/pages/parent-shell.css" />
+    <script src="/js/theme-toggle.js?v=<%= assetVersion %>"></script>
+    <link rel="stylesheet" href="/css/base.css?v=<%= assetVersion %>" />
+    <link rel="stylesheet" href="/css/layout.css?v=<%= assetVersion %>" />
+    <link rel="stylesheet" href="/css/components.css?v=<%= assetVersion %>" />
+    <link rel="stylesheet" href="/css/pages/parent-shell.css?v=<%= assetVersion %>" />
     <% resolvedPageStyles.forEach((styleHref) => { %>
-      <link rel="stylesheet" href="<%= styleHref %>" />
+      <link rel="stylesheet" href="<%= styleHref %>?v=<%= assetVersion %>" />
     <% }) %>
-    <link rel="stylesheet" href="/css/pages/app-shell.css" />
-    <link rel="stylesheet" href="/css/animations.css" />
-    <link rel="stylesheet" href="/css/dark-mode.css" />
+    <link rel="stylesheet" href="/css/pages/app-shell.css?v=<%= assetVersion %>" />
+    <link rel="stylesheet" href="/css/animations.css?v=<%= assetVersion %>" />
+    <link rel="stylesheet" href="/css/dark-mode.css?v=<%= assetVersion %>" />
   </head>
   <body>
     <div

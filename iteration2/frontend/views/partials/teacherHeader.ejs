@@ -1,12 +1,12 @@
 <%# Teacher shell header: sidebar workspace shell shared by all teacher pages. %>
-<script src="/js/theme-toggle.js"></script>
-<link rel="stylesheet" href="/css/base.css">
-<link rel="stylesheet" href="/css/layout.css">
-<link rel="stylesheet" href="/css/components.css">
-<link rel="stylesheet" href="/css/pages/teacher-shell.css">
-<link rel="stylesheet" href="/css/pages/app-shell.css">
-<link rel="stylesheet" href="/css/animations.css">
-<link rel="stylesheet" href="/css/dark-mode.css">
+<script src="/js/theme-toggle.js?v=<%= assetVersion %>"></script>
+<link rel="stylesheet" href="/css/base.css?v=<%= assetVersion %>">
+<link rel="stylesheet" href="/css/layout.css?v=<%= assetVersion %>">
+<link rel="stylesheet" href="/css/components.css?v=<%= assetVersion %>">
+<link rel="stylesheet" href="/css/pages/teacher-shell.css?v=<%= assetVersion %>">
+<link rel="stylesheet" href="/css/pages/app-shell.css?v=<%= assetVersion %>">
+<link rel="stylesheet" href="/css/animations.css?v=<%= assetVersion %>">
+<link rel="stylesheet" href="/css/dark-mode.css?v=<%= assetVersion %>">
 <%
   const teacherAvatarUrl = String(user?.profileImage || user?.profilePic || "").trim();
   const teacherInitials = `${(user?.firstName || "T").charAt(0)}${(user?.lastName || "U").charAt(0)}`.toUpperCase();
