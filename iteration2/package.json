@@ -4,10 +4,13 @@
   "description": "100Devs Social Network",
   "main": "backend/server.js",
   "scripts": {
+    "build": "npm run build:grading-assets",
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
+    "postinstall": "npm run build:grading-assets",
     "build:grading-assets": "node backend/scripts/build-grading-assets.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:render-smoke": "node backend/scripts/render-smoke-test.js",
     "test:grading-v1:calculations": "node backend/scripts/grading-v1-calculation-check.js",
     "test:grading-v1:grid-shape": "node backend/scripts/grading-v1-grid-shape-check.js",
     "test:grading-v1:hydration": "node backend/scripts/grading-v1-hydration-check.js",

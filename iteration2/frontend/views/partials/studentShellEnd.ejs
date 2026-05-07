@@ -1,6 +1,10 @@
-      </main>
+    <% const resolvedPageScripts = (typeof pageScripts !== "undefined" && Array.isArray(pageScripts)) ? pageScripts : []; %>
+    </main>
     </div>
-    <script src="/js/app-shell.js"></script>
-    <script src="/js/scroll-animations.js" defer></script>
+    <script src="<%= assetUrl('/js/app-shell.js') %>"></script>
+    <script src="<%= assetUrl('/js/scroll-animations.js') %>" defer></script>
+    <% resolvedPageScripts.forEach((scriptSrc) => { %>
+      <script src="<%= assetUrl(scriptSrc) %>" defer></script>
+    <% }) %>
   </body>
 </html>

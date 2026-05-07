@@ -1,13 +1,6 @@
 <%# Teacher shell header: sidebar workspace shell shared by all teacher pages. %>
-<script src="/js/theme-toggle.js?v=<%= assetVersion %>"></script>
-<link rel="stylesheet" href="/css/base.css?v=<%= assetVersion %>">
-<link rel="stylesheet" href="/css/layout.css?v=<%= assetVersion %>">
-<link rel="stylesheet" href="/css/components.css?v=<%= assetVersion %>">
-<link rel="stylesheet" href="/css/pages/teacher-shell.css?v=<%= assetVersion %>">
-<link rel="stylesheet" href="/css/pages/app-shell.css?v=<%= assetVersion %>">
-<link rel="stylesheet" href="/css/animations.css?v=<%= assetVersion %>">
-<link rel="stylesheet" href="/css/dark-mode.css?v=<%= assetVersion %>">
 <%
+  const resolvedPageStyles = (typeof pageStyles !== "undefined" && Array.isArray(pageStyles)) ? pageStyles : [];
   const teacherAvatarUrl = String(user?.profileImage || user?.profilePic || "").trim();
   const teacherInitials = `${(user?.firstName || "T").charAt(0)}${(user?.lastName || "U").charAt(0)}`.toUpperCase();
   const teacherDisplayName = `${user?.firstName || "Teacher"} ${user?.lastName || "User"}`.trim();
@@ -50,6 +43,28 @@
     { key: "profile", href: "/profile", label: "Profile", icon: "profile" }
   ];
 %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= resolvedPageTitle %> | IlmQuest</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="<%= assetUrl('/imgs/logo.png') %>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <script src="<%= assetUrl('/js/theme-toggle.js') %>"></script>
+  <link rel="stylesheet" href="<%= assetUrl('/css/base.css') %>">
+  <link rel="stylesheet" href="<%= assetUrl('/css/layout.css') %>">
+  <link rel="stylesheet" href="<%= assetUrl('/css/components.css') %>">
+  <link rel="stylesheet" href="<%= assetUrl('/css/pages/teacher-shell.css') %>">
+  <link rel="stylesheet" href="<%= assetUrl('/css/pages/app-shell.css') %>">
+  <link rel="stylesheet" href="<%= assetUrl('/css/animations.css') %>">
+  <link rel="stylesheet" href="<%= assetUrl('/css/dark-mode.css') %>">
+  <% resolvedPageStyles.forEach((styleHref) => { %>
+    <link rel="stylesheet" href="<%= assetUrl(styleHref) %>">
+  <% }) %>
+</head>
+<body>
 
 <div
   class="teacher-app-shell role-app-shell"
@@ -64,7 +79,7 @@
   <aside class="teacher-sidebar role-sidebar" id="teacherSidebar" aria-label="Teacher Navigation" data-teacher-sidebar-toggle-surface data-shell-toggle-surface>
     <div class="teacher-sidebar-brand role-sidebar-brand">
       <span class="teacher-brand-icon role-brand-icon">
-        <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" />
+        <img src="<%= assetUrl('/imgs/finalLogo.jpg') %>" alt="IlmQuest logo" />
       </span>
       <span class="teacher-brand-text role-brand-meta">
         <span class="teacher-brand-name role-brand-name">IlmQuest</span>
@@ -134,8 +149,8 @@
       </a>
     </header>
     <script>
-      /* Re-run applyTheme for the teacher shell since teacherHeader.ejs inlines
-         CSS links before the <html> element exists; re-apply after DOM is ready. */
+      /* Re-apply the saved theme after the teacher shell mounts so the workspace
+         always reflects the latest stored preference. */
       if (window.__ilmThemeToggle === undefined) {
         (function() {
           var t; try { t = localStorage.getItem('ilmquest_theme'); } catch(e) {}

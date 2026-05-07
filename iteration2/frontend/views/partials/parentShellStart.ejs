@@ -3,7 +3,7 @@
   const resolvedPageTitle = typeof pageTitle === "string" && pageTitle.trim().length
     ? pageTitle.trim()
     : "IlmQuest Parent Portal";
-  const resolvedPageStyles = Array.isArray(pageStyles) ? pageStyles : [];
+  const resolvedPageStyles = (typeof pageStyles !== "undefined" && Array.isArray(pageStyles)) ? pageStyles : [];
   const resolvedActivePage = typeof activePage === "string" ? activePage : "dashboard";
   const parentDisplayName = `${user?.firstName || "Parent"} ${user?.lastName || "User"}`.trim();
   const parentInitials = `${(user?.firstName || "P").charAt(0)}${(user?.lastName || "U").charAt(0)}`.toUpperCase();
@@ -50,17 +50,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= resolvedPageTitle %></title>
-    <script src="/js/theme-toggle.js?v=<%= assetVersion %>"></script>
-    <link rel="stylesheet" href="/css/base.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/layout.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/components.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/pages/parent-shell.css?v=<%= assetVersion %>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script src="<%= assetUrl('/js/theme-toggle.js') %>"></script>
+    <link rel="stylesheet" href="<%= assetUrl('/css/base.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/layout.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/components.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/pages/parent-shell.css') %>" />
     <% resolvedPageStyles.forEach((styleHref) => { %>
-      <link rel="stylesheet" href="<%= styleHref %>?v=<%= assetVersion %>" />
+      <link rel="stylesheet" href="<%= assetUrl(styleHref) %>" />
     <% }) %>
-    <link rel="stylesheet" href="/css/pages/app-shell.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/animations.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/dark-mode.css?v=<%= assetVersion %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/pages/app-shell.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/animations.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/dark-mode.css') %>" />
   </head>
   <body>
     <div
@@ -82,7 +84,7 @@
           aria-label="Toggle sidebar"
         >
           <div class="parent-brand-icon role-brand-icon">
-            <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" />
+            <img src="<%= assetUrl('/imgs/finalLogo.jpg') %>" alt="IlmQuest logo" />
           </div>
           <div class="role-brand-meta">
             <p class="parent-brand-name role-brand-name">IlmQuest</p>
