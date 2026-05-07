@@ -1,0 +1,270 @@
+/* Visual tweak zone:
+   Adjust these custom properties first if you want a different palette,
+   stronger glow, or a different wordmark reveal feel without touching JS. */
+:root {
+  --login-splash-bg-deep: #02050d;
+  --login-splash-bg-mid: #071125;
+  --login-splash-bg-soft: #0d1d39;
+  --login-splash-cyan: #5cecff;
+  --login-splash-teal: #4cf6cb;
+  --login-splash-ice: #d8faff;
+  --login-splash-wordmark-opacity: 0;
+  --login-splash-wordmark-shift: 24px;
+  --login-splash-wordmark-blur: 18px;
+  --login-splash-wordmark-scale: 0.96;
+  --login-splash-glow-strength: 0.42;
+  --login-splash-composition-scale: 1;
+}
+
+html,
+body.login-splash-page {
+  min-height: 100%;
+  margin: 0;
+}
+
+body.login-splash-page {
+  overflow: hidden;
+  background: #02050d;
+}
+
+.login-splash {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(52, 140, 255, 0.18), transparent 36%),
+    radial-gradient(circle at 78% 22%, rgba(74, 244, 214, 0.12), transparent 30%),
+    linear-gradient(158deg, var(--login-splash-bg-soft) 0%, var(--login-splash-bg-mid) 38%, var(--login-splash-bg-deep) 100%);
+  transition: opacity 0.52s ease, visibility 0.52s ease;
+}
+
+.login-splash.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.login-splash__backdrop,
+.login-splash__mesh,
+.login-splash__aurora,
+.login-splash__halo,
+.login-splash__logo-ring,
+.login-splash__logo-echo {
+  pointer-events: none;
+}
+
+.login-splash__backdrop,
+.login-splash__mesh,
+.login-splash__aurora {
+  position: absolute;
+  inset: 0;
+}
+
+.login-splash__backdrop {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(86, 246, 228, 0.11), transparent 19%),
+    radial-gradient(circle at 50% 52%, rgba(20, 120, 255, 0.12), transparent 28%);
+  opacity: 0.9;
+}
+
+.login-splash__mesh {
+  background-image:
+    linear-gradient(rgba(120, 178, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 178, 255, 0.08) 1px, transparent 1px);
+  background-size: 84px 84px;
+  mask-image: radial-gradient(circle at center, black 22%, transparent 88%);
+  opacity: 0.16;
+  transform: perspective(900px) rotateX(72deg) translateY(38%);
+  transform-origin: center bottom;
+}
+
+.login-splash__aurora {
+  filter: blur(26px);
+  mix-blend-mode: screen;
+  animation: loginSplashAuroraFloat 6s ease-in-out infinite;
+}
+
+.login-splash__aurora--left {
+  background:
+    radial-gradient(circle at center, rgba(76, 246, 203, 0.3), transparent 60%);
+  transform: translate(-26%, -8%) scale(1.18);
+}
+
+.login-splash__aurora--right {
+  background:
+    radial-gradient(circle at center, rgba(92, 236, 255, 0.24), transparent 64%);
+  transform: translate(28%, 12%) scale(1.2);
+  animation-delay: -2.2s;
+}
+
+.login-splash__composition {
+  position: relative;
+  z-index: 1;
+  width: min(76vw, 560px);
+  display: grid;
+  justify-items: center;
+  gap: clamp(16px, 2.4vw, 28px);
+  transform: scale(var(--login-splash-composition-scale));
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.login-splash__halo {
+  position: absolute;
+  inset: 3% 11% 18%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center,
+      rgba(92, 236, 255, calc(var(--login-splash-glow-strength) * 0.42)) 0%,
+      rgba(76, 246, 203, calc(var(--login-splash-glow-strength) * 0.32)) 26%,
+      rgba(19, 80, 173, calc(var(--login-splash-glow-strength) * 0.18)) 52%,
+      transparent 74%);
+  filter: blur(30px);
+  transform: scale(1.02);
+}
+
+.login-splash__canvas-shell {
+  position: relative;
+  width: min(54vw, 408px);
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+}
+
+.login-splash__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+.login-splash__logo-ring,
+.login-splash__logo-echo {
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+}
+
+.login-splash__logo-ring {
+  border: 1px solid rgba(140, 240, 255, 0.18);
+  box-shadow:
+    0 0 28px rgba(92, 236, 255, 0.22),
+    inset 0 0 18px rgba(76, 246, 203, 0.12);
+  opacity: 0.82;
+}
+
+.login-splash__logo-echo {
+  background:
+    radial-gradient(circle at center, rgba(92, 236, 255, 0.2), transparent 60%);
+  filter: blur(26px);
+  opacity: 0.7;
+}
+
+.login-splash__wordmark {
+  margin: -8px 0 0;
+  font-family: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+  font-size: clamp(2.2rem, 1.3rem + 3vw, 4.3rem);
+  font-weight: 760;
+  letter-spacing: -0.06em;
+  line-height: 0.94;
+  text-align: center;
+  color: transparent;
+  background:
+    linear-gradient(90deg, rgba(218, 250, 255, 0.96) 0%, rgba(102, 245, 255, 0.96) 32%, rgba(81, 255, 213, 0.95) 58%, rgba(231, 251, 255, 0.98) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  opacity: var(--login-splash-wordmark-opacity);
+  filter:
+    drop-shadow(0 0 18px rgba(92, 236, 255, 0.28))
+    blur(var(--login-splash-wordmark-blur));
+  transform:
+    translateY(var(--login-splash-wordmark-shift))
+    scale(var(--login-splash-wordmark-scale));
+  will-change: transform, opacity, filter;
+}
+
+.login-splash__replay {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(24px, 4vw, 42px);
+  transform: translateX(-50%);
+  padding: 12px 22px;
+  border: 1px solid rgba(110, 232, 255, 0.26);
+  border-radius: 999px;
+  background: rgba(6, 14, 31, 0.84);
+  color: rgba(227, 249, 255, 0.92);
+  font: 600 0.96rem/1 "Avenir Next", "Segoe UI", sans-serif;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    0 0 22px rgba(92, 236, 255, 0.14);
+  opacity: 0;
+  transition: opacity 0.32s ease, transform 0.32s ease, border-color 0.32s ease, box-shadow 0.32s ease;
+}
+
+.login-splash__replay:hover,
+.login-splash__replay:focus-visible {
+  outline: none;
+  transform: translateX(-50%) translateY(-2px);
+  border-color: rgba(128, 243, 255, 0.44);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    0 0 30px rgba(92, 236, 255, 0.2);
+}
+
+.login-splash.is-preview-complete .login-splash__composition {
+  opacity: 0.12;
+  transition: opacity 0.42s ease;
+}
+
+.login-splash.is-preview-complete .login-splash__replay {
+  opacity: 1;
+}
+
+.login-splash-preview-page {
+  min-height: 100vh;
+}
+
+@keyframes loginSplashAuroraFloat {
+  0%,
+  100% {
+    transform: translate(-22%, -10%) scale(1.14);
+  }
+  50% {
+    transform: translate(-14%, -4%) scale(1.26);
+  }
+}
+
+@media (max-width: 680px) {
+  .login-splash__composition {
+    width: min(90vw, 460px);
+    gap: 14px;
+  }
+
+  .login-splash__canvas-shell {
+    width: min(72vw, 340px);
+  }
+
+  .login-splash__mesh {
+    background-size: 64px 64px;
+    opacity: 0.12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-splash__aurora {
+    animation: none;
+  }
+
+  .login-splash,
+  .login-splash__composition,
+  .login-splash__wordmark,
+  .login-splash__replay {
+    transition: none;
+  }
+}

@@ -1,0 +1,100 @@
+<%
+  const shouldShowSidebarToggle =
+    typeof showSidebarToggle !== "undefined" ? showSidebarToggle : false;
+
+  const shouldShowHeaderAccount =
+    typeof showHeaderAccount !== "undefined" ? showHeaderAccount : true;
+
+  const resolvedHeaderClass =
+    typeof headerClass === "string" && headerClass.trim().length
+      ? ` ${headerClass.trim()}`
+      : "";
+
+  const resolvedTitleClass =
+    typeof headerTitleClass === "string" && headerTitleClass.trim().length
+      ? ` ${headerTitleClass.trim()}`
+      : "";
+
+  const resolvedActionsClass =
+    typeof headerActionsClass === "string" && headerActionsClass.trim().length
+      ? ` ${headerActionsClass.trim()}`
+      : "";
+
+  const resolvedTopActionsClass =
+    typeof headerTopActionsClass === "string" && headerTopActionsClass.trim().length
+      ? ` ${headerTopActionsClass.trim()}`
+      : "";
+
+  const safeTitle =
+    typeof headerTitle !== "undefined" ? String(headerTitle) : "";
+
+  const safeSubtitle =
+    typeof headerSubtitle !== "undefined" ? String(headerSubtitle) : "";
+
+  const safeBreadcrumbs =
+    typeof headerBreadcrumbs !== "undefined" ? String(headerBreadcrumbs) : "";
+
+  const safeActions =
+    typeof headerActions !== "undefined" && Array.isArray(headerActions)
+      ? headerActions.filter(Boolean)
+      : [];
+
+  const safeUser =
+    typeof user !== "undefined" && user ? user : {};
+
+  const safeHeaderProfileHref =
+    typeof headerProfileHref === "string" && headerProfileHref.trim().length
+      ? headerProfileHref.trim()
+      : "/profile";
+
+  const icon = typeof iconSvg === "function" ? iconSvg : (() => "");
+%>
+
+<header class="admin-page-header<%= resolvedHeaderClass %>">
+  <% if (shouldShowSidebarToggle) { %>
+    <button
+      type="button"
+      class="sidebar-toggle"
+      data-sidebar-toggle
+      aria-label="Toggle sidebar"
+      aria-expanded="false"
+      aria-controls="adminSidebar"
+    >
+      <%- icon("menu") %>
+    </button>
+  <% } %>
+  <div class="admin-page-title<%= resolvedTitleClass %>">
+    <% if (safeBreadcrumbs) { %>
+      <p class="admin-breadcrumbs"><%= safeBreadcrumbs %></p>
+    <% } %>
+    <h1><%= safeTitle %></h1>
+    <% if (safeSubtitle) { %>
+      <p><%= safeSubtitle %></p>
+    <% } %>
+  </div>
+  <div class="admin-page-header-actions<%= resolvedActionsClass %>">
+    <% if (safeActions.length > 0) { %>
+      <div class="admin-top-actions<%= resolvedTopActionsClass %>">
+        <% safeActions.forEach((action) => { %>
+          <a class="<%= action.className || 'admin-action-link' %>" href="<%= action.href %>">
+            <% if (action.prefixSymbol) { %>
+              <span class="<%= action.prefixClass || '' %>" aria-hidden="true"><%= action.prefixSymbol %></span>
+            <% } %>
+            <%= action.label %>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+    <button
+      type="button"
+      class="theme-toggle-btn admin-icon-btn"
+      data-theme-toggle
+      aria-label="Switch to dark mode"
+      aria-pressed="false"
+      title="Toggle dark mode"
+    ><span class="theme-toggle-icon">☽</span></button>
+    <% if (shouldShowHeaderAccount) { %>
+      <%- include('./adminHeaderAccount', { user: safeUser, headerProfileHref: safeHeaderProfileHref }) %>
+    <% } %>
+  </div>
+</header>

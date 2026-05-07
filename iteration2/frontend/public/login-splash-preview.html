@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IlmQuest Login Splash Preview</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/favicon.ico" />
+  <link rel="preload" href="/imgs/finalLogo.jpg" as="image" />
+  <link rel="stylesheet" href="/css/components/login-animation.css" />
+</head>
+<body class="login-splash-page login-splash-preview-page">
+  <section
+    class="login-splash"
+    data-login-animation
+    data-duration="5000"
+    data-logo-src="/imgs/finalLogo.jpg"
+    data-redirect-url=""
+    data-hide-on-complete="false"
+    data-preview-mode="true"
+    aria-label="IlmQuest login splash animation preview"
+  >
+    <div class="login-splash__backdrop" aria-hidden="true"></div>
+    <div class="login-splash__mesh" aria-hidden="true"></div>
+    <div class="login-splash__aurora login-splash__aurora--left" aria-hidden="true"></div>
+    <div class="login-splash__aurora login-splash__aurora--right" aria-hidden="true"></div>
+
+    <div class="login-splash__composition" data-login-animation-composition>
+      <div class="login-splash__halo" aria-hidden="true"></div>
+      <div class="login-splash__canvas-shell">
+        <canvas class="login-splash__canvas" data-login-animation-canvas aria-hidden="true"></canvas>
+        <div class="login-splash__logo-ring" aria-hidden="true"></div>
+        <div class="login-splash__logo-echo" aria-hidden="true"></div>
+      </div>
+      <p class="login-splash__wordmark" data-login-animation-wordmark>IlmQuest</p>
+    </div>
+
+    <button type="button" class="login-splash__replay" data-login-animation-replay hidden>
+      Replay splash
+    </button>
+  </section>
+
+  <script src="/js/login-animation.js" defer></script>
+</body>
+</html>

@@ -3,12 +3,15 @@ const Class = require("../models/Class");
 const Grade = require("../models/Grades");
 const Attendance = require("../models/Attendance");
 const Mission = require("../models/Missions");
+const ParentPayment = require("../models/ParentPayment");
 const ReportActivity = require("../models/ReportActivity");
 const { scopedIdQuery, scopedQuery } = require("../utils/tenant");
 const { renderStudentReportLatex, compileLatexToPdf, normalizeJobName } = require("../utils/latexReports");
 const { getLinkedStudentsForParent, buildDisplayName } = require("../utils/parentLinks");
 const { buildStudentProgressViewModel } = require("../utils/studentProgress");
 const { getVisibleAnnouncementsForUser, toAnnouncementViewModel } = require("../utils/announcements");
+const { normalizeMissionAttemptStatusKey } = require("../utils/missionDeadlines");
+const { formatCurrencyLabel } = require("../utils/finance");
 
 function toIdString(value) {
   if (!value) return "";
@@ -39,6 +42,13 @@ function formatDateTime(value) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "N/A";
   return parsed.toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function startOfDay(value = new Date()) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return new Date();
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
 }
 
 function inferSubjectSlot(rawSubjectName = "") {
@@ -216,9 +226,11 @@ function summarizeSubjectsForClassReport(grades) {
 }
 
 function normalizeMissionStatus(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  if (["complete", "completed", "done"].includes(normalized)) return "Completed";
-  if (["started", "in_progress", "in progress"].includes(normalized)) return "Started";
+  const statusKey = normalizeMissionAttemptStatusKey(value, Boolean(value));
+  if (statusKey === "completed") return "Completed";
+  if (statusKey === "active") return "Started";
+  if (statusKey === "auto_failed") return "Auto-Failed";
+  if (statusKey === "failed") return "Failed";
   return "Assigned";
 }
 
@@ -227,6 +239,7 @@ function summarizeMissionsForStudent(missionDocs = [], studentId = "") {
   let assigned = 0;
   let started = 0;
   let completed = 0;
+  let failed = 0;
 
   missionDocs
     .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
@@ -240,6 +253,7 @@ function summarizeMissionsForStudent(missionDocs = [], studentId = "") {
       const status = normalizeMissionStatus(activity?.status);
       if (status === "Completed") completed += 1;
       else if (status === "Started") started += 1;
+      else if (status === "Auto-Failed" || status === "Failed") failed += 1;
       else assigned += 1;
 
       if (rows.length < 12) {
@@ -255,13 +269,14 @@ function summarizeMissionsForStudent(missionDocs = [], studentId = "") {
       }
     });
 
-  const total = assigned + started + completed;
+  const total = assigned + started + completed + failed;
   const completionRate = total > 0 ? (completed / total) * 100 : null;
   return {
     total,
     assigned,
     started,
     completed,
+    failed,
     completionRate,
     completionRateLabel: toPercentLabel(completionRate),
     rows
@@ -281,6 +296,211 @@ function computeChildStatusChip(summary) {
     return { label: "On Track", tone: "success" };
   }
   return { label: "In Progress", tone: "neutral" };
+}
+
+function resolveParentPaymentStatus(paymentDoc, now = new Date()) {
+  const expectedAmount = Math.max(0, Number(paymentDoc?.expectedAmount || 0));
+  const paidAmount = Math.max(0, Number(paymentDoc?.paidAmount || 0));
+  const balanceAmount = Math.max(0, expectedAmount - paidAmount);
+  const rawStatus = String(paymentDoc?.status || "").trim();
+  const dueDate = paymentDoc?.dueDate ? new Date(paymentDoc.dueDate) : null;
+  const today = startOfDay(now);
+  const dueIsPast = Boolean(
+    dueDate
+    && !Number.isNaN(dueDate.getTime())
+    && startOfDay(dueDate) < today
+    && balanceAmount > 0
+  );
+
+  if (balanceAmount <= 0 || rawStatus === "Paid") {
+    return { key: "paid", label: "Paid" };
+  }
+  if (rawStatus === "PendingProcessor") {
+    return { key: "pendingprocessor", label: "Pending" };
+  }
+  if (dueIsPast || rawStatus === "Overdue") {
+    return { key: "overdue", label: "Overdue" };
+  }
+  if (rawStatus === "Partial") {
+    return { key: "partial", label: "Partial" };
+  }
+  return { key: "due", label: "Due" };
+}
+
+function buildPaymentStatusChip(summary = {}) {
+  if (Number(summary.overdueCount || 0) > 0) {
+    return { label: "Overdue", tone: "danger" };
+  }
+  if (Number(summary.openCount || 0) > 0) {
+    return { label: "Payment Due", tone: "warning" };
+  }
+  if (Number(summary.paidCount || 0) > 0) {
+    return { label: "Paid Up", tone: "success" };
+  }
+  return { label: "No Bills Yet", tone: "neutral" };
+}
+
+function summarizePaymentRows(rows = [], currency = "USD") {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const totalExpected = safeRows.reduce((sum, row) => sum + Number(row.expectedAmount || 0), 0);
+  const totalPaid = safeRows.reduce((sum, row) => sum + Number(row.paidAmount || 0), 0);
+  const totalOutstanding = safeRows.reduce((sum, row) => sum + Number(row.balanceAmount || 0), 0);
+  const overdueRows = safeRows.filter((row) => row.statusKey === "overdue");
+  const openRows = safeRows.filter((row) => row.statusKey !== "paid");
+  const paidRows = safeRows.filter((row) => row.statusKey === "paid");
+  const overdueAmount = overdueRows.reduce((sum, row) => sum + Number(row.balanceAmount || 0), 0);
+  const nextDue = [...openRows]
+    .filter((row) => row.dueDate)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))[0] || null;
+
+  const summary = {
+    totalExpected,
+    totalExpectedLabel: formatCurrencyLabel(totalExpected, currency),
+    totalPaid,
+    totalPaidLabel: formatCurrencyLabel(totalPaid, currency),
+    totalOutstanding,
+    totalOutstandingLabel: formatCurrencyLabel(totalOutstanding, currency),
+    overdueAmount,
+    overdueAmountLabel: formatCurrencyLabel(overdueAmount, currency),
+    openCount: openRows.length,
+    overdueCount: overdueRows.length,
+    paidCount: paidRows.length,
+    nextDueDateLabel: nextDue ? nextDue.dueDateLabel : "No upcoming balance",
+    nextDueAmountLabel: nextDue ? nextDue.balanceLabel : formatCurrencyLabel(0, currency)
+  };
+
+  summary.statusChip = buildPaymentStatusChip(summary);
+  return summary;
+}
+
+function buildParentPaymentViewModel(parentDoc, paymentDocs = [], options = {}) {
+  const childLookup = options.childLookup instanceof Map ? options.childLookup : new Map();
+  const selectedChildId = String(options.selectedChildId || "").trim();
+  const billingProfile = parentDoc?.parentInfo?.billingProfile || {};
+  const fallbackCurrency = String(billingProfile.currency || "USD").trim().toUpperCase() || "USD";
+
+  const rows = [...(Array.isArray(paymentDocs) ? paymentDocs : [])]
+    .map((payment) => {
+      const populatedStudent = payment?.studentId && typeof payment.studentId === "object"
+        ? payment.studentId
+        : null;
+      const studentId = toIdString(populatedStudent?._id || payment?.studentId);
+      const studentName = populatedStudent
+        ? buildDisplayName(populatedStudent)
+        : childLookup.get(studentId) || "Family Account";
+      const expectedAmount = Math.max(0, Number(payment?.expectedAmount || 0));
+      const paidAmount = Math.max(0, Number(payment?.paidAmount || 0));
+      const balanceAmount = Math.max(0, expectedAmount - paidAmount);
+      const currency = String(payment?.currency || fallbackCurrency).trim().toUpperCase() || fallbackCurrency;
+      const statusMeta = resolveParentPaymentStatus(payment);
+      const dueDate = payment?.dueDate ? new Date(payment.dueDate) : null;
+      const paidAt = payment?.paidAt ? new Date(payment.paidAt) : null;
+      const updatedAt = payment?.updatedAt || payment?.createdAt || payment?.dueDate || new Date();
+
+      return {
+        id: String(payment?._id || ""),
+        studentId,
+        studentName,
+        title: String(payment?.title || "Tuition Payment").trim() || "Tuition Payment",
+        category: String(payment?.category || "Other").trim() || "Other",
+        statusKey: statusMeta.key,
+        statusLabel: statusMeta.label,
+        currency,
+        expectedAmount,
+        paidAmount,
+        balanceAmount,
+        expectedAmountLabel: formatCurrencyLabel(expectedAmount, currency),
+        paidAmountLabel: formatCurrencyLabel(paidAmount, currency),
+        balanceLabel: formatCurrencyLabel(balanceAmount, currency),
+        dueDate: dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate : null,
+        dueDateLabel: dueDate && !Number.isNaN(dueDate.getTime()) ? formatDate(dueDate) : "No due date",
+        paidAt: paidAt && !Number.isNaN(paidAt.getTime()) ? paidAt : null,
+        paidAtLabel: paidAt && !Number.isNaN(paidAt.getTime()) ? formatDate(paidAt) : "Not paid yet",
+        method: String(payment?.method || "").trim(),
+        receiptReference: String(payment?.receiptReference || payment?.processorReference || "").trim(),
+        note: String(payment?.notes || "").trim(),
+        attemptsCount: Array.isArray(payment?.attempts) ? payment.attempts.length : 0,
+        updatedAt
+      };
+    })
+    .sort((a, b) => new Date(b.dueDate || b.updatedAt || 0) - new Date(a.dueDate || a.updatedAt || 0));
+
+  const byStudentRows = new Map();
+  rows.forEach((row) => {
+    const key = String(row.studentId || "__family__");
+    const current = byStudentRows.get(key) || {
+      studentId: row.studentId,
+      studentName: row.studentName,
+      rows: []
+    };
+    current.rows.push(row);
+    byStudentRows.set(key, current);
+  });
+
+  const byStudent = Array.from(byStudentRows.values())
+    .map((entry) => {
+      const entryCurrency = entry.rows[0]?.currency || fallbackCurrency;
+      const entrySummary = summarizePaymentRows(entry.rows, entryCurrency);
+      return {
+        studentId: entry.studentId,
+        studentName: entry.studentName,
+        paymentCount: entry.rows.length,
+        historyRows: entry.rows.slice(0, 3),
+        ...entrySummary
+      };
+    })
+    .sort((a, b) => String(a.studentName || "").localeCompare(String(b.studentName || "")));
+
+  const byStudentMap = new Map(
+    byStudent.map((entry) => [String(entry.studentId || "__family__"), entry])
+  );
+
+  const familySummary = summarizePaymentRows(rows, fallbackCurrency);
+  const upcomingRows = [...rows]
+    .filter((row) => row.statusKey !== "paid")
+    .sort((a, b) => {
+      const left = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+      const right = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+      return left - right;
+    })
+    .slice(0, 4);
+  const historyRows = rows.slice(0, 8);
+  const selectedChildRows = selectedChildId
+    ? rows.filter((row) => String(row.studentId) === selectedChildId)
+    : [];
+  const selectedChildSummary = selectedChildRows.length > 0
+    ? {
+      ...summarizePaymentRows(selectedChildRows, selectedChildRows[0]?.currency || fallbackCurrency),
+      historyRows: selectedChildRows.slice(0, 5),
+      upcomingRows: [...selectedChildRows]
+        .filter((row) => row.statusKey !== "paid")
+        .sort((a, b) => {
+          const left = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+          const right = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+          return left - right;
+        })
+        .slice(0, 3)
+    }
+    : {
+      ...summarizePaymentRows([], fallbackCurrency),
+      historyRows: [],
+      upcomingRows: []
+    };
+
+  return {
+    billingProfile: {
+      monthlyTuitionAmount: Number(billingProfile.monthlyTuitionAmount || 0),
+      monthlyTuitionAmountLabel: formatCurrencyLabel(billingProfile.monthlyTuitionAmount || 0, fallbackCurrency),
+      billingDayOfMonth: Number(billingProfile.billingDayOfMonth || 1),
+      currency: fallbackCurrency
+    },
+    summary: familySummary,
+    historyRows,
+    upcomingRows,
+    byStudent,
+    byStudentMap,
+    selectedChildSummary
+  };
 }
 
 function buildReportErrorMessage(err) {
@@ -314,7 +534,7 @@ async function buildParentPortalViewModel(req, options = {}) {
       ? String(childIds[0])
       : null;
 
-  const [classDocs, gradeDocs, attendanceDocs, missionDocs, reportDocs, parentAnnouncementsRaw] = await Promise.all([
+  const [classDocs, gradeDocs, attendanceDocs, missionDocs, reportDocs, paymentDocs, parentAnnouncementsRaw] = await Promise.all([
     childIds.length
       ? Class.find(scopedQuery(req, { "students._id": { $in: childIds } })).lean()
       : [],
@@ -347,6 +567,13 @@ async function buildParentPortalViewModel(req, options = {}) {
         .limit(10)
         .lean()
       : [],
+    ParentPayment.find(scopedQuery(req, { parentId: parent._id }))
+      .populate({
+        path: "studentId",
+        select: "firstName lastName userName schoolId deletedAt"
+      })
+      .sort({ dueDate: -1, createdAt: -1 })
+      .lean(),
     getVisibleAnnouncementsForUser(req, parent, { limit: 10 })
   ]);
 
@@ -409,7 +636,7 @@ async function buildParentPortalViewModel(req, options = {}) {
     });
   });
 
-  const childSummaries = linkedStudents.map((child) => {
+  const childSummariesBase = linkedStudents.map((child) => {
     const childId = String(child._id);
     const childGrades = gradesByStudentId.get(childId) || [];
     const childAttendance = attendanceByStudentId.get(childId) || [];
@@ -444,9 +671,26 @@ async function buildParentPortalViewModel(req, options = {}) {
     };
   }).sort((a, b) => String(a?.fullName || "").localeCompare(String(b?.fullName || "")));
 
-  if (!selectedChildIdRaw && childSummaries.length > 0) {
-    selectedChildId = String(childSummaries[0].childId || selectedChildId || "");
+  if (!selectedChildIdRaw && childSummariesBase.length > 0) {
+    selectedChildId = String(childSummariesBase[0].childId || selectedChildId || "");
   }
+
+  const childLookup = new Map(
+    linkedStudents.map((child) => [String(child._id), buildDisplayName(child)])
+  );
+  const paymentView = buildParentPaymentViewModel(parent, paymentDocs, {
+    childLookup,
+    selectedChildId
+  });
+  const childSummaries = childSummariesBase.map((entry) => ({
+    ...entry,
+    billing: paymentView.byStudentMap.get(String(entry.childId)) || {
+      paymentCount: 0,
+      totalOutstandingLabel: formatCurrencyLabel(0, paymentView.billingProfile.currency),
+      nextDueDateLabel: "No upcoming balance",
+      statusChip: { label: "No Bills Yet", tone: "neutral" }
+    }
+  }));
 
   const selectedChild = childSummaries.find((entry) => entry.childId === selectedChildId) || null;
   const selectedChildGrades = selectedChildId ? (gradesByStudentId.get(selectedChildId) || []) : [];
@@ -504,7 +748,8 @@ async function buildParentPortalViewModel(req, options = {}) {
     selectedMissionsSummary,
     familySnapshot,
     recentReports,
-    announcements
+    announcements,
+    paymentSummary: paymentView
   };
 }
 
@@ -612,11 +857,28 @@ module.exports = {
       const relationshipEntry = (parentDoc?.parentInfo?.children || []).find(
         (entry) => String(entry?.childID || "") === String(req.params.id)
       );
+      const studentBillingDocs = await ParentPayment.find(
+        scopedQuery(req, {
+          parentId: parentDoc._id,
+          studentId: req.params.id
+        })
+      )
+        .populate({
+          path: "studentId",
+          select: "firstName lastName userName schoolId deletedAt"
+        })
+        .sort({ dueDate: -1, createdAt: -1 })
+        .lean();
+      const paymentSummary = buildParentPaymentViewModel(parentDoc, studentBillingDocs, {
+        childLookup: new Map([[String(req.params.id), progress?.identity?.fullName || "Student"]]),
+        selectedChildId: String(req.params.id)
+      });
 
       return res.render("parent/childProgress.ejs", {
         user: req.user,
         activePage: "children",
         progress,
+        paymentSummary: paymentSummary.selectedChildSummary,
         relationshipLabel: String(relationshipEntry?.relationship || "Guardian"),
         messages: req.flash()
       });

@@ -16,10 +16,10 @@
 :root {
   --admin-shell-bar-height: clamp(70px, 4.8vw, 78px);
 
-  --admin-bg-canvas: #e9e3d8;
-  --admin-shell-bg: #f4efe5;
+  --admin-bg-canvas: #e9eaee;
+  --admin-shell-bg: #f4f5f8;
   --admin-surface: #ffffff;
-  --admin-surface-soft: #f6f9f7;
+  --admin-surface-soft: #f7f8fb;
 
   --admin-sidebar-bg: #0f4f40;
   --admin-sidebar-bg-soft: #145a49;
@@ -66,7 +66,7 @@ body {
 }
 
 body {
-  font-family: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: "Inter", "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Roboto, sans-serif;
   background: var(--admin-bg-canvas);
   color: var(--admin-text-main);
   line-height: 1.45;
@@ -84,7 +84,7 @@ a {
   margin: var(--space-3) auto;
   border-radius: 22px;
   overflow: hidden;
-  border: 1px solid #cdbfa9;
+  border: 1px solid #cdd1da;
   background: var(--admin-shell-bg);
   display: grid;
   grid-template-columns: 274px minmax(0, 1fr);
@@ -169,28 +169,28 @@ a {
 
 .sidebar-search-shell {
   border: 1px solid var(--admin-sidebar-border);
-  border-radius: 10px;
-  min-height: 38px;
+  border-radius: 12px;
+  height: 34px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  background: rgba(10, 68, 54, 0.58);
+  gap: 7px;
+  padding: 0 9px;
+  background: rgba(10, 68, 54, 0.44);
 }
 
 .sidebar-search-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   color: #9dccba;
   flex-shrink: 0;
 }
 
 .sidebar-search-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   stroke: currentColor;
   stroke-width: 1.8;
   fill: none;
@@ -200,16 +200,17 @@ a {
 
 .sidebar-search-shell input {
   width: 100%;
-  min-height: 34px;
+  min-height: 30px;
   border: 0;
   background: transparent;
   font: inherit;
   color: #dff4ea;
-  opacity: 0.82;
+  font-size: 0.82rem;
+  opacity: 0.78;
 }
 
 .sidebar-search-shell input::placeholder {
-  color: #9cc8b8;
+  color: #a4d0c0;
 }
 
 .sidebar-search-shell input:focus {
@@ -388,9 +389,7 @@ a {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 0 0, rgba(36, 131, 95, 0.1), transparent 38%),
-    linear-gradient(180deg, #f8f6f0 0%, #f2eee5 100%);
+  background: #f7f8fb;
 }
 
 .admin-page-header {
@@ -405,8 +404,8 @@ a {
   margin: 0 calc(-1 * var(--admin-main-pad-x));
   min-height: var(--admin-shell-bar-height);
   padding: 12px var(--admin-main-pad-x);
-  border-bottom: 1px solid color-mix(in srgb, var(--admin-card-border) 85%, var(--glass-border));
-  background: color-mix(in srgb, #f8f6f0 86%, var(--glass-bg));
+  border-bottom: 1px solid var(--admin-card-border);
+  background: rgba(247, 248, 251, 0.94);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -419,25 +418,39 @@ a {
 .admin-breadcrumbs {
   margin: 0 0 4px;
   font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #8392a7;
+  color: var(--admin-text-subtle);
 }
 
 .admin-page-title h1 {
   margin: 0;
-  font-size: clamp(1.42rem, 1.7vw, 1.84rem);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: #142133;
+  font-size: clamp(1.38rem, 1.7vw, 1.76rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--admin-text-main);
+  font-weight: 800;
 }
 
 .admin-page-title p {
   margin: 4px 0 0;
-  color: #5f6f86;
-  font-weight: 600;
-  font-size: 0.92rem;
+  color: var(--admin-text-muted);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.admin-page-header-actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.admin-page-header-actions .admin-top-actions {
+  margin-left: 0;
 }
 
 .admin-top-actions {
@@ -556,22 +569,25 @@ a {
 .admin-flash {
   border: 1px solid var(--admin-card-border);
   border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
   background: var(--admin-card-bg);
+  border-left-width: 4px;
 }
 
 .admin-flash-success {
-  background: #ecf8f1;
-  border-color: #bfe0cb;
-  color: #1f6a45;
+  background: #f0fbf4;
+  border-color: #b8dfc9;
+  border-left-color: var(--admin-success);
+  color: #1a5e3b;
 }
 
 .admin-flash-error {
-  background: #fff1f1;
-  border-color: #efc4c4;
-  color: #b43535;
+  background: #fff2f2;
+  border-color: #edc8c8;
+  border-left-color: var(--admin-critical);
+  color: #a42c2c;
 }
 
 .admin-card,
@@ -621,8 +637,9 @@ a {
 .finance-card-header h3 {
   margin: 0;
   color: var(--admin-text-main);
-  font-size: 1.08rem;
-  letter-spacing: -0.01em;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
 }
 
 .card-header p,
@@ -631,9 +648,10 @@ a {
 .finance-card-header p,
 .announcement-panel-header p,
 .reports-panel-header p {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   color: var(--admin-text-muted);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
+  font-weight: 400;
 }
 
 .admin-page-grid {
@@ -699,12 +717,13 @@ a {
 .empty-row,
 .empty-callout,
 .reports-empty {
-  border: 1px dashed #ccd5e1;
-  border-radius: 10px;
-  padding: 12px;
-  color: #607189;
-  background: #f9fbff;
+  border: 1px dashed #c8cfd9;
+  border-radius: 12px;
+  padding: 20px;
+  color: #5d6b82;
+  background: #f8f9fb;
   font-size: 0.88rem;
+  text-align: center;
 }
 
 .table-wrap,
@@ -951,6 +970,18 @@ button[type="submit"].table-action:hover {
   background: #eef9f2;
 }
 
+.chip-tone.tone-info {
+  color: #1a4f8e;
+  border-color: #b8d2ef;
+  background: #eef4fd;
+}
+
+.chip-tone.tone-neutral {
+  color: #5f6f85;
+  border-color: #d6dee8;
+  background: #f5f8fb;
+}
+
 .hidden {
   display: none;
 }
@@ -1054,6 +1085,12 @@ button[type="submit"].table-action:hover {
     min-height: auto;
   }
 
+  .admin-page-header-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
   .admin-page-grid {
     grid-template-columns: 1fr;
   }
@@ -1108,6 +1145,10 @@ button[type="submit"].table-action:hover {
 
   .admin-page-title p {
     font-size: 0.84rem;
+  }
+
+  .admin-page-header-actions {
+    gap: 8px;
   }
 }
 

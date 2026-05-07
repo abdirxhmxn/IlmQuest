@@ -1,0 +1,15 @@
+<%
+  const safeUser = typeof user !== "undefined" && user ? user : {};
+  const adminDisplayName = `${safeUser.firstName || "Admin"} ${safeUser.lastName || "User"}`.trim();
+  const adminRoleLabel = String(safeUser.role || safeUser.accountType || "Admin")
+    .trim()
+    .replace(/_/g, " ")
+    .toUpperCase();
+  const resolvedProfileHref = typeof headerProfileHref === "string" && headerProfileHref.trim().length
+    ? headerProfileHref.trim()
+    : "/profile";
+%>
+<a class="admin-header-user" href="<%= resolvedProfileHref %>" aria-label="Open account profile">
+  <span class="admin-header-user-name"><%= adminDisplayName %></span>
+  <span class="admin-header-user-role"><%= adminRoleLabel %></span>
+</a>

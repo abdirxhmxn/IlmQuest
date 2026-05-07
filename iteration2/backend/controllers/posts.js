@@ -4,6 +4,7 @@ const Post = require("../models/Post");
 const User = require("../models/User")
 const Class = require("../models/Class")
 const Mission = require("../models/Missions")
+const PointAdjustment = require("../models/PointAdjustment");
 const Grade = require("../models/Grades")
 const Attendance = require("../models/Attendance");
 const { isHtmlRequest } = require("../middleware/validate");
@@ -17,6 +18,13 @@ const {
   canStudentAccessMissionRank
 } = require("../utils/ranks");
 const {
+  MISSION_AUTO_FAIL_STATUS,
+  normalizeMissionAttemptStatusKey,
+  getMissionAutoFailDeadline,
+  normalizeMissionDeadline,
+  sweepExpiredMissionAttempts
+} = require("../utils/missionDeadlines");
+const {
   normalizeEmail,
   normalizeUserName,
   deriveUserNameCandidate,
@@ -25,7 +33,11 @@ const {
   mapDuplicateKeyError
 } = require("../utils/userIdentifiers");
 const { applyFirstLoginPasswordFlags } = require("../utils/passwordSetup");
-const { scopedQuery, scopedIdQuery } = require("../utils/tenant");
+const {
+  scopedQuery,
+  scopedIdQuery,
+  deletedLifecycleFilter
+} = require("../utils/tenant");
 const {
   normalizeRelationship,
   buildDisplayName,
@@ -47,8 +59,26 @@ const {
   normalizeSubjectKey,
   normalizeName,
   getDefaultSubjectConfig,
+  buildDefaultGradingScaleSet,
+  normalizeGradingScaleSet,
   buildGradingConfigVersion
 } = require("../utils/teacherCustomization");
+const {
+  MEMORIZATION_SYSTEM_KEY,
+  SUBAC_SYSTEM_KEY,
+  serializeScaleForSignature,
+  getScaleBySystem,
+  buildSymbolicMarkSnapshot,
+  getStoredScoreFromMarkSnapshot
+} = require("../utils/gradingScales");
+const {
+  REGULAR_COLUMN_DEFINITIONS,
+  SUBAC_SUBJECT_DEFINITION,
+  toDateKey,
+  parseDateKey,
+  formatDayShort,
+  buildRowUpdatePayload
+} = require("../utils/teacherGradebook");
 
 const CLASS_GRADE_LEVELS = ["Prep 1", "Prep 2", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"];
 const MAX_SUBJECT_CONFIG_ITEMS = 20;
@@ -131,7 +161,16 @@ function buildSettingsSignature(settings = {}) {
     }))
     .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key));
 
-  return JSON.stringify({ subjectConfig, gradingCategories });
+  const gradingScales = normalizeGradingScaleSet(settings.gradingScales || buildDefaultGradingScaleSet());
+
+  return JSON.stringify({
+    subjectConfig,
+    gradingCategories,
+    gradingScales: {
+      memorization: serializeScaleForSignature(gradingScales.memorization),
+      subac: serializeScaleForSignature(gradingScales.subac)
+    }
+  });
 }
 
 async function getClassGradeUsageSummary(req, classId) {
@@ -292,6 +331,16 @@ function validateTeacherSettingsPayload({
     errors.push("Invalid grading categories payload.");
   }
 
+  const memorizationScaleRaw = safeJsonParse(payload.memorizationScaleJson, null);
+  if (memorizationScaleRaw !== null && (typeof memorizationScaleRaw !== "object" || Array.isArray(memorizationScaleRaw))) {
+    errors.push("Invalid memorization scale payload.");
+  }
+
+  const subacScaleRaw = safeJsonParse(payload.subacScaleJson, null);
+  if (subacScaleRaw !== null && (typeof subacScaleRaw !== "object" || Array.isArray(subacScaleRaw))) {
+    errors.push("Invalid Subac scale payload.");
+  }
+
   if (errors.length) {
     return { isValid: false, errors, clean: null };
   }
@@ -353,6 +402,11 @@ function validateTeacherSettingsPayload({
     usageSummary
   });
 
+  const gradingScales = normalizeGradingScaleSet({
+    memorization: memorizationScaleRaw || baseSettings.gradingScales?.memorization || buildDefaultGradingScaleSet().memorization,
+    subac: subacScaleRaw || baseSettings.gradingScales?.subac || buildDefaultGradingScaleSet().subac
+  });
+
   const activeCategories = mergedCategories.filter((category) => toBoolean(category.active, true) && !category.isArchived);
   if (!activeCategories.length) {
     errors.push("At least one active grading category is required.");
@@ -361,6 +415,19 @@ function validateTeacherSettingsPayload({
   const activeWeightTotal = activeCategories.reduce((sum, category) => sum + Number(category.weight || 0), 0);
   if (Math.abs(activeWeightTotal - 100) > 0.01) {
     errors.push("Active grading category weights must total 100%.");
+  }
+
+  const activeMemorizationMarks = gradingScales.memorization.marks.filter((mark) => mark.active);
+  if (!activeMemorizationMarks.length) {
+    errors.push("At least one active memorization grading mark is required.");
+  }
+  if (!activeMemorizationMarks.some((mark) => mark.countsTowardGrade)) {
+    errors.push("At least one memorization grading mark must count toward the grade.");
+  }
+
+  const activeSubacMarks = gradingScales.subac.marks.filter((mark) => mark.active);
+  if (!activeSubacMarks.length) {
+    errors.push("At least one active Subac grading mark is required.");
   }
 
   if (errors.length) {
@@ -377,7 +444,8 @@ function validateTeacherSettingsPayload({
       dashboardLayout,
       dashboardSections,
       subjectConfig,
-      gradingCategories: mergedCategories
+      gradingCategories: mergedCategories,
+      gradingScales
     }
   };
 }
@@ -394,6 +462,7 @@ function upsertTeacherSettingsForClass(classDoc, teacherId, cleanPayload, actor)
 
   const nextSubjectConfig = cleanPayload.subjectConfig || baseSettings.subjectConfig;
   const nextGradingCategories = cleanPayload.gradingCategories || baseSettings.gradingCategories;
+  const nextGradingScales = cleanPayload.gradingScales || baseSettings.gradingScales || buildDefaultGradingScaleSet();
 
   const configVersions = Array.isArray(baseSettings.configVersions)
     ? [...baseSettings.configVersions]
@@ -404,7 +473,8 @@ function upsertTeacherSettingsForClass(classDoc, teacherId, cleanPayload, actor)
 
   const nextSignature = buildSettingsSignature({
     subjectConfig: nextSubjectConfig,
-    gradingCategories: nextGradingCategories
+    gradingCategories: nextGradingCategories,
+    gradingScales: nextGradingScales
   });
 
   if (beforeSignature !== nextSignature) {
@@ -419,6 +489,7 @@ function upsertTeacherSettingsForClass(classDoc, teacherId, cleanPayload, actor)
         version: nextVersion,
         subjectConfig: nextSubjectConfig,
         gradingCategories: nextGradingCategories,
+        gradingScales: nextGradingScales,
         createdAt: timestamp,
         createdBy: actor.actorId,
         createdByRole: actor.actorRole,
@@ -439,6 +510,7 @@ function upsertTeacherSettingsForClass(classDoc, teacherId, cleanPayload, actor)
     dashboardSections: cleanPayload.dashboardSections || baseSettings.dashboardSections,
     subjectConfig: nextSubjectConfig,
     gradingCategories: nextGradingCategories,
+    gradingScales: nextGradingScales,
     currentConfigVersion,
     configVersions,
     lastCustomizedBy: actor.actorId || null,
@@ -568,6 +640,78 @@ function buildRankAuditSnapshot(studentDocLike = {}, rankSummary = {}, extras = 
   };
 }
 
+function buildActorName(userLike = {}, fallback = "User") {
+  const preferred = String(buildDisplayName(userLike) || "").trim();
+  if (preferred) return preferred;
+  const byUserName = String(userLike?.userName || "").trim();
+  if (byUserName) return byUserName;
+  return fallback;
+}
+
+function parsePositiveWholeNumber(value) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
+function normalizeAdjustmentDirection(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "add" || normalized === "subtract") return normalized;
+  return "";
+}
+
+function normalizeFreeformReason(value, maxLength = 300) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+async function findTeacherManagedClass(req, studentId, classId = "") {
+  const classScope = classId
+    ? { _id: classId, "teachers._id": req.user._id, "students._id": studentId }
+    : { "teachers._id": req.user._id, "students._id": studentId };
+
+  return Class.findOne(scopedQuery(req, classScope))
+    .select("_id className")
+    .lean();
+}
+
+function buildPointsAuditSnapshot(studentDocLike = {}, rankSummary = {}, extras = {}) {
+  return {
+    studentId: String(studentDocLike?._id || ""),
+    totalXp: Number(rankSummary?.xp || 0),
+    points: Number(resolveStudentXp(studentDocLike)),
+    rank: rankSummary?.displayRankKey || String(studentDocLike?.rank || "F").toUpperCase(),
+    adjustmentAmount: Number(extras.adjustmentAmount || 0),
+    direction: extras.direction || "",
+    reason: extras.reason || "",
+    classId: extras.classId || "",
+    className: extras.className || "",
+    changedBy: extras.changedBy || "",
+    changedAt: extras.changedAt || new Date().toISOString(),
+    manualOverrideEnabled: Boolean(studentDocLike?.rankOverrideEnabled)
+  };
+}
+
+function buildMissionAttemptSummary(missionDoc = {}, studentEntry = {}) {
+  const statusKey = normalizeMissionAttemptStatusKey(studentEntry?.status, Boolean(studentEntry));
+  const failedAt = studentEntry?.failedAt || null;
+  const completedAt = studentEntry?.completedAt || null;
+  const dueDate = normalizeMissionDeadline(missionDoc?.dueDate);
+  return {
+    missionId: String(missionDoc?._id || ""),
+    title: String(missionDoc?.title || "Mission").trim() || "Mission",
+    status: statusKey,
+    dueDate,
+    failedAt,
+    completedAt,
+    failureReason: String(studentEntry?.failureReason || "").trim(),
+    failureType: String(studentEntry?.failureType || "").trim(),
+    graceWindowMinutes: Number(studentEntry?.graceWindowMinutes || 0) || null
+  };
+}
+
 function isCloudinaryConfigured() {
   if (typeof cloudinary.isConfigured === "function") {
     return cloudinary.isConfigured();
@@ -622,6 +766,158 @@ async function syncStudentNameIntoParents(req, studentDoc) {
       arrayFilters: [{ "child.childID": studentDoc._id }]
     }
   );
+}
+
+function normalizeDeletedReason(value) {
+  return String(value || "").trim().slice(0, 500);
+}
+
+function isUserSoftDeleted(userDoc) {
+  return Boolean(userDoc?.isDeleted === true && userDoc?.deletedAt);
+}
+
+function buildUserLifecycleSnapshot(userDoc) {
+  const fullName = `${userDoc?.firstName || ""} ${userDoc?.lastName || ""}`.trim();
+  return {
+    userId: userDoc?._id ? String(userDoc._id) : "",
+    schoolId: userDoc?.schoolId ? String(userDoc.schoolId) : "",
+    fullName: fullName || userDoc?.userName || userDoc?.email || "",
+    firstName: userDoc?.firstName || "",
+    lastName: userDoc?.lastName || "",
+    userName: userDoc?.userName || "",
+    email: userDoc?.email || "",
+    role: userDoc?.role || "",
+    isDeleted: Boolean(userDoc?.isDeleted),
+    deletedAt: userDoc?.deletedAt || null,
+    deletedBy: userDoc?.deletedBy ? String(userDoc.deletedBy) : null,
+    deletedReason: userDoc?.deletedReason || "",
+    restoredAt: userDoc?.restoredAt || null,
+    restoredBy: userDoc?.restoredBy ? String(userDoc.restoredBy) : null
+  };
+}
+
+function resolveUsersRedirectPath(req) {
+  const referrer = String(req.get("Referrer") || req.get("Referer") || "");
+  if (referrer.includes("/admin/users/deleted")) {
+    return "/admin/users/deleted";
+  }
+  return "/admin/users";
+}
+
+async function cleanupUserReferencesForPermanentDelete(req, userDoc) {
+  const userId = userDoc._id;
+  const cleanupSummary = {
+    classesUpdated: 0,
+    parentAccountsUpdated: 0,
+    studentAccountsUpdated: 0,
+    missionsUpdated: 0
+  };
+
+  const classCleanup = await Class.updateMany(
+    scopedQuery(req, {
+      includeDeleted: true,
+      $or: [
+        { "students._id": userId },
+        { "teachers._id": userId },
+        { "teacherSettings.teacherId": userId }
+      ]
+    }),
+    {
+      $pull: {
+        students: { _id: userId },
+        teachers: { _id: userId },
+        teacherSettings: { teacherId: userId }
+      }
+    }
+  );
+  cleanupSummary.classesUpdated = Number(classCleanup?.modifiedCount || 0);
+
+  if (userDoc.role === "student") {
+    const parentCleanup = await User.updateMany(
+      scopedQuery(req, {
+        includeDeleted: true,
+        role: "parent",
+        "parentInfo.children.childID": userId
+      }),
+      {
+        $pull: {
+          "parentInfo.children": { childID: userId }
+        }
+      }
+    );
+    cleanupSummary.parentAccountsUpdated = Number(parentCleanup?.modifiedCount || 0);
+
+    const missionCleanup = await Mission.updateMany(
+      scopedQuery(req, {
+        $or: [
+          { "assignedTo.studentInfo": userId },
+          { "active.studentInfo._id": userId }
+        ]
+      }),
+      {
+        $pull: {
+          "assignedTo.studentInfo": userId,
+          "active.studentInfo": { _id: userId }
+        }
+      }
+    );
+    cleanupSummary.missionsUpdated = Number(missionCleanup?.modifiedCount || 0);
+  }
+
+  if (userDoc.role === "parent") {
+    const studentCleanup = await User.updateMany(
+      scopedQuery(req, {
+        includeDeleted: true,
+        role: "student",
+        "studentInfo.parents.parentID": userId
+      }),
+      {
+        $pull: {
+          "studentInfo.parents": { parentID: userId }
+        }
+      }
+    );
+    cleanupSummary.studentAccountsUpdated = Number(studentCleanup?.modifiedCount || 0);
+  }
+
+  return cleanupSummary;
+}
+
+function resolveTeacherGradeRedirect(req) {
+  const allowedPaths = new Set([
+    "/teacher/manage-grades",
+    "/teacher/manage-missions"
+  ]);
+  const requestedPath = String(req.body?.redirectTo || "").trim();
+  return allowedPaths.has(requestedPath) ? requestedPath : "/teacher/manage-grades";
+}
+
+function normalizeRichText(value, maxLength = 240) {
+  return String(value || "")
+    .trim()
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .slice(0, maxLength);
+}
+
+function resolveGradebookColumnDefinition(systemKey, columnKey) {
+  if (systemKey === SUBAC_SYSTEM_KEY) {
+    return String(columnKey || "") === SUBAC_SUBJECT_DEFINITION.key ? SUBAC_SUBJECT_DEFINITION : null;
+  }
+  return REGULAR_COLUMN_DEFINITIONS.find((column) => column.key === String(columnKey || "")) || null;
+}
+
+function buildGradebookAssignmentName(systemKey, columnDefinition, dateKey) {
+  if (!columnDefinition) return "Gradebook Entry";
+  const dayLabel = formatDayShort(dateKey);
+  if (systemKey === SUBAC_SYSTEM_KEY) {
+    return `Subac Revision • ${dateKey} • ${dayLabel}`;
+  }
+  return `${columnDefinition.longLabel} • ${dateKey} • ${dayLabel}`;
+}
+
+function resolveGradebookQuarter(classDoc, _dateKey) {
+  return String(classDoc?.academicYear?.quarter || "Q1").trim() || "Q1";
 }
 
 module.exports = {
@@ -1149,6 +1445,21 @@ module.exports = {
   },
   createMission: async (req, res) => {
     try {
+      const rawDueDate = String(req.body.dueDate || "").trim();
+      let dueDate = undefined;
+
+      if (rawDueDate) {
+        const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(rawDueDate);
+        dueDate = isDateOnly
+          ? new Date(`${rawDueDate}T23:59:59.999`)
+          : new Date(rawDueDate);
+
+        if (Number.isNaN(dueDate.getTime())) {
+          req.flash("error", "Due date is invalid.");
+          return res.redirect("/teacher/manage-missions");
+        }
+      }
+
       await Mission.create({
         schoolId: req.schoolId,
         // Mission name
@@ -1165,7 +1476,7 @@ module.exports = {
 
         // Time Limit
         timeLimit: req.body.timeLimit,
-        dueDate: req.body.dueDate,
+        dueDate,
 
         //Assigned to ?
         assignedTo: {},
@@ -1414,8 +1725,571 @@ module.exports = {
       return res.redirect("/teacher/manage-grades");
     }
   },
+  createStudentPointAdjustment: async (req, res) => {
+    try {
+      const studentId = req.params.studentId;
+      const classId = String(req.body.classId || "").trim();
+      const amount = parsePositiveWholeNumber(req.body.amount);
+      const direction = normalizeAdjustmentDirection(req.body.direction);
+      const reason = normalizeFreeformReason(req.body.reason);
+
+      if (req.user.role !== "teacher") {
+        return respondMutation(
+          req,
+          res,
+          403,
+          { message: "Only teachers can adjust student points." },
+          "/teacher/student-progress"
+        );
+      }
+
+      if (!amount) {
+        return respondMutation(
+          req,
+          res,
+          422,
+          { message: "Amount must be a positive whole number." },
+          `/teacher/students/${studentId}/progress`
+        );
+      }
+
+      if (!direction) {
+        return respondMutation(
+          req,
+          res,
+          422,
+          { message: "Direction must be add or subtract." },
+          `/teacher/students/${studentId}/progress`
+        );
+      }
+
+      if (!reason) {
+        return respondMutation(
+          req,
+          res,
+          422,
+          { message: "Reason is required." },
+          `/teacher/students/${studentId}/progress`
+        );
+      }
+
+      const assignedClass = await findTeacherManagedClass(req, studentId, classId);
+      if (!assignedClass) {
+        return respondMutation(
+          req,
+          res,
+          403,
+          { message: "You are not authorized to adjust points for this student." },
+          "/teacher/student-progress"
+        );
+      }
+
+      const studentDoc = await User.findOne(scopedIdQuery(req, studentId, { role: "student" }))
+        .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled rankOverrideReason")
+        .lean();
+
+      if (!studentDoc) {
+        return respondMutation(
+          req,
+          res,
+          404,
+          { message: "Student record not found." },
+          "/teacher/student-progress"
+        );
+      }
+
+      const beforeSummary = buildRankSummaryFromUser(studentDoc);
+      const baselineXp = resolveStudentXp(studentDoc);
+      const delta = direction === "subtract" ? -amount : amount;
+      const afterXp = baselineXp + delta;
+
+      if (afterXp < 0) {
+        return respondMutation(
+          req,
+          res,
+          422,
+          { message: "Point adjustment cannot reduce the student below 0 XP." },
+          `/teacher/students/${studentId}/progress`
+        );
+      }
+
+      const nextRankKey = beforeSummary.isManualOverride
+        ? String(studentDoc?.rank || beforeSummary.displayRankKey || "F").toUpperCase()
+        : getAutoRankForXp(afterXp).key;
+
+      const updatedStudent = await User.findOneAndUpdate(
+        scopedIdQuery(req, studentId, { role: "student" }),
+        {
+          $set: {
+            points: afterXp,
+            xp: afterXp,
+            rank: nextRankKey
+          }
+        },
+        { new: true }
+      )
+        .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled rankOverrideReason")
+        .lean();
+
+      if (!updatedStudent) {
+        return respondMutation(
+          req,
+          res,
+          500,
+          { message: "Could not update student points." },
+          `/teacher/students/${studentId}/progress`
+        );
+      }
+
+      const afterSummary = buildRankSummaryFromUser(updatedStudent);
+      const teacherName = buildActorName(req.user, "Teacher");
+      const studentName = buildActorName(updatedStudent, "Student");
+      const nowIso = new Date().toISOString();
+
+      const adjustmentRecord = await PointAdjustment.create({
+        schoolId: req.schoolId,
+        studentId: updatedStudent._id,
+        studentNameSnapshot: studentName,
+        teacherId: req.user._id,
+        teacherNameSnapshot: teacherName,
+        classId: assignedClass._id,
+        classNameSnapshot: String(assignedClass?.className || "").trim(),
+        amount,
+        direction,
+        beforePoints: baselineXp,
+        afterPoints: afterXp,
+        beforeXp: baselineXp,
+        afterXp,
+        beforeRank: beforeSummary.displayRankKey || "F",
+        afterRank: afterSummary.displayRankKey || "F",
+        reason
+      });
+
+      await logAdminAction(req, {
+        action: "teacher.student.points.adjust",
+        targetType: "user",
+        targetId: updatedStudent._id,
+        before: buildPointsAuditSnapshot(studentDoc, beforeSummary, {
+          adjustmentAmount: amount,
+          direction,
+          reason,
+          classId: String(assignedClass?._id || ""),
+          className: String(assignedClass?.className || "").trim(),
+          changedBy: String(req.user?._id || ""),
+          changedAt: nowIso
+        }),
+        after: buildPointsAuditSnapshot(updatedStudent, afterSummary, {
+          adjustmentAmount: amount,
+          direction,
+          reason,
+          classId: String(assignedClass?._id || ""),
+          className: String(assignedClass?.className || "").trim(),
+          changedBy: String(req.user?._id || ""),
+          changedAt: nowIso
+        })
+      });
+
+      return respondMutation(
+        req,
+        res,
+        200,
+        {
+          message: direction === "add"
+            ? "Points added successfully."
+            : "Points subtracted successfully.",
+          data: {
+            student: {
+              id: String(updatedStudent._id),
+              fullName: studentName,
+              points: afterSummary.xp,
+              xp: afterSummary.xp,
+              rank: afterSummary.displayRankKey,
+              rankLabel: afterSummary.displayRankLabel,
+              autoRankKey: afterSummary.autoRankKey,
+              manualRankOverride: afterSummary.isManualOverride
+            },
+            adjustment: {
+              id: String(adjustmentRecord._id),
+              amount,
+              direction,
+              reason,
+              createdAt: adjustmentRecord.createdAt,
+              beforePoints: baselineXp,
+              afterPoints: afterXp,
+              beforeRank: beforeSummary.displayRankKey || "F",
+              afterRank: afterSummary.displayRankKey || "F",
+              classId: String(assignedClass?._id || ""),
+              className: String(assignedClass?.className || "").trim()
+            }
+          }
+        },
+        `/teacher/students/${studentId}/progress${assignedClass?._id ? `?classId=${assignedClass._id}` : ""}`
+      );
+    } catch (err) {
+      console.error("Error creating student point adjustment:", err);
+      return respondMutation(
+        req,
+        res,
+        500,
+        { message: "Could not adjust student points." },
+        "/teacher/student-progress"
+      );
+    }
+  },
+  getStudentPointAdjustments: async (req, res) => {
+    try {
+      const studentId = req.params.studentId;
+      const classId = String(req.query.classId || req.body?.classId || "").trim();
+
+      const assignedClass = await findTeacherManagedClass(req, studentId, classId);
+      if (!assignedClass) {
+        return res.status(403).json({ message: "You are not authorized to view this student." });
+      }
+
+      const studentDoc = await User.findOne(scopedIdQuery(req, studentId, { role: "student" }))
+        .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled")
+        .lean();
+
+      if (!studentDoc) {
+        return res.status(404).json({ message: "Student record not found." });
+      }
+
+      const adjustments = await PointAdjustment.find(scopedQuery(req, { studentId: studentDoc._id }))
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
+
+      return res.status(200).json({
+        data: {
+          student: {
+            id: String(studentDoc._id),
+            fullName: buildActorName(studentDoc, "Student"),
+            rank: buildRankSummaryFromUser(studentDoc).displayRankKey
+          },
+          adjustments: adjustments.map((entry) => ({
+            id: String(entry._id),
+            amount: Number(entry.amount || 0),
+            direction: String(entry.direction || ""),
+            reason: String(entry.reason || ""),
+            beforePoints: Number(entry.beforePoints || 0),
+            afterPoints: Number(entry.afterPoints || 0),
+            beforeXp: Number(entry.beforeXp || 0),
+            afterXp: Number(entry.afterXp || 0),
+            beforeRank: String(entry.beforeRank || "F"),
+            afterRank: String(entry.afterRank || "F"),
+            classId: entry.classId ? String(entry.classId) : "",
+            className: String(entry.classNameSnapshot || ""),
+            teacherId: String(entry.teacherId || ""),
+            teacherName: String(entry.teacherNameSnapshot || ""),
+            createdAt: entry.createdAt
+          }))
+        }
+      });
+    } catch (err) {
+      console.error("Error fetching student point adjustments:", err);
+      return res.status(500).json({ message: "Could not load point adjustment history." });
+    }
+  },
+  reopenStudentMissionAttempt: async (req, res) => {
+    try {
+      const studentId = req.params.studentId;
+      const missionId = req.params.missionId;
+      const classId = String(req.body.classId || "").trim();
+      const reason = normalizeFreeformReason(req.body.reason, 240);
+      const redirectPath = `/teacher/students/${studentId}/progress${classId ? `?classId=${classId}` : ""}`;
+
+      if (!reason) {
+        req.flash("error", "A reason is required to reopen an auto-failed mission.");
+        return res.redirect(redirectPath);
+      }
+
+      const assignedClass = await findTeacherManagedClass(req, studentId, classId);
+      if (!assignedClass) {
+        req.flash("error", "You are not authorized to manage missions for this student.");
+        return res.redirect("/teacher/student-progress");
+      }
+
+      const missionDoc = await Mission.findOne(scopedIdQuery(req, missionId));
+      if (!missionDoc) {
+        req.flash("error", "Mission record not found.");
+        return res.redirect(redirectPath);
+      }
+
+      const studentEntry = (missionDoc?.active?.studentInfo || []).find(
+        (entry) => String(entry?._id || "") === String(studentId)
+      );
+
+      if (!studentEntry) {
+        req.flash("error", "No mission attempt was found for this student.");
+        return res.redirect(redirectPath);
+      }
+
+      const statusKey = normalizeMissionAttemptStatusKey(studentEntry?.status, true);
+      if (statusKey !== "auto_failed" && statusKey !== "failed") {
+        req.flash("error", "Only failed mission attempts can be reopened.");
+        return res.redirect(redirectPath);
+      }
+
+      const beforeSummary = buildMissionAttemptSummary(missionDoc, studentEntry);
+      studentEntry.status = "started";
+      studentEntry.startedAt = new Date();
+      studentEntry.failedAt = null;
+      studentEntry.failureReason = "";
+      studentEntry.failureType = "";
+      studentEntry.graceWindowMinutes = null;
+      studentEntry.reopenedAt = new Date();
+      studentEntry.reopenedBy = req.user._id;
+      studentEntry.reopenReason = reason;
+      missionDoc.markModified("active.studentInfo");
+      await missionDoc.save();
+
+      const refreshedEntry = (missionDoc?.active?.studentInfo || []).find(
+        (entry) => String(entry?._id || "") === String(studentId)
+      );
+
+      await logAdminAction(req, {
+        action: "teacher.student.mission.reopen",
+        targetType: "mission",
+        targetId: missionDoc._id,
+        before: beforeSummary,
+        after: {
+          ...buildMissionAttemptSummary(missionDoc, refreshedEntry),
+          reopenedBy: String(req.user?._id || ""),
+          reopenReason: reason
+        }
+      });
+
+      req.flash("success", "Mission attempt reopened. The student can submit again.");
+      return res.redirect(redirectPath);
+    } catch (err) {
+      console.error("Error reopening student mission attempt:", err);
+      req.flash("error", "Could not reopen the mission attempt.");
+      return res.redirect("/teacher/student-progress");
+    }
+  },
+  upsertTeacherGradebookCell: async (req, res) => {
+    const redirectPath = "/teacher/manage-grades";
+
+    try {
+      const classId = String(req.body?.classId || "").trim();
+      const studentId = String(req.body?.studentId || "").trim();
+      const systemKey = String(req.body?.systemKey || "").trim();
+      const columnKey = String(req.body?.columnKey || "").trim();
+      const dateKey = String(req.body?.dateKey || "").trim();
+      const requestedMarkKey = String(req.body?.markKey || "").trim();
+      const note = normalizeRichText(req.body?.note, 320);
+      const reviewer = normalizeRichText(req.body?.reviewer, 120);
+      const portion = normalizeRichText(req.body?.portion, 120);
+
+      if (!classId || !studentId || !systemKey || !columnKey || !dateKey) {
+        return respondMutation(req, res, 422, {
+          success: false,
+          message: "Missing gradebook cell context."
+        }, redirectPath);
+      }
+
+      if (systemKey !== MEMORIZATION_SYSTEM_KEY && systemKey !== SUBAC_SYSTEM_KEY) {
+        return respondMutation(req, res, 422, {
+          success: false,
+          message: "Invalid gradebook system."
+        }, redirectPath);
+      }
+
+      const entryDate = parseDateKey(dateKey);
+      if (!entryDate) {
+        return respondMutation(req, res, 422, {
+          success: false,
+          message: "Invalid gradebook date."
+        }, redirectPath);
+      }
+
+      const columnDefinition = resolveGradebookColumnDefinition(systemKey, columnKey);
+      if (!columnDefinition) {
+        return respondMutation(req, res, 422, {
+          success: false,
+          message: "Invalid gradebook column."
+        }, redirectPath);
+      }
+
+      const [classDoc, studentDoc] = await Promise.all([
+        Class.findOne(scopedIdQuery(req, classId)),
+        User.findOne(scopedIdQuery(req, studentId, { role: "student" }))
+      ]);
+
+      if (!classDoc || !studentDoc) {
+        return respondMutation(req, res, 404, {
+          success: false,
+          message: "Student or class not found."
+        }, redirectPath);
+      }
+
+      if (!isTeacherAssignedToClass(classDoc, req.user._id)) {
+        return respondMutation(req, res, 403, {
+          success: false,
+          message: "You are not authorized to grade this class."
+        }, redirectPath);
+      }
+
+      const isStudentInClass = Array.isArray(classDoc.students)
+        && classDoc.students.some((student) => String(student?._id) === String(studentId));
+      if (!isStudentInClass) {
+        return respondMutation(req, res, 403, {
+          success: false,
+          message: "Selected student is not enrolled in this class."
+        }, redirectPath);
+      }
+
+      const teacherSettings = resolveTeacherSettings(classDoc, req.user._id);
+      const scaleSet = teacherSettings.gradingScales || buildDefaultGradingScaleSet();
+      const scale = getScaleBySystem(scaleSet, systemKey);
+
+      let record = await Grade.findOne(scopedQuery(req, {
+        "classInfo._id": classId,
+        "students._id": studentId,
+        "sheetContext.mode": systemKey,
+        "sheetContext.dateKey": dateKey,
+        "sheetContext.columnKey": columnKey
+      }));
+
+      const existingMarkKey = String(record?.symbolicMark?.markKey || "").trim();
+      const targetMarkKey = requestedMarkKey || existingMarkKey;
+      if (!targetMarkKey) {
+        return respondMutation(req, res, 422, {
+          success: false,
+          message: "Select a grading mark before saving."
+        }, redirectPath);
+      }
+
+      const markSnapshot = buildSymbolicMarkSnapshot(scale, targetMarkKey);
+      if (!markSnapshot) {
+        return respondMutation(req, res, 422, {
+          success: false,
+          message: "Selected grading mark is not available."
+        }, redirectPath);
+      }
+
+      const selectedMark = scale.marks.find((mark) => String(mark.key) === markSnapshot.markKey) || null;
+      const canUseInactiveMark = Boolean(record && existingMarkKey && existingMarkKey === markSnapshot.markKey);
+      if (selectedMark && !selectedMark.active && !canUseInactiveMark) {
+        return respondMutation(req, res, 422, {
+          success: false,
+          message: "That grading mark is currently hidden."
+        }, redirectPath);
+      }
+
+      const { grade, maxScore } = getStoredScoreFromMarkSnapshot(markSnapshot);
+      const assignmentName = buildGradebookAssignmentName(systemKey, columnDefinition, dateKey);
+      const feedbackContent = note;
+      const assignmentDescription = systemKey === SUBAC_SYSTEM_KEY
+        ? [portion, reviewer].filter(Boolean).join(" • ")
+        : columnDefinition.longLabel;
+
+      if (!record) {
+        record = new Grade({
+          schoolId: req.schoolId,
+          students: [{
+            _id: studentDoc._id,
+            name: `${studentDoc.firstName || ""} ${studentDoc.lastName || ""}`.trim() || studentDoc.userName || "Student"
+          }],
+          classInfo: [{
+            _id: classDoc._id,
+            name: classDoc.className
+          }]
+        });
+      }
+
+      record.subject = columnDefinition.subjectLabel;
+      record.subjectKey = columnDefinition.subjectKey;
+      record.subjectLabel = columnDefinition.subjectLabel;
+      record.gradingConfigVersion = Number(teacherSettings.currentConfigVersion || 1);
+      record.quarter = resolveGradebookQuarter(classDoc, dateKey);
+      record.Assignment = {
+        name: assignmentName,
+        description: assignmentDescription || "Gradebook entry",
+        grade,
+        maxScore,
+        categoryKey: systemKey === SUBAC_SYSTEM_KEY ? "subac-revision" : "weekly-sheet",
+        categoryLabel: systemKey === SUBAC_SYSTEM_KEY ? "Subac Revision" : "Weekly Gradebook",
+        categoryWeight: 0,
+        type: systemKey === SUBAC_SYSTEM_KEY ? "subac-revision" : "weekly-sheet"
+      };
+      record.assignedDate = entryDate;
+      record.dueDate = entryDate;
+      record.feedback = {
+        content: feedbackContent,
+        teacher: {
+          _id: req.user._id,
+          name: `${req.user.firstName || ""} ${req.user.lastName || ""}`.trim() || req.user.userName
+        }
+      };
+      record.gradingContext = {
+        teacherId: req.user._id,
+        teacherName: `${req.user.firstName || ""} ${req.user.lastName || ""}`.trim() || req.user.userName,
+        configVersion: Number(teacherSettings.currentConfigVersion || 1),
+        configCapturedAt: new Date(),
+        subject: {
+          key: columnDefinition.subjectKey,
+          label: columnDefinition.subjectLabel
+        },
+        category: {
+          key: systemKey === SUBAC_SYSTEM_KEY ? "subac-revision" : "weekly-sheet",
+          label: systemKey === SUBAC_SYSTEM_KEY ? "Subac Revision" : "Weekly Gradebook",
+          weight: 0
+        }
+      };
+      record.symbolicMark = markSnapshot;
+      record.sheetContext = {
+        mode: systemKey,
+        dateKey,
+        columnKey,
+        columnLabel: columnDefinition.label,
+        dayLabel: formatDayShort(dateKey),
+        reviewer: systemKey === SUBAC_SYSTEM_KEY ? reviewer : "",
+        portion: systemKey === SUBAC_SYSTEM_KEY ? portion : ""
+      };
+      record.active = true;
+
+      await record.save();
+
+      const classGradeDocs = await Grade.find(scopedQuery(req, {
+        "classInfo._id": classId
+      })).lean();
+      const preparedClassDoc = {
+        ...classDoc.toObject(),
+        teacherSettings,
+        currentConfigVersion: Number(teacherSettings.currentConfigVersion || 1)
+      };
+      const rowPayload = buildRowUpdatePayload({
+        classDoc: preparedClassDoc,
+        studentId,
+        classGradeDocs,
+        rankLookup: {}
+      });
+
+      return respondMutation(req, res, 200, {
+        success: true,
+        message: "Gradebook cell saved.",
+        cell: {
+          gradeId: String(record._id),
+          dateKey,
+          systemKey,
+          columnKey,
+          markKey: markSnapshot.markKey
+        },
+        updatedRow: rowPayload.row,
+        subacDateColumns: rowPayload.subacDateColumns
+      }, redirectPath);
+    } catch (err) {
+      console.error("Error saving teacher gradebook cell:", err);
+      return respondMutation(req, res, 500, {
+        success: false,
+        message: "Could not save the gradebook cell."
+      }, redirectPath);
+    }
+  },
   createGrade: async (req, res) => {
     try {
+      const redirectPath = resolveTeacherGradeRedirect(req);
       const {
         student,
         classId,
@@ -1453,28 +2327,28 @@ module.exports = {
         String(gradeValueRaw).trim() === ""
       ) {
         req.flash("error", "Missing required fields.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       // Validate quarter
       if (!['Q1', 'Q2', 'Q3', 'Q4'].includes(quarter)) {
         req.flash("error", "Invalid quarter selected.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       if (!Number.isFinite(gradeValue) || gradeValue < 0) {
         req.flash("error", "Grade must be a valid number greater than or equal to 0.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       if (!Number.isFinite(maxScoreValue) || maxScoreValue <= 0) {
         req.flash("error", "Max score must be greater than 0.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       if (gradeValue > maxScoreValue) {
         req.flash("error", "Grade cannot be greater than max score.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       const parsedAssignedDate = assignedDate ? new Date(assignedDate) : null;
@@ -1482,17 +2356,17 @@ module.exports = {
 
       if (parsedAssignedDate && Number.isNaN(parsedAssignedDate.getTime())) {
         req.flash("error", "Assigned date is invalid.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       if (parsedDueDate && Number.isNaN(parsedDueDate.getTime())) {
         req.flash("error", "Due date is invalid.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       if (parsedAssignedDate && parsedDueDate && parsedDueDate < parsedAssignedDate) {
         req.flash("error", "Due date cannot be earlier than assigned date.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       // Fetch student + class docs to store names
@@ -1503,12 +2377,12 @@ module.exports = {
 
       if (!studentDoc || !classDoc) {
         req.flash("error", "Student or class not found.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       if (!isTeacherAssignedToClass(classDoc, req.user._id)) {
         req.flash("error", "You are not authorized to add grades for this class.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       const teacherSettings = resolveTeacherSettings(classDoc, req.user._id);
@@ -1521,7 +2395,7 @@ module.exports = {
       );
       if (!selectedSubject) {
         req.flash("error", "Selected subject is not active for this class.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       const selectedCategory = activeCategories.find(
@@ -1529,13 +2403,13 @@ module.exports = {
       );
       if (!selectedCategory) {
         req.flash("error", "Selected grading category is not active for this class.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       const isStudentInClass = classDoc.students?.some(s => s._id.toString() === studentDoc._id.toString());
       if (!isStudentInClass) {
         req.flash("error", "Selected student is not enrolled in this class.");
-        return res.redirect("back");
+        return res.redirect(redirectPath);
       }
 
       // Create grade following schema
@@ -1598,12 +2472,12 @@ module.exports = {
       await newGrade.save();
 
       req.flash("success", "Grade saved successfully.");
-      res.redirect("/teacher/manage-grades");
+      res.redirect(redirectPath);
 
     } catch (err) {
       console.error("Error saving grade:", err);
       req.flash("error", "Could not save grade.");
-      res.redirect("back");
+      res.redirect(resolveTeacherGradeRedirect(req));
     }
   },
   updateTeacherClassCustomization: async (req, res) => {
@@ -1787,12 +2661,14 @@ module.exports = {
         return res.redirect('/student/missions');
       }
 
+      await sweepExpiredMissionAttempts({ schoolId: req.schoolId });
+
       const [studentDoc, missionDoc] = await Promise.all([
         User.findOne(scopedIdQuery(req, req.user._id, { role: "student" }))
           .select("_id points xp rank manualRank rankOverrideEnabled")
           .lean(),
         Mission.findOne(scopedIdQuery(req, missionId))
-          .select("_id title rank")
+          .select("_id title rank dueDate active.studentInfo")
           .lean()
       ]);
 
@@ -1815,10 +2691,31 @@ module.exports = {
         return res.redirect('/student/missions');
       }
 
+      const missionDeadline = getMissionAutoFailDeadline(missionDoc?.dueDate);
+      if (missionDeadline && Date.now() > missionDeadline.getTime()) {
+        req.flash("error", "This mission deadline has passed.");
+        return res.redirect('/student/missions');
+      }
+
+      const existingEntry = (missionDoc?.active?.studentInfo || []).find(
+        (entry) => String(entry?._id || "") === String(req.user?._id || "")
+      );
+      const existingStatusKey = normalizeMissionAttemptStatusKey(existingEntry?.status, Boolean(existingEntry));
+
+      if (existingStatusKey === "auto_failed" || existingStatusKey === "failed") {
+        req.flash("error", "This mission attempt was closed after the deadline. Ask your teacher to reopen it.");
+        return res.redirect('/student/missions');
+      }
+
+      if (existingEntry) {
+        console.log(`Mission ${missionId} already has an entry for student ${req.user._id}`);
+        return res.redirect('/student/missions');
+      }
+
       await Mission.findOneAndUpdate(
         scopedIdQuery(req, missionId),
         {
-          $addToSet: {
+          $push: {
             "active.studentInfo": {
               _id: req.user._id,
               name: `${req.user.firstName} ${req.user.lastName}`,
@@ -1850,12 +2747,25 @@ module.exports = {
         return res.redirect("/student/missions");
       }
 
+      await sweepExpiredMissionAttempts({ schoolId: req.schoolId });
+
       // Grab mission info
-      const mission = await Mission.findOne(scopedIdQuery(req, missionId)).lean();
+      const mission = await Mission.findOne(scopedIdQuery(req, missionId))
+        .select("_id title pointsXP dueDate active.studentInfo")
+        .lean();
       console.log("mission from DB:", mission);
 
       if (!mission) {
         console.log("mission not found in database");
+        return res.redirect("/student/missions");
+      }
+
+      const currentAttempt = (mission?.active?.studentInfo || []).find(
+        (entry) => String(entry?._id || "") === String(req.user?._id || "")
+      );
+      const currentStatusKey = normalizeMissionAttemptStatusKey(currentAttempt?.status, Boolean(currentAttempt));
+      if (currentStatusKey === "auto_failed" || currentStatusKey === "failed") {
+        req.flash("error", "This mission attempt was auto-failed after the deadline. Ask your teacher to reopen it.");
         return res.redirect("/student/missions");
       }
 
@@ -1870,10 +2780,13 @@ module.exports = {
           _id: missionId,
           schoolId: req.schoolId,
           "active.studentInfo._id": req.user._id,
-          "active.studentInfo.status": "started"
+          "active.studentInfo.status": { $in: ["started", "in-progress", "active"] }
         },
         {
-          $set: { "active.studentInfo.$.status": "complete" }
+          $set: {
+            "active.studentInfo.$.status": "complete",
+            "active.studentInfo.$.completedAt": new Date()
+          }
         },
         { new: true }
       );
@@ -2382,34 +3295,47 @@ module.exports = {
   deleteUser: async (req, res) => {
     try {
       const userID = req.params.id;
+      const redirectPath = "/admin/users";
       if (req.user.role !== "admin") {
-        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/users");
+        return respondMutation(req, res, 403, { message: "Not authorized." }, redirectPath);
       }
 
-      const user = await User.findOne(scopedIdQuery(req, userID));
-      if (!user) return respondMutation(req, res, 404, { message: "User not found." }, "/admin/users");
+      if (String(req.user._id) === String(userID)) {
+        return respondMutation(req, res, 400, { message: "You cannot delete your own account." }, redirectPath);
+      }
 
-      const before = {
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        userName: user.userName || "",
-        email: user.email || "",
-        role: user.role
-      };
+      const user = await User.findOne(scopedIdQuery(req, userID, { includeDeleted: true }));
+      if (!user) return respondMutation(req, res, 404, { message: "User not found." }, redirectPath);
+      if (isUserSoftDeleted(user)) {
+        return respondMutation(req, res, 409, { message: "User is already deleted." }, redirectPath);
+      }
 
+      const before = buildUserLifecycleSnapshot(user);
+      const deletedReason = normalizeDeletedReason(req.body?.deletedReason);
+
+      user.isDeleted = true;
       user.deletedAt = new Date();
       user.deletedBy = req.user._id;
+      user.deletedReason = deletedReason;
+      user.restoredAt = null;
+      user.restoredBy = null;
       await user.save();
 
+      const after = buildUserLifecycleSnapshot(user);
       await logAdminAction(req, {
         action: "admin.user.soft_delete",
         targetType: "user",
         targetId: user._id,
         before,
-        after: { ...before, deletedAt: user.deletedAt }
+        after,
+        diff: simpleDiff(before, after)
       });
 
-      return respondMutation(req, res, 200, { message: "User deleted." }, "/admin/users");
+      if (isHtmlRequest(req)) {
+        req.flash("success", "User moved to deleted accounts.");
+      }
+
+      return respondMutation(req, res, 200, { message: "User moved to deleted accounts." }, redirectPath);
 
     } catch (err) {
       console.error(err);
@@ -2453,11 +3379,15 @@ module.exports = {
   },
   restoreUser: async (req, res) => {
     try {
+      const redirectPath = resolveUsersRedirectPath(req);
       if (req.user.role !== "admin") {
-        return respondMutation(req, res, 403, { message: "Not authorized." }, "/admin/users");
+        return respondMutation(req, res, 403, { message: "Not authorized." }, redirectPath);
       }
       const user = await User.findOne(scopedIdQuery(req, req.params.id, { includeDeleted: true }));
-      if (!user) return respondMutation(req, res, 404, { message: "User not found." }, "/admin/users");
+      if (!user) return respondMutation(req, res, 404, { message: "User not found." }, redirectPath);
+      if (!isUserSoftDeleted(user)) {
+        return respondMutation(req, res, 409, { message: "Only deleted users can be restored." }, redirectPath);
+      }
 
       const emailNormalized = user.emailNormalized || normalizeEmail(user.email);
       if (emailNormalized) {
@@ -2473,7 +3403,7 @@ module.exports = {
             res,
             409,
             { error: "conflict", field: "email", message: "Email already exists for this school." },
-            "/admin/users"
+            redirectPath
           );
         }
       }
@@ -2492,7 +3422,7 @@ module.exports = {
             res,
             409,
             { error: "conflict", field: "userName", message: "Username already exists for this school." },
-            "/admin/users"
+            redirectPath
           );
         }
       }
@@ -2511,7 +3441,7 @@ module.exports = {
             res,
             409,
             { error: "conflict", field: "employeeId", message: "Employee ID already exists for this school." },
-            "/admin/users"
+            redirectPath
           );
         }
       }
@@ -2530,26 +3460,110 @@ module.exports = {
             res,
             409,
             { error: "conflict", field: "studentNumber", message: "Student number already exists for this school." },
-            "/admin/users"
+            redirectPath
           );
         }
       }
 
+      const before = buildUserLifecycleSnapshot(user);
+      user.isDeleted = false;
       user.deletedAt = null;
       user.deletedBy = null;
+      user.deletedReason = "";
+      user.restoredAt = new Date();
+      user.restoredBy = req.user._id;
       await user.save();
+
+      const after = buildUserLifecycleSnapshot(user);
       await logAdminAction(req, {
         action: "admin.user.restore",
         targetType: "user",
         targetId: user._id,
-        before: { deletedAt: new Date() },
-        after: { deletedAt: null }
+        before,
+        after,
+        diff: simpleDiff(before, after)
       });
-      return respondMutation(req, res, 200, { message: "User restored." }, "/admin/users");
+
+      if (isHtmlRequest(req)) {
+        req.flash("success", "User restored successfully.");
+      }
+
+      return respondMutation(req, res, 200, { message: "User restored." }, redirectPath);
     } catch (err) {
       console.error(err);
-      if (err.code === 11000) return conflictResponse(req, res, "/admin/users", err);
-      return respondMutation(req, res, 500, { message: err.message || "Error restoring user." }, "/admin/users");
+      const redirectPath = resolveUsersRedirectPath(req);
+      if (err.code === 11000) return conflictResponse(req, res, redirectPath, err);
+      return respondMutation(req, res, 500, { message: err.message || "Error restoring user." }, redirectPath);
+    }
+  },
+  permanentDeleteUser: async (req, res) => {
+    try {
+      const redirectPath = resolveUsersRedirectPath(req);
+      if (req.user.role !== "admin") {
+        return respondMutation(req, res, 403, { message: "Not authorized." }, redirectPath);
+      }
+
+      if (String(req.user._id) === String(req.params.id)) {
+        return respondMutation(req, res, 400, { message: "You cannot permanently delete your own account." }, redirectPath);
+      }
+
+      const user = await User.findOne(
+        scopedIdQuery(req, req.params.id, {
+          includeDeleted: true,
+          ...deletedLifecycleFilter()
+        })
+      );
+      if (!user) {
+        const existingUser = await User.findOne(scopedIdQuery(req, req.params.id, { includeDeleted: true })).lean();
+        if (existingUser) {
+          return respondMutation(req, res, 409, { message: "Only deleted users can be permanently deleted." }, redirectPath);
+        }
+        return respondMutation(req, res, 404, { message: "User not found." }, redirectPath);
+      }
+
+      const before = buildUserLifecycleSnapshot(user);
+      const cleanupSummary = await cleanupUserReferencesForPermanentDelete(req, user);
+
+      await logAdminAction(req, {
+        action: "admin.user.permanent_delete",
+        targetType: "user",
+        targetId: user._id,
+        before,
+        after: {
+          ...before,
+          permanentlyDeleted: true,
+          cleanupSummary
+        },
+        diff: simpleDiff(before, {
+          ...before,
+          permanentlyDeleted: true,
+          cleanupSummary
+        })
+      });
+
+      await User.deleteOne(scopedIdQuery(req, req.params.id, { includeDeleted: true }));
+
+      if (isHtmlRequest(req)) {
+        req.flash("success", "Deleted account permanently removed.");
+      }
+
+      return respondMutation(
+        req,
+        res,
+        200,
+        { message: "Deleted account permanently removed.", cleanup: cleanupSummary },
+        redirectPath
+      );
+    } catch (err) {
+      console.error(err);
+      const redirectPath = resolveUsersRedirectPath(req);
+      return respondMutation(
+        req,
+        res,
+        500,
+        { message: err.message || "Error permanently deleting user." },
+        redirectPath
+      );
     }
   },
   restoreClass: async (req, res) => {

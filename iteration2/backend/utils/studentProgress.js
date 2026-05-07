@@ -6,6 +6,7 @@ const Mission = require("../models/Missions");
 const { scopedIdQuery, scopedQuery } = require("./tenant");
 const { buildDisplayName } = require("./parentLinks");
 const { buildRankSummaryFromUser } = require("./ranks");
+const { normalizeMissionAttemptStatusKey } = require("./missionDeadlines");
 
 const ATTENDANCE_COUNTED_STATUSES = new Set(["Present", "Absent", "Late", "Excused"]);
 const ATTENDANCE_PRESENT_STATUSES = new Set(["Present", "Late", "Excused"]);
@@ -239,12 +240,13 @@ function summarizeAttendanceForStudent(attendanceDocs = [], studentId = "") {
 }
 
 function normalizeMissionStatus(rawStatus = "", hasActivity = false) {
-  const normalized = String(rawStatus || "").trim().toLowerCase();
-  if (/(complete|completed|done)/.test(normalized)) return { key: "completed", label: "Completed" };
-  if (/(pending|review|approval|await)/.test(normalized)) return { key: "pending", label: "Pending Review" };
-  if (/(reject|rejected|declined)/.test(normalized)) return { key: "rejected", label: "Rejected" };
-  if (/(start|in_progress|in progress|active)/.test(normalized)) return { key: "active", label: "Active" };
-  if (hasActivity) return { key: "active", label: "Active" };
+  const statusKey = normalizeMissionAttemptStatusKey(rawStatus, hasActivity);
+  if (statusKey === "completed") return { key: "completed", label: "Completed" };
+  if (statusKey === "pending") return { key: "pending", label: "Pending Review" };
+  if (statusKey === "rejected") return { key: "rejected", label: "Rejected" };
+  if (statusKey === "auto_failed") return { key: "failed", label: "Auto-Failed" };
+  if (statusKey === "failed") return { key: "failed", label: "Failed" };
+  if (statusKey === "active") return { key: "active", label: "Active" };
   return { key: "assigned", label: "Assigned" };
 }
 
@@ -257,7 +259,8 @@ function summarizeMissionsForStudent(missionDocs = [], studentId = "", classIds 
     active: 0,
     pending: 0,
     rejected: 0,
-    completed: 0
+    completed: 0,
+    failed: 0
   };
 
   [...missionDocs]
@@ -281,6 +284,7 @@ function summarizeMissionsForStudent(missionDocs = [], studentId = "", classIds 
       if (recentRows.length < 20) {
         const updatedAt = mission.updatedAt || mission.createdAt || new Date();
         recentRows.push({
+          missionId: String(mission?._id || ""),
           title: mission?.title || "Mission",
           type: mission?.type || "General",
           category: mission?.category || "Solo",
@@ -290,6 +294,9 @@ function summarizeMissionsForStudent(missionDocs = [], studentId = "", classIds 
           dueDateLabel: mission?.dueDate ? formatDateLabel(mission.dueDate) : "No due date",
           statusKey: statusInfo.key,
           statusLabel: statusInfo.label,
+          failureReason: String(activity?.failureReason || "").trim(),
+          failedAt: activity?.failedAt || null,
+          failedAtLabel: activity?.failedAt ? formatDateTimeLabel(activity.failedAt) : "",
           updatedAt,
           updatedAtLabel: formatDateTimeLabel(updatedAt)
         });
@@ -334,10 +341,15 @@ function buildRecentActivitySummary(gradeSummary, attendanceSummary, missionSumm
   });
 
   (missionSummary?.recentRows || []).slice(0, 6).forEach((entry) => {
+    const rewardLabel = entry.statusKey === "completed"
+      ? `+${entry.pointsXP} XP`
+      : entry.statusKey === "failed"
+        ? "No XP awarded"
+        : `+${entry.pointsXP} XP`;
     events.push({
       type: "Mission",
       title: entry.title,
-      detail: `${entry.statusLabel} · +${entry.pointsXP} XP`,
+      detail: `${entry.statusLabel} · ${rewardLabel}`,
       at: entry.updatedAt,
       atLabel: formatDateTimeLabel(entry.updatedAt),
       tone: "mission"
@@ -454,6 +466,7 @@ function buildDirectoryMissionLookup({
         active: 0,
         pending: 0,
         rejected: 0,
+        failed: 0,
         completed: 0,
         total: 0,
         completionRate: null,
@@ -703,6 +716,7 @@ async function buildTeacherStudentProgressDirectoryViewModel(req, teacherId) {
           active: 0,
           pending: 0,
           rejected: 0,
+          failed: 0,
           completed: 0,
           total: 0,
           completionRate: null,
@@ -781,6 +795,7 @@ async function buildTeacherStudentProgressDirectoryViewModel(req, teacherId) {
         active: 0,
         pending: 0,
         rejected: 0,
+        failed: 0,
         completed: 0,
         total: 0,
         completionRate: null,

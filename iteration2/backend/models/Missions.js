@@ -1,5 +1,24 @@
 const mongoose = require("mongoose");
 
+const MissionActiveStudentSchema = new mongoose.Schema(
+  {
+    name: { type: String, trim: true, default: "" },
+    _id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    attempt: Number,
+    status: { type: String, default: false },
+    startedAt: Date,
+    completedAt: Date,
+    failedAt: { type: Date, default: null },
+    failureReason: { type: String, trim: true, default: "" },
+    failureType: { type: String, trim: true, default: "" },
+    graceWindowMinutes: { type: Number, default: null },
+    reopenedAt: { type: Date, default: null },
+    reopenedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    reopenReason: { type: String, trim: true, default: "" }
+  },
+  { _id: false }
+);
+
 const MissionSchema = new mongoose.Schema({
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -57,14 +76,7 @@ const MissionSchema = new mongoose.Schema({
   // Active Status
   active: {
     status: { type: Boolean, default: true },
-    studentInfo: [{
-      name: { type: String },
-      _id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      attempt: Number,
-      status: { type: String, default: false },
-      startedAt: Date,
-      completedAt: Date
-    }]
+    studentInfo: { type: [MissionActiveStudentSchema], default: [] }
   }
 
 

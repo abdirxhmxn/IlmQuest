@@ -1,117 +1,383 @@
 <%- include('../partials/studentShellStart', {
   pageTitle: 'IlmQuest Student Dashboard',
-  pageStyles: ['/css/main.css'],
+  pageStyles: ['/css/pages/student-dashboard.css'],
   activePage: 'home',
   user
 }) %>
 
 <%
-  const announcements = Array.isArray(studentAnnouncements) ? studentAnnouncements : [];
-  const summary = dashboardSummary || {};
-  const classCount = Number(summary.classCount || 0);
-  const gradeCount = Number(summary.gradeCount || 0);
-  const missionCount = Number(summary.missionCount || 0);
-  const missionInProgress = Number(summary.missionInProgress || 0);
-  const missionCompleted = Number(summary.missionCompleted || 0);
-  const totalXp = Number(summary.totalXp || 0);
-  const currentRankLabel = String(summary.currentRankLabel || `${String(user?.rank || "F").toUpperCase()} Rank`);
-  const gradeAverage = Number.isFinite(Number(summary.gradeAverage)) ? `${Number(summary.gradeAverage).toFixed(1)}%` : "No grades yet";
-  const attendanceRate = Number.isFinite(Number(summary.attendanceRate)) ? `${Number(summary.attendanceRate).toFixed(1)}%` : "No attendance yet";
-  const attendanceDetail = Number(summary.attendanceTotal || 0) > 0
-    ? `${Number(summary.attendancePresent || 0)} of ${Number(summary.attendanceTotal || 0)} marked present`
-    : "Attendance records will appear once teachers publish attendance.";
+  const summary =
+    typeof dashboardSummary !== "undefined" ? dashboardSummary : {};
+
+  const dashboard =
+    typeof studentDashboard !== "undefined" ? studentDashboard : {};
+
+  const hero = dashboard.hero || {};
+
+  const quickStats = Array.isArray(dashboard.quickStats) ? dashboard.quickStats.slice(0, 4) : [];
+  const todayLessons = Array.isArray(dashboard.todayLessons) ? dashboard.todayLessons : [];
+  const updates =
+    typeof recentUpdates !== "undefined" && Array.isArray(recentUpdates)
+      ? recentUpdates
+      : (Array.isArray(dashboard.recentUpdates) ? dashboard.recentUpdates : []);
+  const missionControl = dashboard.missionControl || {};
+  const leaderboard = dashboard.leaderboard || {};
+  const leaderboardStudents = Array.isArray(leaderboard.students) ? leaderboard.students : [];
+  const missionList = Array.isArray(dashboard.missionList) ? dashboard.missionList : [];
+  const inspiration = dashboard.inspiration || {};
+  const verse = inspiration.verse || verses || {};
+  const reflection = inspiration.reflection || reflections || {};
+  const emptyState = dashboard.emptyState || {};
+  const hasClasses = Boolean(emptyState.hasClasses || Number(summary.classCount || 0) > 0);
+  const hasMissions = Boolean(emptyState.hasMissions || missionList.length > 0);
+  const studentFirstName = String(user?.firstName || 'Student').trim() || 'Student';
+  const leaderboardPosition = Number.isFinite(Number(leaderboard.currentPosition))
+    ? Number(leaderboard.currentPosition)
+    : null;
+
+  function dashboardIcon(iconName) {
+    const icons = {
+      quran: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6Z"/><path d="M6 4.5V20A2 2 0 0 0 8 22h10"/></svg>',
+      streak: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 6 14h5l-1 8 8-13h-5l0-7Z"/></svg>',
+      points: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.5 6.4 20.2l1.1-6.2L3 9.6l6.2-.9Z"/></svg>',
+      rank: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20h10"/><path d="M12 4v11"/><path d="m8 8 4-4 4 4"/></svg>'
+    };
+
+    return icons[iconName] || icons.points;
+  }
+
+  function dashboardUpdateIcon(iconName) {
+    const icons = {
+      announcement: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5V9a2 2 0 0 1 2-2h2l7-3v16l-7-3H6a2 2 0 0 1-2-2Z"/><path d="M15 9.5c1.6.7 2.5 2 2.5 3s-.9 2.3-2.5 3"/></svg>',
+      grade: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10l2 3v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>',
+      mission: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="m10 9 5 3-5 3Z"/></svg>'
+    };
+
+    return icons[iconName] || icons.announcement;
+  }
 %>
 
 <section class="student-page-shell student-dashboard-page">
   <header class="student-page-header">
     <div class="student-page-title">
       <h1>Student Dashboard</h1>
-      <p>Track your learning journey, mission streak, and classroom updates in one place.</p>
+      <p>Stay focused on today&apos;s lessons, your mission momentum, and the progress that matters most.</p>
     </div>
     <div class="student-top-actions">
-      <a class="student-header-link" href="/student/missions">Open Missions</a>
-      <a class="student-header-link" href="/student/grades">View Grades</a>
+      <a class="student-header-link" href="/student/missions">Mission Center</a>
+      <a class="student-header-link" href="/student/grades">Grades</a>
     </div>
   </header>
 
-  <main class="student-page">
-    <section class="grid-top">
-      <article class="card student-summary-card">
-        <p class="summary-kicker">Current Rank</p>
-        <h2 class="summary-value"><%= currentRankLabel %></h2>
-        <p class="summary-note"><%= totalXp.toLocaleString() %> XP earned</p>
-      </article>
-
-      <article class="card student-summary-card">
-        <p class="summary-kicker">Missions</p>
-        <h2 class="summary-value"><%= missionCount %></h2>
-        <p class="summary-note"><%= missionInProgress %> in progress • <%= missionCompleted %> completed</p>
-      </article>
-
-      <article class="card student-summary-card">
-        <p class="summary-kicker">Grades</p>
-        <h2 class="summary-value"><%= gradeAverage %></h2>
-        <p class="summary-note"><%= gradeCount %> graded assignment<%= gradeCount === 1 ? '' : 's' %> published</p>
-      </article>
-
-      <article class="card student-summary-card">
-        <p class="summary-kicker">Attendance</p>
-        <h2 class="summary-value"><%= attendanceRate %></h2>
-        <p class="summary-note"><%= attendanceDetail %></p>
-      </article>
+  <main class="student-page student-dashboard-layout">
+    <section class="student-hero-card student-card" aria-labelledby="student-dashboard-hero-title">
+      <div class="student-hero-copy">
+        <p class="student-hero-kicker">Learning Journey</p>
+        <h2 id="student-dashboard-hero-title"><%= hero.greeting || `Keep going, ${studentFirstName}` %></h2>
+        <p class="student-hero-message"><%= hero.streakMessage || 'Every mission you finish builds momentum for the next one.' %></p>
+      </div>
+      <div class="student-hero-progress">
+        <div class="hero-progress-head">
+          <div>
+            <p class="hero-progress-label"><%= hero.dailyGoalLabel || 'Daily goal progress' %></p>
+            <strong><%= hero.dailyGoalDetail || 'Progress will appear here as lessons and missions update.' %></strong>
+          </div>
+          <span class="hero-progress-value"><%= Number(hero.dailyGoalProgress || 0) %>%</span>
+        </div>
+        <progress class="dashboard-progress dashboard-progress-hero" max="100" value="<%= Number(hero.dailyGoalProgress || 0) %>"></progress>
+        <div class="student-hero-meta">
+          <div class="student-hero-meta-item">
+            <span>Next Rank</span>
+            <strong><%= hero.nextRankLabel || 'Maximum Rank' %></strong>
+          </div>
+          <div class="student-hero-meta-item">
+            <span>Progress</span>
+            <strong><%= hero.rankProgressLabel || '0 / 0 XP' %></strong>
+          </div>
+          <div class="student-hero-meta-item">
+            <span>XP Remaining</span>
+            <strong><%= Number(hero.xpToNextRank || 0).toLocaleString() %></strong>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <% if (!classCount) { %>
-      <section class="card student-empty-inline">
-        <h3>No Class Enrollment Yet</h3>
-        <p>Your dashboard is active, but you are not currently enrolled in a class. Once enrollment is completed, grades, missions, attendance, and library updates will appear automatically.</p>
+    <section class="student-stats-grid reveal-stagger" aria-label="Quick stats">
+      <% quickStats.forEach((stat) => { %>
+        <article class="student-stat-card student-card reveal">
+          <span class="student-stat-icon" aria-hidden="true"><%- dashboardIcon(stat.icon) %></span>
+          <div class="student-stat-copy">
+            <p class="student-stat-label"><%= stat.label %></p>
+            <h2 class="student-stat-value"><%= stat.value %></h2>
+            <p class="student-stat-note"><%= stat.note %></p>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+
+    <% if (!hasClasses) { %>
+      <section class="student-dashboard-notice student-card" aria-live="polite">
+        <h3>No class enrollment yet</h3>
+        <p>Your dashboard is ready. As soon as you are enrolled in a class, today&apos;s lessons, leaderboard progress, grades, and missions will appear automatically.</p>
       </section>
     <% } %>
 
-    <section class="grid-bottom">
-      <div class="card">
-        <h3>Verse of the Day</h3>
-        <% if (verses?.arabic || verses?.translation) { %>
-          <p class="ayah"><%= verses?.arabic || '' %></p>
-          <p class="translation"><%= verses?.translation || '' %></p>
-          <small class="meta"><%= verses?.surah || '' %> — <%= verses?.reference || '' %></small>
-        <% } else { %>
-          <p class="translation">No verse is available right now. Check back soon for daily inspiration.</p>
-        <% } %>
+    <section class="student-section student-card reveal" aria-labelledby="student-dashboard-lessons">
+      <div class="student-section-head">
+        <div>
+          <p class="student-section-kicker">Primary Focus</p>
+          <h2 id="student-dashboard-lessons">Today&apos;s Lessons</h2>
+          <p>Stay with the lessons that are most important right now.</p>
+        </div>
+        <a class="student-section-link" href="/student/missions">Open Mission Center</a>
       </div>
-      <div class="card">
-        <h3>Reminder of the Day</h3>
-        <% if (reflections?.arabic || reflections?.translation) { %>
-          <p class="ayah"><%= reflections?.arabic || '' %></p>
-          <p class="translation"><%= reflections?.translation || '' %></p>
-          <small class="meta"><%= reflections?.reference || '' %> — <%= reflections?.hadithNumber || '' %></small>
-        <% } else { %>
-          <p class="translation">No reminder is available right now. Check back soon for daily reflection.</p>
-        <% } %>
-      </div>
+
+      <% if (!todayLessons.length) { %>
+        <div class="student-empty-state">
+          <h3><%= hasClasses ? 'No lessons unlocked yet' : 'Waiting for your first class' %></h3>
+          <p><%= hasClasses
+            ? 'As your teachers publish missions, your focused lesson list will appear here first.'
+            : 'Once you are assigned to a class, this section will turn into your daily lesson checklist.' %></p>
+        </div>
+      <% } else { %>
+        <div class="lesson-list">
+          <% todayLessons.forEach((lesson) => { %>
+            <article class="lesson-row">
+              <div class="lesson-row-main">
+                <div class="lesson-row-copy">
+                  <div class="lesson-row-head">
+                    <h3><%= lesson.title %></h3>
+                    <span class="status-pill status-<%= lesson.statusKey %>"><%= lesson.statusLabel %></span>
+                  </div>
+                  <p><%= lesson.subtitle %></p>
+                </div>
+                <div class="lesson-row-progress">
+                  <progress class="dashboard-progress" max="100" value="<%= Number(lesson.progressPercent || 0) %>"></progress>
+                  <span><%= lesson.progressLabel %></span>
+                </div>
+              </div>
+              <div class="lesson-row-footer">
+                <p><strong>Reward:</strong> +<%= Number(lesson.pointsXP || 0) %> XP • <%= lesson.teacherName || 'Teacher' %></p>
+                <a href="<%= lesson.actionHref || '/student/missions' %>">Continue</a>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
     </section>
 
-    <aside class="updates">
-      <h2>Community Updates</h2>
-      <div class="panel">
-        <% if (!announcements.length) { %>
-          <p class="updates-empty">No announcements posted yet.</p>
+    <section class="student-dashboard-split student-dashboard-split-top">
+      <section class="student-section student-card inspiration-card" aria-labelledby="student-dashboard-inspiration">
+        <div class="student-section-head student-section-head-centered">
+          <div>
+            <p class="student-section-kicker">Daily Inspiration</p>
+            <h2 id="student-dashboard-inspiration">Verse of the Day</h2>
+            <p>A calm moment to recenter before the next lesson.</p>
+          </div>
+        </div>
+
+        <% if (verse?.arabic || verse?.translation || reflection?.arabic || reflection?.translation) { %>
+          <% if (verse?.arabic || verse?.translation) { %>
+            <div class="inspiration-block">
+              <p class="inspiration-label">Verse of the Day</p>
+              <% if (verse?.arabic) { %>
+                <p class="inspiration-arabic"><%= verse.arabic %></p>
+              <% } %>
+              <% if (verse?.translation) { %>
+                <p class="inspiration-translation"><%= verse.translation %></p>
+              <% } %>
+              <% if (verse?.surah || verse?.reference) { %>
+                <p class="inspiration-meta"><%= verse?.surah || '' %><%= verse?.surah && verse?.reference ? ' • ' : '' %><%= verse?.reference || '' %></p>
+              <% } %>
+            </div>
+          <% } %>
+
+          <% if (reflection?.arabic || reflection?.translation) { %>
+            <div class="inspiration-divider" aria-hidden="true"></div>
+            <div class="inspiration-block">
+              <p class="inspiration-label">Reflection</p>
+              <% if (reflection?.arabic) { %>
+                <p class="inspiration-arabic"><%= reflection.arabic %></p>
+              <% } %>
+              <% if (reflection?.translation) { %>
+                <p class="inspiration-translation"><%= reflection.translation %></p>
+              <% } %>
+              <% if (reflection?.reference || reflection?.hadithNumber) { %>
+                <p class="inspiration-meta"><%= reflection?.reference || '' %><%= reflection?.reference && reflection?.hadithNumber ? ' • ' : '' %><%= reflection?.hadithNumber || '' %></p>
+              <% } %>
+            </div>
+          <% } %>
         <% } else { %>
-          <ul class="updates-list">
-            <% announcements.forEach((announcement) => { %>
-              <li class="update-item">
-                <div class="update-head">
-                  <strong><%= announcement.title %></strong>
-                  <% if (announcement.isPinned) { %><span class="update-chip">Pinned</span><% } %>
+          <div class="student-empty-state student-empty-state-center">
+            <h3>Inspiration will appear here soon</h3>
+            <p>Daily verses and reflections are not available right now. Check back later for a fresh reminder.</p>
+          </div>
+        <% } %>
+      </section>
+
+      <section class="student-section student-card updates-card" aria-labelledby="student-dashboard-updates">
+        <div class="student-section-head">
+          <div>
+            <p class="student-section-kicker">Recent Updates</p>
+            <h2 id="student-dashboard-updates">Recent Updates</h2>
+            <p>See what changed most recently across your school day.</p>
+          </div>
+        </div>
+
+        <% if (!updates.length) { %>
+          <div class="student-empty-state">
+            <h3>No recent updates yet</h3>
+            <p>Announcements, grades, and mission activity will appear here.</p>
+          </div>
+        <% } else { %>
+          <ol class="updates-timeline">
+            <% updates.forEach((item) => { %>
+              <li class="timeline-item tone-<%= item.type || 'neutral' %>">
+                <span class="timeline-marker" aria-hidden="true"></span>
+                <div class="timeline-content">
+                  <div class="timeline-head">
+                    <p class="timeline-type">
+                      <span class="timeline-type-icon" aria-hidden="true"><%- dashboardUpdateIcon(item.iconKey || item.type) %></span>
+                      <span><%= item.typeLabel || 'Update' %></span>
+                    </p>
+                    <time><%= item.timestampLabel || '' %></time>
+                  </div>
+                  <h3>
+                    <% if (item.href) { %>
+                      <a class="timeline-title-link" href="<%= item.href %>"><%= item.title %></a>
+                    <% } else { %>
+                      <%= item.title %>
+                    <% } %>
+                  </h3>
+                  <% if (item.description) { %>
+                    <p><%= item.description %></p>
+                  <% } %>
+                  <% if (item.isPinned) { %>
+                    <span class="timeline-chip">Pinned</span>
+                  <% } %>
                 </div>
-                <p><%= announcement.summary || announcement.content || '' %></p>
-                <small>Published <%= announcement.publishLabel || announcement.createdAtLabel %></small>
               </li>
             <% }) %>
-          </ul>
+          </ol>
         <% } %>
+      </section>
+    </section>
+
+    <section class="student-dashboard-split student-dashboard-split-bottom">
+      <section class="student-section student-card mission-control-card" aria-labelledby="student-dashboard-mission-control">
+        <div class="student-section-head">
+          <div>
+            <p class="student-section-kicker">Momentum</p>
+            <h2 id="student-dashboard-mission-control">Mission Control</h2>
+            <p>Keep your activity light, visible, and easy to act on.</p>
+          </div>
+        </div>
+
+        <div class="mission-control-stats">
+          <article>
+            <span>Active</span>
+            <strong><%= Number(missionControl.active || 0) %></strong>
+          </article>
+          <article>
+            <span>Completed</span>
+            <strong><%= Number(missionControl.completed || 0) %></strong>
+          </article>
+          <article>
+            <span>Points</span>
+            <strong><%= Number(missionControl.points || 0).toLocaleString() %></strong>
+          </article>
+          <article>
+            <span>Streak</span>
+            <strong><%= Number(missionControl.streak || 0) %></strong>
+          </article>
+        </div>
+
+        <p class="mission-control-note">Progress toward <strong><%= missionControl.nextRankLabel || 'your next rank' %></strong>: <%= missionControl.progressLabel || '0 / 0 XP' %></p>
+      </section>
+
+      <section class="student-section student-card leaderboard-card" aria-labelledby="student-dashboard-leaderboard">
+        <div class="student-section-head">
+          <div>
+            <p class="student-section-kicker">Class Standing</p>
+            <h2 id="student-dashboard-leaderboard">Leaderboard</h2>
+            <p><%= leaderboardPosition
+              ? `You are currently #${leaderboardPosition} of ${Number(leaderboard.totalStudents || 0)} students.`
+              : 'Class rankings will appear as students earn XP.' %></p>
+          </div>
+        </div>
+
+        <% if (!leaderboardStudents.length) { %>
+          <div class="student-empty-state student-empty-state-center">
+            <h3>No leaderboard data yet</h3>
+            <p>As soon as your class starts earning XP, the top learners will appear here.</p>
+          </div>
+        <% } else { %>
+          <div class="leaderboard-podium leaderboard-size-<%= leaderboardStudents.length %>">
+            <% leaderboardStudents.forEach((student) => { %>
+              <article class="leaderboard-item leaderboard-place-<%= student.position %> <%= student.isCurrentStudent ? 'is-current-student' : '' %>">
+                <p class="leaderboard-position">#<%= student.position %></p>
+                <h3><%= student.name %></h3>
+                <p class="leaderboard-rank"><%= student.rankLabel %></p>
+                <strong><%= Number(student.totalXp || 0).toLocaleString() %> XP</strong>
+                <% if (student.isCurrentStudent) { %>
+                  <span class="leaderboard-you">You</span>
+                <% } %>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+    </section>
+
+    <section class="student-section student-card mission-list-card" aria-labelledby="student-dashboard-missions">
+      <div class="student-section-head">
+        <div>
+          <p class="student-section-kicker">Mission Board</p>
+          <h2 id="student-dashboard-missions">Mission List</h2>
+          <p>Each mission stays full width so the next step is always clear.</p>
+        </div>
+        <a class="student-section-link" href="/student/missions">See All Missions</a>
       </div>
-    </aside>
+
+      <% if (!missionList.length) { %>
+        <div class="student-empty-state">
+          <h3><%= hasClasses ? 'No missions published yet' : 'Mission list is waiting for your first class' %></h3>
+          <p><%= hasClasses
+            ? 'When teachers publish missions for your rank, they will appear here with progress and a direct path back into the mission center.'
+            : 'Class enrollment unlocks your mission list, lesson flow, and class leaderboard.' %></p>
+        </div>
+      <% } else { %>
+        <div class="mission-stack">
+          <% missionList.forEach((mission) => { %>
+            <article class="mission-list-item">
+              <div class="mission-list-main">
+                <div class="mission-list-copy">
+                  <div class="mission-list-head">
+                    <h3><%= mission.title %></h3>
+                    <span class="status-pill status-<%= mission.statusKey %>"><%= mission.statusLabel %></span>
+                  </div>
+                  <p><%= mission.description || `${mission.type} mission with ${mission.rankLabel} difficulty.` %></p>
+                  <div class="mission-tag-row">
+                    <% mission.tags.forEach((tag) => { %>
+                      <span class="mission-tag"><%= tag %></span>
+                    <% }) %>
+                    <span class="mission-time-chip"><%= mission.timeRemainingLabel || mission.dueDateLabel %></span>
+                  </div>
+                </div>
+                <div class="mission-list-side">
+                  <p class="mission-points">+<%= Number(mission.pointsXP || 0) %> XP</p>
+                  <a class="mission-cta" href="<%= mission.actionHref || '/student/missions' %>"><%= mission.actionLabel || 'Continue Mission' %></a>
+                </div>
+              </div>
+              <div class="mission-list-progress">
+                <progress class="dashboard-progress" max="100" value="<%= Number(mission.progressPercent || 0) %>"></progress>
+                <span><%= mission.progressLabel %></span>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
   </main>
 </section>
 

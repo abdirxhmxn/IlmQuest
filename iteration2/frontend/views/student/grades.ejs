@@ -4,6 +4,7 @@
   activePage: 'grades',
   user
 }) %>
+<% function to12h(t) { if (!t) return ''; var p = String(t).split(':'); var h = parseInt(p[0], 10); var m = p[1] || '00'; var a = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + m + ' ' + a; } %>
 <% const safeClasses = Array.isArray(classes) ? classes : []; %>
 <% const gradeSummary = gradesSummary || {}; %>
 <% const publishedGradeCount = Number(gradeSummary.gradeCount || (Array.isArray(grades) ? grades.length : 0)); %>
@@ -62,7 +63,7 @@
                                         <%= time.day %>:
                                     </span>
                                     <span class="time">
-                                        <%= time.startTime %> – <%= time.endTime %>
+                                        <%= to12h(time.startTime) %> – <%= to12h(time.endTime) %>
                                     </span>
                                 </div>
                             <% }) %>

@@ -1,0 +1,121 @@
+<% if (!detail) { %>
+  <div class="gradebook-v1-drawer-placeholder">
+    <h3>Select a cell</h3>
+    <p>Open any cell to edit comments, metadata, and history without leaving the spreadsheet.</p>
+  </div>
+<% } else { %>
+  <div class="gradebook-v1-drawer-head">
+    <p class="gradebook-v1-kicker">Cell Details</p>
+    <h3><%= detail.studentName %></h3>
+    <p><%= detail.cell.detailLabel %> · <%= detail.periodName %></p>
+    <% if (savedMessage) { %>
+      <p class="gradebook-v1-inline-success"><%= savedMessage %></p>
+    <% } %>
+  </div>
+
+  <form
+    class="gradebook-v1-drawer-form"
+    action="/api/teacher/gradebook/cell/detail"
+    method="POST"
+    hx-post="/api/teacher/gradebook/cell/detail"
+    hx-target="#gradebookDrawerContent"
+    hx-swap="innerHTML"
+    data-gradebook-drawer-form
+  >
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="classId" value="<%= detail.classId %>">
+    <input type="hidden" name="studentId" value="<%= detail.studentId %>">
+    <input type="hidden" name="gradingPeriodId" value="<%= detail.gradingPeriodId %>">
+    <input type="hidden" name="category" value="<%= detail.cell.category %>">
+    <input type="hidden" name="dateKey" value="<%= detail.cell.dateKey || '' %>">
+    <input type="hidden" name="columnKey" value="<%= detail.cell.columnKey || '' %>">
+    <input type="hidden" name="assessmentId" value="<%= detail.cell.assessmentId || '' %>">
+    <input type="hidden" name="clientEventId" value="" data-gradebook-client-event-id>
+
+    <label>
+      <span>Mark</span>
+      <select name="markKey">
+        <option value="">— Clear —</option>
+        <% (detail.options || []).forEach((option) => { %>
+          <option value="<%= option.key %>" <%= detail.cell.markKey === option.key ? 'selected' : '' %>>
+            <%= option.symbol %><%= option.label ? ` · ${option.label}` : '' %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <% if (detail.cell.category === 'subac') { %>
+      <div class="gradebook-v1-drawer-grid">
+        <label>
+          <span>Reviewer</span>
+          <input type="text" name="reviewer" maxlength="120" value="<%= detail.cell.reviewer || '' %>">
+        </label>
+        <label>
+          <span>Revision Portion</span>
+          <input type="text" name="revisionPortion" maxlength="120" value="<%= detail.cell.revisionPortion || '' %>">
+        </label>
+      </div>
+    <% } %>
+
+    <% if (detail.cell.category === 'behavior') { %>
+      <label>
+        <span>Behavior Subcategory</span>
+        <input type="text" name="behaviorSubcategory" maxlength="80" value="<%= detail.cell.behaviorSubcategory || '' %>" placeholder="Adab, focus, effort...">
+      </label>
+    <% } %>
+
+    <% if (detail.isClosed && detail.postCloseEditEnabled) { %>
+      <label class="gradebook-v1-drawer-check">
+        <input type="checkbox" name="postCloseEdit" value="true" <%= detail.cell.postCloseEdit ? 'checked' : '' %>>
+        <span>Mark this as a post-close edit</span>
+      </label>
+      <label>
+        <span>Post-close reason</span>
+        <textarea name="postCloseReason" rows="2" maxlength="240"><%= detail.cell.postCloseReason || '' %></textarea>
+      </label>
+    <% } %>
+
+    <label>
+      <span>Internal Comment</span>
+      <textarea name="internalComment" rows="4" maxlength="1600"><%= detail.cell.internalComment || '' %></textarea>
+    </label>
+
+    <label>
+      <span>Parent-facing Comment</span>
+      <textarea name="parentComment" rows="4" maxlength="1600"><%= detail.cell.parentComment || '' %></textarea>
+    </label>
+
+    <div class="gradebook-v1-drawer-actions">
+      <button class="gradebook-v1-btn gradebook-v1-btn-primary" type="submit">Save Details</button>
+      <button
+        class="gradebook-v1-btn gradebook-v1-btn-secondary"
+        type="button"
+        data-gradebook-undo
+        data-class-id="<%= detail.classId %>"
+        data-student-id="<%= detail.studentId %>"
+        data-grading-period-id="<%= detail.gradingPeriodId %>"
+        data-category="<%= detail.cell.category %>"
+        data-date-key="<%= detail.cell.dateKey || '' %>"
+        data-column-key="<%= detail.cell.columnKey || '' %>"
+        data-assessment-id="<%= detail.cell.assessmentId || '' %>"
+      >Undo Last Change</button>
+    </div>
+  </form>
+
+  <section class="gradebook-v1-history">
+    <h4>History</h4>
+    <% if (!(detail.history || []).length) { %>
+      <p>No audit history for this cell yet.</p>
+    <% } else { %>
+      <ul>
+        <% (detail.history || []).forEach((entry) => { %>
+          <li class="<%= entry.isCurrent ? 'is-current' : '' %>">
+            <strong><%= entry.markSymbol %></strong>
+            <span><%= entry.markLabel %></span>
+            <small><%= entry.action %> · #<%= entry.sequenceNumber %> · <%= entry.actorName %> · <%= entry.createdAtLabel %></small>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+<% } %>

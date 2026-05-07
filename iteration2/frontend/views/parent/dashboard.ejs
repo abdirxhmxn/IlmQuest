@@ -14,8 +14,18 @@
   const attendanceSummary = summary.selectedAttendanceSummary || {};
   const missionsSummary = summary.selectedMissionsSummary || {};
   const familySnapshot = summary.familySnapshot || {};
+  const paymentSummary = summary.paymentSummary || {};
+  const familyBillingSummary = paymentSummary.summary || {};
+  const billingProfile = paymentSummary.billingProfile || {};
+  const paymentRows = Array.isArray(paymentSummary.historyRows) ? paymentSummary.historyRows : [];
+  const upcomingPayments = Array.isArray(paymentSummary.upcomingRows) ? paymentSummary.upcomingRows : [];
+  const billingByChild = Array.isArray(paymentSummary.byStudent) ? paymentSummary.byStudent : [];
+  const selectedBilling = paymentSummary.selectedChildSummary || {};
   const reports = Array.isArray(summary.recentReports) ? summary.recentReports : [];
   const announcements = Array.isArray(summary.announcements) ? summary.announcements : [];
+  const selectedGradeValue = Math.max(0, Math.min(100, Number(selectedChild?.overallAverage || gradesSummary.overallAverage || 0)));
+  const selectedAttendanceValue = Math.max(0, Math.min(100, Number(selectedChild?.attendanceRate || attendanceSummary.attendanceRate || 0)));
+  const selectedMissionValue = Math.max(0, Math.min(100, Number(missionsSummary.completionRate || 0)));
   const successMessages = Array.isArray(messages?.success) ? messages.success : [];
   const errorMessages = [
     ...(Array.isArray(messages?.error) ? messages.error : []),
@@ -37,9 +47,10 @@
     </button>
     <div class="parent-page-title">
       <h1>Family Dashboard</h1>
-      <p>Track grades, attendance, missions, and report activity across your child accounts.</p>
+      <p>Track child progress, family billing, and the updates that need your attention in one calm view.</p>
     </div>
     <div class="parent-top-actions">
+      <a class="parent-action-link" href="/parent/home#payments">View Billing</a>
       <a class="parent-action-link" href="/parent/home#grades">View Grades</a>
       <a class="parent-action-link" href="/parent/home#missions">View Missions</a>
       <% if (selectedChildId) { %>
@@ -58,37 +69,174 @@
     <div class="parent-flash parent-flash-error"><%= errorMessages.join(' ') %></div>
   <% } %>
 
-  <section class="parent-card intro-card">
-    <div class="intro-headline">
-      <p class="intro-kicker">Parent Overview</p>
+  <section class="parent-card parent-hero-card">
+    <div class="parent-hero-copy">
+      <p class="parent-hero-kicker">Family Command Center</p>
       <h2>Welcome back, <%= user?.firstName || 'Parent' %></h2>
-      <p>You currently have <strong><%= children.length %></strong> linked child account(s).</p>
+      <p>Keep academic progress and payment health visible without jumping between pages or losing child context.</p>
+      <div class="parent-hero-meta">
+        <span><strong><%= children.length %></strong> linked child account(s)</span>
+        <span><strong><%= billingByChild.length %></strong> billing profile<%= billingByChild.length === 1 ? '' : 's' %> tracked</span>
+        <span><strong><%= reports.length %></strong> recent report event<%= reports.length === 1 ? '' : 's' %></span>
+      </div>
     </div>
-    <div class="intro-metrics">
+    <div class="parent-hero-stats">
       <article>
         <p class="metric-label">Family Avg Grade</p>
         <p class="metric-value"><%= Number.isFinite(Number(familySnapshot.averageGrade)) ? `${Number(familySnapshot.averageGrade).toFixed(1)}%` : 'N/A' %></p>
+        <p class="metric-note">Across all linked learners</p>
       </article>
       <article>
         <p class="metric-label">Family Avg Attendance</p>
         <p class="metric-value"><%= Number.isFinite(Number(familySnapshot.averageAttendance)) ? `${Number(familySnapshot.averageAttendance).toFixed(1)}%` : 'N/A' %></p>
+        <p class="metric-note">Present, late, and excused sessions</p>
       </article>
       <article>
-        <p class="metric-label">Missions Assigned</p>
-        <p class="metric-value"><%= Number(familySnapshot.missionAssigned || 0) %></p>
+        <p class="metric-label">Open Balance</p>
+        <p class="metric-value"><%= familyBillingSummary.totalOutstandingLabel || '$0.00' %></p>
+        <p class="metric-note"><%= familyBillingSummary.statusChip?.label || 'No bills yet' %></p>
       </article>
       <article>
         <p class="metric-label">Missions Completed</p>
         <p class="metric-value"><%= Number(familySnapshot.missionCompleted || 0) %></p>
+        <p class="metric-note"><%= Number(familySnapshot.missionAssigned || 0) %> assigned overall</p>
       </article>
     </div>
+  </section>
+
+  <section class="parent-dashboard-primary-grid reveal-stagger">
+    <article class="parent-card selected-child-panel reveal">
+      <header class="section-head section-head-spread">
+        <div>
+          <h3>Selected Child Overview</h3>
+          <p><%= selectedChild ? selectedChild.fullName : 'Choose a child to load details' %></p>
+        </div>
+        <% if (selectedChildId) { %>
+          <a class="parent-action-link parent-action-link-soft" href="/parent/child/<%= selectedChildId %>">Open Full Progress</a>
+        <% } %>
+      </header>
+
+      <% if (!selectedChild) { %>
+        <div class="parent-empty-state">Select a child from the family list to see grades, attendance, missions, and billing at a glance.</div>
+      <% } else { %>
+        <div class="selected-child-summary-grid">
+          <article class="selected-child-card">
+            <span class="selected-child-label">Class</span>
+            <strong><%= selectedChild.className %></strong>
+            <small><%= selectedChild.programType %> · <%= selectedChild.gradeLevel %></small>
+          </article>
+          <article class="selected-child-card">
+            <span class="selected-child-label">Teacher</span>
+            <strong><%= selectedChild.teacherNames %></strong>
+            <small><%= selectedChild.statusChip?.label || 'In Progress' %></small>
+          </article>
+          <article class="selected-child-card">
+            <span class="selected-child-label">Billing Status</span>
+            <strong><%= selectedBilling.statusChip?.label || 'No Bills Yet' %></strong>
+            <small><%= selectedBilling.nextDueDateLabel || 'No upcoming balance' %></small>
+          </article>
+        </div>
+
+        <div class="selected-child-progress-list">
+          <article class="selected-progress-card">
+            <div class="selected-progress-head">
+              <div>
+                <p class="metric-label">Overall Grade</p>
+                <strong><%= selectedChild.overallAverageLabel %></strong>
+              </div>
+              <span><%= Math.round(selectedGradeValue) %>%</span>
+            </div>
+            <progress class="parent-progress" max="100" value="<%= selectedGradeValue %>"></progress>
+          </article>
+
+          <article class="selected-progress-card">
+            <div class="selected-progress-head">
+              <div>
+                <p class="metric-label">Attendance Rate</p>
+                <strong><%= selectedChild.attendanceRateLabel %></strong>
+              </div>
+              <span><%= Math.round(selectedAttendanceValue) %>%</span>
+            </div>
+            <progress class="parent-progress" max="100" value="<%= selectedAttendanceValue %>"></progress>
+          </article>
+
+          <article class="selected-progress-card">
+            <div class="selected-progress-head">
+              <div>
+                <p class="metric-label">Mission Completion</p>
+                <strong><%= missionsSummary.completionRateLabel || 'N/A' %></strong>
+              </div>
+              <span><%= Math.round(selectedMissionValue) %>%</span>
+            </div>
+            <progress class="parent-progress" max="100" value="<%= selectedMissionValue %>"></progress>
+          </article>
+        </div>
+      <% } %>
+    </article>
+
+    <aside id="payments" class="parent-card family-billing-panel reveal">
+      <header class="section-head section-head-spread">
+        <div>
+          <h3>Billing Snapshot</h3>
+          <p>Review open balances and the next family payment due date.</p>
+        </div>
+        <span class="status-chip status-<%= familyBillingSummary.statusChip?.tone || 'neutral' %>"><%= familyBillingSummary.statusChip?.label || 'No Bills Yet' %></span>
+      </header>
+
+      <div class="billing-stat-grid">
+        <article>
+          <p class="metric-label">Outstanding</p>
+          <p class="metric-value"><%= familyBillingSummary.totalOutstandingLabel || '$0.00' %></p>
+          <small class="metric-note"><%= Number(familyBillingSummary.openCount || 0) %> open item<%= Number(familyBillingSummary.openCount || 0) === 1 ? '' : 's' %></small>
+        </article>
+        <article>
+          <p class="metric-label">Collected</p>
+          <p class="metric-value"><%= familyBillingSummary.totalPaidLabel || '$0.00' %></p>
+          <small class="metric-note"><%= Number(familyBillingSummary.paidCount || 0) %> paid item<%= Number(familyBillingSummary.paidCount || 0) === 1 ? '' : 's' %></small>
+        </article>
+        <article>
+          <p class="metric-label">Overdue</p>
+          <p class="metric-value"><%= familyBillingSummary.overdueAmountLabel || '$0.00' %></p>
+          <small class="metric-note"><%= Number(familyBillingSummary.overdueCount || 0) %> overdue</small>
+        </article>
+        <article>
+          <p class="metric-label">Billing Day</p>
+          <p class="metric-value">Day <%= Number(billingProfile.billingDayOfMonth || 1) %></p>
+          <small class="metric-note"><%= billingProfile.monthlyTuitionAmountLabel || '$0.00' %> monthly profile</small>
+        </article>
+      </div>
+
+      <div class="billing-office-note">
+        <strong>Need to act on a balance?</strong>
+        <p>Online payment processing is not enabled in the portal yet. Use the references below when following up with your school office.</p>
+      </div>
+
+      <% if (!upcomingPayments.length) { %>
+        <div class="parent-empty-state">No upcoming billing items are scheduled right now.</div>
+      <% } else { %>
+        <div class="billing-upcoming-list">
+          <% upcomingPayments.forEach((row) => { %>
+            <article class="billing-upcoming-item">
+              <div>
+                <h4><%= row.studentName %></h4>
+                <p><%= row.title %> · <%= row.category %></p>
+              </div>
+              <div class="billing-upcoming-meta">
+                <strong><%= row.balanceLabel %></strong>
+                <span><%= row.dueDateLabel %></span>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+    </aside>
   </section>
 
   <section class="parent-shell-grid-2 parent-overview-grid">
     <section class="parent-card section-card">
       <header class="section-head">
-        <h3>Announcements</h3>
-        <p>Pinned and recent updates relevant to your family.</p>
+        <h3>Recent Updates</h3>
+        <p>Pinned and recently published school updates relevant to your family.</p>
       </header>
       <% if (!announcements.length) { %>
         <div class="parent-empty-state">No announcements are available right now.</div>
@@ -129,6 +277,10 @@
                 <span>Grade <strong><%= child.overallAverageLabel %></strong></span>
                 <span>Attendance <strong><%= child.attendanceRateLabel %></strong></span>
               </div>
+              <div class="child-card-billing">
+                <span><%= child.billing?.totalOutstandingLabel || '$0.00' %></span>
+                <small><%= child.billing?.nextDueDateLabel || 'No upcoming balance' %></small>
+              </div>
             </a>
           <% }) %>
         </div>
@@ -156,24 +308,76 @@
 
     <article class="parent-card summary-card">
       <header class="section-head">
-        <h3>Mission Snapshot</h3>
-        <p><%= selectedChild ? selectedChild.fullName : 'No child selected' %></p>
+        <h3>Billing By Child</h3>
+        <p>Keep each learner&apos;s payment status easy to compare.</p>
       </header>
-      <% if (!selectedChild) { %>
-        <div class="parent-empty-state">Select a child to view mission progress.</div>
+      <% if (!billingByChild.length) { %>
+        <div class="parent-empty-state">No billing records are available for linked children yet.</div>
       <% } else { %>
-        <dl class="summary-list">
-          <div><dt>Total Missions</dt><dd><%= Number(missionsSummary.total || 0) %></dd></div>
-          <div><dt>Completed</dt><dd><%= Number(missionsSummary.completed || 0) %></dd></div>
-          <div><dt>Started</dt><dd><%= Number(missionsSummary.started || 0) %></dd></div>
-          <div><dt>Assigned</dt><dd><%= Number(missionsSummary.assigned || 0) %></dd></div>
-          <div><dt>Completion Rate</dt><dd><%= missionsSummary.completionRateLabel || 'N/A' %></dd></div>
-        </dl>
+        <div class="billing-by-child-list">
+          <% billingByChild.forEach((entry) => { %>
+            <article class="billing-child-row">
+              <div>
+                <h4><%= entry.studentName %></h4>
+                <p><%= entry.nextDueDateLabel || 'No upcoming balance' %></p>
+              </div>
+              <div class="billing-child-meta">
+                <strong><%= entry.totalOutstandingLabel || '$0.00' %></strong>
+                <span class="status-chip status-<%= entry.statusChip?.tone || 'neutral' %>"><%= entry.statusChip?.label || 'No Bills Yet' %></span>
+              </div>
+            </article>
+          <% }) %>
+        </div>
       <% } %>
     </article>
   </section>
 
-  <section id="grades" class="parent-card section-card">
+  <section class="parent-card section-card payment-history-card reveal">
+    <header class="section-head">
+      <h3>Payment History</h3>
+      <p>Recent family billing records with status and outstanding balance references.</p>
+    </header>
+    <% if (!paymentRows.length) { %>
+      <div class="parent-empty-state">No payment activity is available for this family yet.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="portal-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Charge</th>
+              <th>Due</th>
+              <th>Status</th>
+              <th>Expected</th>
+              <th>Paid</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% paymentRows.forEach((row) => { %>
+              <tr>
+                <td>
+                  <strong><%= row.studentName %></strong>
+                  <div class="table-meta"><%= row.category %></div>
+                </td>
+                <td>
+                  <strong><%= row.title %></strong>
+                  <div class="table-meta"><%= row.receiptReference || row.method || 'School office reference pending' %></div>
+                </td>
+                <td><%= row.dueDateLabel %></td>
+                <td><span class="status-chip status-<%= row.statusKey || 'neutral' %>"><%= row.statusLabel %></span></td>
+                <td><%= row.expectedAmountLabel %></td>
+                <td><%= row.paidAmountLabel %></td>
+                <td><strong><%= row.balanceLabel %></strong></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+  <section id="grades" class="parent-card section-card reveal">
     <header class="section-head">
       <h3>Grades</h3>
       <p>Subject-level performance and latest teacher feedback.</p>
@@ -204,8 +408,8 @@
     <% } %>
   </section>
 
-  <section class="parent-shell-grid-2 parent-detail-grid">
-    <section id="attendance" class="parent-card section-card">
+  <section class="parent-shell-grid-2 parent-detail-grid reveal-stagger">
+    <section id="attendance" class="parent-card section-card reveal">
       <header class="section-head">
         <h3>Attendance</h3>
         <p>Absence, excused, and late-arrival breakdown.</p>
@@ -234,7 +438,7 @@
       <% } %>
     </section>
 
-    <section id="reports" class="parent-card section-card">
+    <section id="reports" class="parent-card section-card reveal">
       <header class="section-head">
         <h3>Reports</h3>
         <p>Download child reports and review recent report activity.</p>
@@ -259,7 +463,7 @@
     </section>
   </section>
 
-  <section id="missions" class="parent-card section-card">
+  <section id="missions" class="parent-card section-card reveal">
     <header class="section-head">
       <h3>Missions</h3>
       <p>Read-only mission progress for the selected child.</p>

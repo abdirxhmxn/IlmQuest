@@ -19,6 +19,36 @@ const GradeContextSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const SymbolicMarkSchema = new mongoose.Schema(
+  {
+    systemKey: { type: String, trim: true, default: "" },
+    scaleName: { type: String, trim: true, default: "" },
+    scaleDescription: { type: String, trim: true, default: "" },
+    markKey: { type: String, trim: true, default: "" },
+    symbol: { type: String, trim: true, default: "" },
+    label: { type: String, trim: true, default: "" },
+    description: { type: String, trim: true, default: "" },
+    value: { type: Number, default: 0 },
+    maxValue: { type: Number, default: 0 },
+    countsTowardGrade: { type: Boolean, default: true },
+    sortOrder: { type: Number, default: 0 }
+  },
+  { _id: false }
+);
+
+const GradeSheetContextSchema = new mongoose.Schema(
+  {
+    mode: { type: String, trim: true, default: "" },
+    dateKey: { type: String, trim: true, default: "" },
+    columnKey: { type: String, trim: true, default: "" },
+    columnLabel: { type: String, trim: true, default: "" },
+    dayLabel: { type: String, trim: true, default: "" },
+    reviewer: { type: String, trim: true, default: "" },
+    portion: { type: String, trim: true, default: "" }
+  },
+  { _id: false }
+);
+
 const GradeSchema = new mongoose.Schema({
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -70,6 +100,8 @@ const GradeSchema = new mongoose.Schema({
     }
   },
   gradingContext: { type: GradeContextSchema, default: () => ({}) },
+  symbolicMark: { type: SymbolicMarkSchema, default: null },
+  sheetContext: { type: GradeSheetContextSchema, default: () => ({}) },
   active: { type: Boolean, default: true }
 }, { timestamps: true });
 
@@ -80,5 +112,7 @@ GradeSchema.index({ schoolId: 1, "classInfo._id": 1, subjectKey: 1, quarter: 1 }
 GradeSchema.index({ schoolId: 1, createdAt: -1 });
 GradeSchema.index({ schoolId: 1, "students._id": 1, createdAt: -1 });
 GradeSchema.index({ schoolId: 1, "classInfo._id": 1, quarter: 1, createdAt: -1 });
+GradeSchema.index({ schoolId: 1, "sheetContext.mode": 1, "sheetContext.dateKey": 1 });
+GradeSchema.index({ schoolId: 1, "classInfo._id": 1, "students._id": 1, "sheetContext.mode": 1, "sheetContext.dateKey": 1, "sheetContext.columnKey": 1 });
 
 module.exports = mongoose.model("Grade", GradeSchema);

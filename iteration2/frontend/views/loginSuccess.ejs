@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> | IlmQuest</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/favicon.ico" />
+  <link rel="preload" href="/imgs/finalLogo.jpg" as="image" />
+  <% if (redirectUrl) { %>
+    <noscript>
+      <meta http-equiv="refresh" content="0;url=<%= redirectUrl %>" />
+    </noscript>
+  <% } %>
+</head>
+<body class="login-splash-page">
+  <%- include('partials/login-animation', {
+    redirectUrl,
+    previewMode: false,
+    hideOnComplete: false
+  }) %>
+</body>
+</html>

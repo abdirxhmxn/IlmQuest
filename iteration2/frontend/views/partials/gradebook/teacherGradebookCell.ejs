@@ -1,0 +1,72 @@
+<%
+  const toneClass = cell?.tone ? `is-${cell.tone}` : "is-empty";
+  const hasComment = Boolean(cell?.hasInternalComment || cell?.hasParentComment);
+  const gradingPeriodId = classView?.gradingPeriod?.id || classView?.gradingPeriodId || '';
+  const indicatorLabel = [
+    cell?.hasInternalComment ? "Internal" : "",
+    cell?.hasParentComment ? "Parent" : ""
+  ].filter(Boolean).join(" + ");
+%>
+<td
+  class="gradebook-v1-cell <%= toneClass %> <%= hasComment ? 'has-comment' : '' %>"
+  data-gradebook-cell
+  data-class-id="<%= classView.id %>"
+  data-student-id="<%= student.id %>"
+  data-coordinate-key="<%= cell.coordinateKey %>"
+  data-stable-cell-key="<%= cell.stableCellKey || '' %>"
+  data-category="<%= cell.category %>"
+  data-date-key="<%= cell.dateKey %>"
+  data-column-key="<%= cell.columnKey %>"
+  data-assessment-id="<%= cell.assessmentId || '' %>"
+>
+  <form
+    class="gradebook-v1-cell-form"
+    action="/api/teacher/gradebook/cell"
+    method="POST"
+    hx-post="/api/teacher/gradebook/cell"
+    hx-target="closest tr"
+    hx-swap="outerHTML"
+    data-gradebook-cell-form
+  >
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="classId" value="<%= classView.id %>">
+    <input type="hidden" name="studentId" value="<%= student.id %>">
+    <input type="hidden" name="gradingPeriodId" value="<%= gradingPeriodId %>">
+    <input type="hidden" name="category" value="<%= cell.category %>">
+    <input type="hidden" name="dateKey" value="<%= cell.dateKey || '' %>">
+    <input type="hidden" name="columnKey" value="<%= cell.columnKey || '' %>">
+    <input type="hidden" name="assessmentId" value="<%= cell.assessmentId || '' %>">
+    <input type="hidden" name="clientEventId" value="" data-gradebook-client-event-id>
+
+    <label class="gradebook-v1-select-wrap">
+      <span class="sr-only"><%= `${student.name} ${cell.detailLabel}` %></span>
+      <select
+        class="gradebook-v1-select"
+        name="markKey"
+        data-gradebook-select
+        data-mark-key="<%= cell.markKey || '' %>"
+        aria-label="<%= `${student.name} ${cell.detailLabel}` %>"
+      >
+        <option value="">—</option>
+        <% (cell.options || []).forEach((option) => { %>
+          <option value="<%= option.key %>" <%= cell.markKey === option.key ? 'selected' : '' %>>
+            <%= option.symbol %><%= option.label ? ` · ${option.label}` : '' %>
+          </option>
+        <% }) %>
+      </select>
+    </label>
+  </form>
+
+  <button
+    type="button"
+    class="gradebook-v1-detail-btn"
+    data-gradebook-drawer-open
+    aria-label="Open details for <%= student.name %> <%= cell.detailLabel %>"
+  >⋯</button>
+
+  <span class="gradebook-v1-cell-symbol" data-gradebook-cell-symbol><%= cell.symbol || "" %></span>
+
+  <% if (hasComment) { %>
+    <span class="gradebook-v1-comment-indicator" title="<%= indicatorLabel %> comment"></span>
+  <% } %>
+</td>

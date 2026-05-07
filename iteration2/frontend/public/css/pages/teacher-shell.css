@@ -17,12 +17,12 @@
 
 /* 1. Tokens */
 :root {
-  --teacher-shell-canvas: #e7dfd3;
-  --teacher-shell-panel: #efe8dc;
+  --teacher-shell-canvas: #e9eaee;
+  --teacher-shell-panel: #f4f5f8;
   --teacher-surface: #ffffff;
-  --teacher-surface-soft: #f7faf8;
-  --teacher-border: #d6ded8;
-  --teacher-border-strong: #c5d3ca;
+  --teacher-surface-soft: #f7f9fb;
+  --teacher-border: #d2d6de;
+  --teacher-border-strong: #c2c8d4;
 
   --teacher-sidebar-bg: #0f4f40;
   --teacher-sidebar-bg-soft: #0b3f33;
@@ -612,20 +612,23 @@ table th,
 .flash-message {
   border-radius: 12px;
   border: 1px solid transparent;
-  padding: 10px 12px;
-  font-size: 0.9rem;
+  border-left-width: 4px;
+  padding: 11px 14px;
+  font-size: 0.88rem;
   font-weight: 600;
 }
 
 .flash-message.success {
-  background: #edf8f1;
-  border-color: #b8ddc6;
-  color: #1e5f3f;
+  background: #f0fbf4;
+  border-color: #b8dfc9;
+  border-left-color: #1e8a55;
+  color: #1a5e3b;
 }
 
 .flash-message.error {
-  background: #fef2f2;
-  border-color: #f5c2c7;
+  background: #fff2f2;
+  border-color: #edc8c8;
+  border-left-color: #c23b3b;
   color: #8b1f2b;
 }
 

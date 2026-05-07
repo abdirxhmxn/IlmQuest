@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const User = require("../models/User");
 const School = require("../models/School");
 const { normalizeEmail, normalizeUserName } = require("../utils/userIdentifiers");
+const { activeLifecycleFilter } = require("../utils/tenant");
 
 function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -58,7 +59,7 @@ module.exports = function (passport) {
           if (schoolId) {
             const schoolQuery = {
               schoolId,
-              deletedAt: null
+              ...activeLifecycleFilter()
             };
             if (isEmailIdentifier) {
               schoolQuery.emailNormalized = emailNormalized;
@@ -67,7 +68,7 @@ module.exports = function (passport) {
             }
             user = await User.findOne(schoolQuery).select("+password");
           } else {
-            const superAdminQuery = { role: "superAdmin", deletedAt: null };
+            const superAdminQuery = { role: "superAdmin", ...activeLifecycleFilter() };
             if (isEmailIdentifier) {
               superAdminQuery.emailNormalized = emailNormalized;
             } else {
@@ -81,7 +82,7 @@ module.exports = function (passport) {
 
           if (!user && !schoolId) {
             const globalQuery = {
-              deletedAt: null
+              ...activeLifecycleFilter()
             };
             if (isEmailIdentifier) {
               globalQuery.emailNormalized = emailNormalized;
@@ -139,7 +140,7 @@ module.exports = function (passport) {
       const sessionSchoolId =
         typeof sessionUser === "object" ? sessionUser.schoolId : null;
 
-      const query = { _id: id, deletedAt: null };
+      const query = { _id: id, ...activeLifecycleFilter() };
       if (sessionSchoolId) {
         query.schoolId = sessionSchoolId;
       }

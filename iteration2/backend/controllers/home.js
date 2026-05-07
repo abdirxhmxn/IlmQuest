@@ -4,10 +4,11 @@ const Mission = require("../models/Missions");
 const Class = require("../models/Class");
 const Grade = require("../models/Grades");
 const Attendance = require("../models/Attendance");
+const PointAdjustment = require("../models/PointAdjustment");
 const ReportActivity = require("../models/ReportActivity");
 const Verses = require("../models/Verses");
 const Reflection = require("../models/Reflections");
-const { scopedQuery } = require("../utils/tenant");
+const { scopedQuery, activeLifecycleFilter, deletedLifecycleFilter } = require("../utils/tenant");
 const {
   renderStudentReportLatex,
   renderClassReportLatex,
@@ -42,9 +43,17 @@ const {
   resolveStudentXp
 } = require("../utils/ranks");
 const {
+  normalizeMissionAttemptStatusKey,
+  sweepExpiredMissionAttempts
+} = require("../utils/missionDeadlines");
+const {
   buildTeacherStudentProgressDirectoryViewModel,
   buildStudentProgressViewModel
 } = require("../utils/studentProgress");
+const { buildDefaultGradingScaleSet } = require("../utils/gradingScales");
+const {
+  buildTeacherGradebookPage: buildGradingV1TeacherGradebookPage
+} = require("../services/gradingV1");
 const { resolveSchoolId } = require("../utils/tenant");
 
 const ADMIN_ANALYTICS_CACHE_TTL_MS = Math.max(
@@ -222,61 +231,90 @@ const getSubjectAverage = (grades, studentID, subjectKeyOrName, options = {}) =>
   let weightedVersionDivisor = 0;
 
   groupedByVersion.forEach((versionGrades, version) => {
+    const sheetGrades = versionGrades.filter((grade) => String(grade?.sheetContext?.mode || "").trim());
+    const traditionalGrades = versionGrades.filter((grade) => !String(grade?.sheetContext?.mode || "").trim());
     const versionSnapshot = versionLookup.get(Number(version));
+    const versionContributions = [];
 
-    let versionWeightMap = {};
-    if (versionSnapshot?.gradingCategories?.length) {
-      versionSnapshot.gradingCategories.forEach((category) => {
-        if (!category.active || category.isArchived) return;
-        versionWeightMap[String(category.key)] = Number(category.weight || 0);
+    if (traditionalGrades.length) {
+      let versionWeightMap = {};
+      if (versionSnapshot?.gradingCategories?.length) {
+        versionSnapshot.gradingCategories.forEach((category) => {
+          if (!category.active || category.isArchived) return;
+          versionWeightMap[String(category.key)] = Number(category.weight || 0);
+        });
+      }
+
+      if (!Object.keys(versionWeightMap).length) {
+        traditionalGrades.forEach((grade) => {
+          const categoryMeta = resolveCategoryFromGrade(grade, classSettings);
+          if (categoryMeta.weight > 0) {
+            versionWeightMap[categoryMeta.key] = Number(categoryMeta.weight);
+          }
+        });
+      }
+
+      if (!Object.keys(versionWeightMap).length) {
+        versionWeightMap = fallbackWeightMap;
+      }
+
+      const categoryScores = {};
+      traditionalGrades.forEach((grade) => {
+        const categoryKey = getGradeCategoryKey(grade);
+        if (!versionWeightMap[categoryKey]) return;
+        const maxScore = Number(grade.Assignment?.maxScore || 100);
+        const score = Number(grade.Assignment?.grade || 0);
+        if (!maxScore) return;
+        const percent = (score / maxScore) * 100;
+        if (!categoryScores[categoryKey]) categoryScores[categoryKey] = [];
+        categoryScores[categoryKey].push(percent);
       });
+
+      const weightEntries = Object.entries(versionWeightMap)
+        .map(([categoryKey, weight]) => [String(categoryKey), Number(weight)])
+        .filter(([, weight]) => Number.isFinite(weight) && weight > 0);
+
+      const versionWeightTotal = weightEntries.reduce((sum, [, weight]) => sum + weight, 0);
+      if (versionWeightTotal > 0) {
+        let versionWeightedScore = 0;
+        weightEntries.forEach(([categoryKey, weight]) => {
+          const scores = categoryScores[categoryKey];
+          const avg = scores && scores.length
+            ? scores.reduce((acc, val) => acc + val, 0) / scores.length
+            : 100;
+          versionWeightedScore += (avg / 100) * weight;
+        });
+
+        versionContributions.push({
+          percent: (versionWeightedScore / versionWeightTotal) * 100,
+          weight: traditionalGrades.length || 1
+        });
+      }
     }
 
-    if (!Object.keys(versionWeightMap).length) {
-      versionGrades.forEach((grade) => {
-        const categoryMeta = resolveCategoryFromGrade(grade, classSettings);
-        if (categoryMeta.weight > 0) {
-          versionWeightMap[categoryMeta.key] = Number(categoryMeta.weight);
-        }
-      });
+    if (sheetGrades.length) {
+      const sheetTotals = sheetGrades.reduce((acc, grade) => {
+        const maxScore = Number(grade?.Assignment?.maxScore ?? grade?.symbolicMark?.maxValue ?? 0);
+        const score = Number(grade?.Assignment?.grade ?? grade?.symbolicMark?.value ?? 0);
+        if (!maxScore) return acc;
+        acc.earned += score;
+        acc.possible += maxScore;
+        acc.count += 1;
+        return acc;
+      }, { earned: 0, possible: 0, count: 0 });
+
+      if (sheetTotals.possible > 0) {
+        versionContributions.push({
+          percent: (sheetTotals.earned / sheetTotals.possible) * 100,
+          weight: sheetTotals.count || 1
+        });
+      }
     }
 
-    if (!Object.keys(versionWeightMap).length) {
-      versionWeightMap = fallbackWeightMap;
-    }
-
-    const categoryScores = {};
-    versionGrades.forEach((grade) => {
-      const categoryKey = getGradeCategoryKey(grade);
-      if (!versionWeightMap[categoryKey]) return;
-      const maxScore = Number(grade.Assignment?.maxScore || 100);
-      const score = Number(grade.Assignment?.grade || 0);
-      if (!maxScore) return;
-      const percent = (score / maxScore) * 100;
-      if (!categoryScores[categoryKey]) categoryScores[categoryKey] = [];
-      categoryScores[categoryKey].push(percent);
+    versionContributions.forEach((entry) => {
+      weightedVersionSum += Number(entry.percent || 0) * Number(entry.weight || 1);
+      weightedVersionDivisor += Number(entry.weight || 1);
     });
-
-    const weightEntries = Object.entries(versionWeightMap)
-      .map(([categoryKey, weight]) => [String(categoryKey), Number(weight)])
-      .filter(([, weight]) => Number.isFinite(weight) && weight > 0);
-
-    const versionWeightTotal = weightEntries.reduce((sum, [, weight]) => sum + weight, 0);
-    if (!versionWeightTotal) return;
-
-    let versionWeightedScore = 0;
-    weightEntries.forEach(([categoryKey, weight]) => {
-      const scores = categoryScores[categoryKey];
-      const avg = scores && scores.length
-        ? scores.reduce((acc, val) => acc + val, 0) / scores.length
-        : 100;
-      versionWeightedScore += (avg / 100) * weight;
-    });
-
-    const versionAveragePercent = (versionWeightedScore / versionWeightTotal) * 100;
-    const multiplier = versionGrades.length || 1;
-    weightedVersionSum += versionAveragePercent * multiplier;
-    weightedVersionDivisor += multiplier;
   });
 
   if (!weightedVersionDivisor) return "100.00";
@@ -711,15 +749,345 @@ function summarizeMissionRecords(missionDocs = []) {
     (mission?.active?.studentInfo || []).forEach((entry) => {
       const studentId = toIdString(entry?._id);
       if (!studentId) return;
-      const status = String(entry?.status || "").toLowerCase();
-      const agg = studentAgg.get(studentId) || { started: 0, completed: 0 };
-      if (status === "completed") agg.completed += 1;
-      if (status === "started") agg.started += 1;
+      const statusKey = normalizeMissionAttemptStatusKey(entry?.status, true);
+      const agg = studentAgg.get(studentId) || { started: 0, completed: 0, failed: 0 };
+      if (statusKey === "completed") agg.completed += 1;
+      if (statusKey === "active") agg.started += 1;
+      if (statusKey === "auto_failed" || statusKey === "failed") agg.failed += 1;
       studentAgg.set(studentId, agg);
     });
   });
 
   return { studentAgg };
+}
+
+const STUDENT_DASHBOARD_MISSION_STATUS_PRIORITY = Object.freeze({
+  active: 0,
+  revision: 1,
+  pending: 2,
+  ready: 3,
+  failed: 4,
+  completed: 5
+});
+
+function normalizeStudentDashboardMissionStatus(rawStatus = "", hasActivity = false) {
+  const statusKey = normalizeMissionAttemptStatusKey(rawStatus, hasActivity);
+  if (statusKey === "completed") {
+    return { key: "completed", label: "Completed" };
+  }
+  if (statusKey === "pending") {
+    return { key: "pending", label: "Pending Review" };
+  }
+  if (statusKey === "rejected") {
+    return { key: "revision", label: "Needs Revision" };
+  }
+  if (statusKey === "auto_failed") {
+    return { key: "failed", label: "Auto-Failed" };
+  }
+  if (statusKey === "failed") {
+    return { key: "failed", label: "Failed" };
+  }
+  if (statusKey === "active") {
+    return { key: "active", label: "In Progress" };
+  }
+  return { key: "ready", label: "Ready to Start" };
+}
+
+function getStudentDashboardMissionProgress(statusKey = "") {
+  const progressMap = {
+    ready: 12,
+    active: 58,
+    pending: 84,
+    revision: 46,
+    failed: 100,
+    completed: 100
+  };
+  return Number(progressMap[statusKey] ?? 0);
+}
+
+function buildStudentAttendanceStreak(attendanceDocs = [], studentId = "") {
+  const normalizedStudentId = String(studentId || "");
+  if (!normalizedStudentId) return 0;
+
+  const presentStatuses = new Set(["Present", "Late", "Excused"]);
+  const ignoredStatuses = new Set(["Holiday", "Weather"]);
+  const dateStatusMap = new Map();
+
+  attendanceDocs.forEach((doc) => {
+    const record = Array.isArray(doc?.records)
+      ? doc.records.find((entry) => toIdString(entry?.studentId) === normalizedStudentId)
+      : null;
+    if (!record) return;
+
+    const status = String(record?.status || "").trim();
+    if (!status || ignoredStatuses.has(status)) return;
+
+    const parsedDate = new Date(doc?.date);
+    if (Number.isNaN(parsedDate.getTime())) return;
+
+    const dateKey = parsedDate.toISOString().slice(0, 10);
+    if (!dateStatusMap.has(dateKey)) {
+      dateStatusMap.set(dateKey, {
+        status,
+        date: parsedDate
+      });
+    }
+  });
+
+  const orderedDates = Array.from(dateStatusMap.values())
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  let streak = 0;
+  for (const entry of orderedDates) {
+    if (!presentStatuses.has(entry.status)) break;
+    streak += 1;
+  }
+
+  return streak;
+}
+
+function buildStudentDashboardMissionRows({
+  missions = [],
+  studentId = "",
+  studentFullName = "",
+  now = new Date()
+} = {}) {
+  return missions
+    .map((missionDoc) => {
+      const studentEntries = Array.isArray(missionDoc?.active?.studentInfo)
+        ? missionDoc.active.studentInfo
+        : [];
+      const studentEntry = studentEntries.find((entry) => {
+        const sameId = toIdString(entry?._id) === studentId;
+        const sameName = String(entry?.name || "").trim() === studentFullName;
+        return sameId || sameName;
+      });
+
+      const statusInfo = normalizeStudentDashboardMissionStatus(
+        studentEntry?.status,
+        Boolean(studentEntry)
+      );
+      const progressPercent = getStudentDashboardMissionProgress(statusInfo.key);
+      const actionLabel = statusInfo.key === "ready"
+        ? "Start Mission"
+        : statusInfo.key === "active"
+          ? "Continue Mission"
+          : statusInfo.key === "failed"
+            ? "View Auto-Fail"
+            : "View Mission";
+
+      const parsedDueDate = missionDoc?.dueDate ? new Date(missionDoc.dueDate) : null;
+      const hasDueDate = parsedDueDate instanceof Date && !Number.isNaN(parsedDueDate.getTime());
+      const dueDate = hasDueDate ? parsedDueDate : null;
+      const dueDateLabel = hasDueDate ? formatMonthDayLabel(parsedDueDate) : "No due date";
+      const timeRemainingLabel = hasDueDate ? buildTimeRemainingLabel(parsedDueDate, now) : "";
+      const cadenceLabel = String(missionDoc?.timeLimit || "").trim();
+      const paceLabel = cadenceLabel && cadenceLabel !== "None" ? `${cadenceLabel} pace` : "Open pace";
+      const subtitle = [
+        String(missionDoc?.type || "Mission").trim() || "Mission",
+        timeRemainingLabel || (hasDueDate ? `Due ${dueDateLabel}` : paceLabel)
+      ]
+        .filter(Boolean)
+        .join(" • ");
+      const updatedAt = missionDoc?.updatedAt || missionDoc?.createdAt || new Date();
+
+      return {
+        id: toIdString(missionDoc?._id),
+        title: String(missionDoc?.title || "Mission").trim() || "Mission",
+        description: String(missionDoc?.description || "").trim(),
+        subtitle,
+        type: String(missionDoc?.type || "Mission").trim() || "Mission",
+        category: String(missionDoc?.category || "Solo").trim() || "Solo",
+        rankKey: String(missionDoc?.rank || "F").trim().toUpperCase() || "F",
+        rankLabel: `${String(missionDoc?.rank || "F").trim().toUpperCase() || "F"} Rank`,
+        pointsXP: Number(missionDoc?.pointsXP || 0),
+        teacherName: String(missionDoc?.createdBy?.name || "Teacher").trim() || "Teacher",
+        dueDate,
+        dueDateLabel: hasDueDate ? `Due ${dueDateLabel}` : "No due date",
+        timeRemainingLabel,
+        progressPercent,
+        progressLabel: `${progressPercent}%`,
+        statusKey: statusInfo.key,
+        statusLabel: statusInfo.label,
+        failureReason: String(studentEntry?.failureReason || "").trim(),
+        failedAt: studentEntry?.failedAt || null,
+        failedAtLabel: studentEntry?.failedAt ? formatDateTimeLabel(studentEntry.failedAt) : "",
+        updatedAt,
+        updatedAtLabel: formatDateTimeLabel(updatedAt),
+        actionHref: "/student/missions",
+        actionLabel,
+        tags: [
+          String(missionDoc?.type || "Mission").trim() || "Mission",
+          String(missionDoc?.category || "Solo").trim() || "Solo",
+          `${String(missionDoc?.rank || "F").trim().toUpperCase() || "F"} Rank`
+        ]
+      };
+    })
+    .sort((left, right) => {
+      const leftPriority = Number(
+        STUDENT_DASHBOARD_MISSION_STATUS_PRIORITY[left?.statusKey] ?? 99
+      );
+      const rightPriority = Number(
+        STUDENT_DASHBOARD_MISSION_STATUS_PRIORITY[right?.statusKey] ?? 99
+      );
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+
+      const leftDue = left?.dueDate instanceof Date ? left.dueDate.getTime() : Number.POSITIVE_INFINITY;
+      const rightDue = right?.dueDate instanceof Date ? right.dueDate.getTime() : Number.POSITIVE_INFINITY;
+      if (leftDue !== rightDue) return leftDue - rightDue;
+
+      return String(left?.title || "").localeCompare(String(right?.title || ""));
+    });
+}
+
+function buildStudentDashboardRecentUpdates({
+  announcements = [],
+  gradeDocs = [],
+  missionRows = []
+} = {}) {
+  const maxItems = 3;
+
+  function toTimestamp(value) {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  }
+
+  function sortByNewest(items = []) {
+    return [...items]
+      .filter((item) => item?.timestamp instanceof Date && !Number.isNaN(item.timestamp.getTime()))
+      .sort((left, right) => right.timestamp.getTime() - left.timestamp.getTime());
+  }
+
+  function buildUpdateKey(item) {
+    const id = String(item?.id || "").trim();
+    if (id) return `${item.type}:${id}`;
+    return `${item.type}:${item.title}:${item.timestamp instanceof Date ? item.timestamp.toISOString() : ""}`;
+  }
+
+  const announcementCandidates = sortByNewest(
+    (Array.isArray(announcements) ? announcements : []).map((announcement) => {
+      const timestamp = toTimestamp(announcement?.publishAt || announcement?.createdAt);
+      if (!timestamp) return null;
+
+      return {
+        id: String(announcement?.id || announcement?._id || "").trim(),
+        type: "announcement",
+        typeLabel: "Announcement",
+        title: String(announcement?.title || "School update").trim() || "School update",
+        description: String(announcement?.summary || announcement?.content || "").trim(),
+        timestamp,
+        timestampLabel: announcement?.publishLabel || announcement?.createdAtLabel || formatDateTimeLabel(timestamp),
+        iconKey: "announcement",
+        href: "",
+        isPinned: Boolean(announcement?.isPinned)
+      };
+    })
+  );
+
+  const gradeCandidates = sortByNewest(
+    (Array.isArray(gradeDocs) ? gradeDocs : []).map((grade) => {
+      const timestamp = toTimestamp(grade?.updatedAt || grade?.createdAt);
+      if (!timestamp) return null;
+
+      const score = Number(grade?.Assignment?.grade || 0);
+      const maxScore = Number(grade?.Assignment?.maxScore || 100);
+      const percent = Number.isFinite(score) && Number.isFinite(maxScore) && maxScore > 0
+        ? `${((score / maxScore) * 100).toFixed(1)}%`
+        : "";
+      const subjectLabel = String(grade?.subjectLabel || grade?.subject || "Classwork").trim() || "Classwork";
+      const gradeDetail = [
+        subjectLabel,
+        `${score}/${maxScore}${percent ? ` (${percent})` : ""}`
+      ]
+        .filter(Boolean)
+        .join(" • ");
+
+      return {
+        id: toIdString(grade?._id),
+        type: "grade",
+        typeLabel: "Grade Update",
+        title: String(grade?.Assignment?.name || grade?.subjectLabel || grade?.subject || "Assessment").trim() || "Assessment",
+        description: gradeDetail,
+        timestamp,
+        timestampLabel: formatDateTimeLabel(timestamp),
+        iconKey: "grade",
+        href: "/student/grades",
+        isPinned: false
+      };
+    })
+  );
+
+  const missionCandidates = sortByNewest(
+    (Array.isArray(missionRows) ? missionRows : []).map((mission) => {
+      const timestamp = toTimestamp(mission?.updatedAt || mission?.createdAt);
+      if (!timestamp) return null;
+
+      const rewardLabel = mission?.statusKey === "completed"
+        ? `+${Number(mission?.pointsXP || 0).toLocaleString()} XP`
+        : mission?.statusKey === "failed"
+          ? "No XP awarded"
+          : Number.isFinite(Number(mission?.pointsXP))
+            ? `+${Number(mission.pointsXP).toLocaleString()} XP`
+            : "";
+
+      const missionDetail = [
+        String(mission?.statusLabel || "Mission update").trim() || "Mission update",
+        rewardLabel,
+        String(mission?.timeRemainingLabel || mission?.dueDateLabel || "").trim()
+      ]
+        .filter(Boolean)
+        .join(" • ");
+
+      return {
+        id: String(mission?.id || "").trim(),
+        type: "mission",
+        typeLabel: "Mission Update",
+        title: String(mission?.title || "Mission update").trim() || "Mission update",
+        description: missionDetail,
+        timestamp,
+        timestampLabel: mission?.updatedAtLabel || formatDateTimeLabel(timestamp),
+        iconKey: "mission",
+        href: "/student/missions",
+        isPinned: false
+      };
+    })
+  );
+
+  const selected = [];
+  const selectedKeys = new Set();
+
+  function trySelect(item) {
+    if (!item) return false;
+    const key = buildUpdateKey(item);
+    if (selectedKeys.has(key)) return false;
+    selected.push(item);
+    selectedKeys.add(key);
+    return true;
+  }
+
+  [
+    announcementCandidates[0],
+    gradeCandidates[0],
+    missionCandidates[0]
+  ].forEach((item) => {
+    if (selected.length < maxItems) {
+      trySelect(item);
+    }
+  });
+
+  const remainingCandidates = sortByNewest([
+    ...announcementCandidates,
+    ...gradeCandidates,
+    ...missionCandidates
+  ]).filter((item) => !selectedKeys.has(buildUpdateKey(item)));
+
+  for (const candidate of remainingCandidates) {
+    if (selected.length >= maxItems) break;
+    trySelect(candidate);
+  }
+
+  return sortByNewest(selected).slice(0, maxItems);
 }
 
 async function buildAdminAnalytics(req) {
@@ -806,6 +1174,82 @@ async function buildAdminAnalytics(req) {
   const topStudents = rankedByGradeDesc.slice(0, 5);
   const bottomStudents = rankedByGradeAsc.slice(0, 5);
 
+  const hasStudentActivityData = studentPerformance.some((entry) =>
+    Number.isFinite(entry.avgGrade)
+    || Number.isFinite(entry.attendanceRate)
+    || Number(entry.missionsStarted || 0) > 0
+    || Number(entry.missionsCompleted || 0) > 0
+  );
+
+  const priorityStudents = studentPerformance
+    .map((entry) => {
+      const riskSignals = [];
+      let riskScore = 0;
+
+      if (Number.isFinite(entry.avgGrade) && entry.avgGrade < 70) {
+        riskSignals.push({
+          tone: "critical",
+          label: "Low grade",
+          detail: `${toPercentLabel(entry.avgGrade)} average`
+        });
+        riskScore += 4;
+      } else if (Number.isFinite(entry.avgGrade) && entry.avgGrade < 80) {
+        riskSignals.push({
+          tone: "warning",
+          label: "Grade slipping",
+          detail: `${toPercentLabel(entry.avgGrade)} average`
+        });
+        riskScore += 2;
+      }
+
+      if (Number.isFinite(entry.attendanceRate) && entry.attendanceRate < 80) {
+        riskSignals.push({
+          tone: "critical",
+          label: "Low attendance",
+          detail: `${toPercentLabel(entry.attendanceRate)} present`
+        });
+        riskScore += 3;
+      } else if (Number.isFinite(entry.attendanceRate) && entry.attendanceRate < 90) {
+        riskSignals.push({
+          tone: "warning",
+          label: "Attendance watch",
+          detail: `${toPercentLabel(entry.attendanceRate)} present`
+        });
+        riskScore += 2;
+      }
+
+      const missionsStarted = Number(entry.missionsStarted || 0);
+      const missionsCompleted = Number(entry.missionsCompleted || 0);
+      if (missionsStarted > missionsCompleted) {
+        riskSignals.push({
+          tone: missionsCompleted === 0 ? "warning" : "info",
+          label: "Incomplete missions",
+          detail: `${missionsCompleted}/${missionsStarted} completed`
+        });
+        riskScore += missionsCompleted === 0 ? 2 : 1;
+      }
+
+      if (!riskSignals.length) return null;
+
+      return {
+        ...entry,
+        riskScore,
+        riskSignals
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      const aAttendance = Number.isFinite(a.attendanceRate) ? a.attendanceRate : Number.POSITIVE_INFINITY;
+      const bAttendance = Number.isFinite(b.attendanceRate) ? b.attendanceRate : Number.POSITIVE_INFINITY;
+      const aGrade = Number.isFinite(a.avgGrade) ? a.avgGrade : Number.POSITIVE_INFINITY;
+      const bGrade = Number.isFinite(b.avgGrade) ? b.avgGrade : Number.POSITIVE_INFINITY;
+      return b.riskScore - a.riskScore
+        || aAttendance - bAttendance
+        || aGrade - bGrade
+        || a.name.localeCompare(b.name);
+    })
+    .slice(0, 5);
+
   const classPerformance = activeClasses.map((cls) => {
     const classId = toIdString(cls._id);
     const gradeAgg = gradeSummary.classAgg.get(classId);
@@ -891,7 +1335,9 @@ async function buildAdminAnalytics(req) {
     alerts.push({
       tone: "critical",
       title: `${belowThresholdStudents.length} students scoring below 70%`,
-      detail: belowThresholdStudents.slice(0, 3).map((entry) => entry.name).join(", ")
+      detail: belowThresholdStudents.slice(0, 3).map((entry) => entry.name).join(", "),
+      actionHref: "/admin/reports",
+      actionLabel: "Open reports"
     });
   }
 
@@ -900,7 +1346,9 @@ async function buildAdminAnalytics(req) {
     alerts.push({
       tone: "warning",
       title: `${lowest.className} attendance at ${toPercentLabel(lowest.attendanceRate)}`,
-      detail: `${lowAttendanceClasses.length} class(es) are below the 80% attendance threshold`
+      detail: `${lowAttendanceClasses.length} class(es) are below the 80% attendance threshold`,
+      actionHref: "/admin/attendance",
+      actionLabel: "Review attendance"
     });
   }
 
@@ -936,6 +1384,8 @@ async function buildAdminAnalytics(req) {
       programDistribution,
       topStudents,
       bottomStudents,
+      priorityStudents,
+      hasStudentActivityData,
       topClasses,
       bottomClasses,
       alerts,
@@ -1176,21 +1626,23 @@ module.exports = {
   },
   getMainPage: async (req, res) => {
     try {
+      await sweepExpiredMissionAttempts({ schoolId: req.schoolId });
+
       const [verses, reminders, studentAnnouncementsRaw, classes, gradeDocs, attendanceDocs, currentStudentSnapshot] = await Promise.all([
         Verses.find().lean(),
         Reflection.find().lean(),
         getVisibleAnnouncementsForUser(req, req.user, { limit: 8 }),
         Class.find(scopedQuery(req, { "students._id": req.user._id }))
-          .select("_id className classCode teachers")
+          .select("_id className classCode teachers students active")
           .lean(),
         Grade.find(scopedQuery(req, { "students._id": req.user._id }))
-          .select("_id students classInfo Assignment.grade Assignment.maxScore createdAt")
+          .select("_id students classInfo subject subjectLabel Assignment.name Assignment.grade Assignment.maxScore createdAt updatedAt")
           .lean(),
         Attendance.find(scopedQuery(req, { "records.studentId": req.user._id }))
           .select("_id records.studentId records.status classId date")
           .lean(),
         User.findOne(scopedQuery(req, { _id: req.user._id, role: "student" }))
-          .select("_id firstName lastName points xp rank manualRank rankOverrideEnabled")
+          .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled studentInfo.programType")
           .lean()
       ]);
       const randomVerses = Array.isArray(verses) && verses.length
@@ -1206,6 +1658,7 @@ module.exports = {
       const currentStudent = currentStudentSnapshot || req.user;
       const currentStudentRankSummary = buildRankSummaryFromUser(currentStudent);
       const studentId = toIdString(currentStudent?._id || req.user?._id);
+      const studentFullName = resolveStudentFullName(currentStudent);
 
       const teacherIds = Array.from(
         new Set(
@@ -1220,7 +1673,7 @@ module.exports = {
         ? { "createdBy._id": { $in: teacherIds } }
         : { _id: { $in: [] } };
       const teacherMissions = await Mission.find(scopedQuery(req, missionScope))
-        .select("_id rank active.studentInfo dueDate")
+        .select("_id title description type category rank pointsXP timeLimit dueDate createdBy active.studentInfo createdAt updatedAt")
         .lean();
 
       const visibleMissions = teacherMissions.filter((missionDoc) =>
@@ -1229,24 +1682,88 @@ module.exports = {
       const missionStatusCounts = {
         available: visibleMissions.length,
         inProgress: 0,
-        completed: 0
+        completed: 0,
+        failed: 0
       };
 
       visibleMissions.forEach((missionDoc) => {
         const studentEntries = Array.isArray(missionDoc?.active?.studentInfo) ? missionDoc.active.studentInfo : [];
         const studentRow = studentEntries.find((entry) => toIdString(entry?._id) === studentId);
-        const normalizedStatus = String(studentRow?.status || "").trim().toLowerCase();
-        if (normalizedStatus === "started" || normalizedStatus === "in-progress" || normalizedStatus === "active") {
+        const statusKey = normalizeMissionAttemptStatusKey(studentRow?.status, Boolean(studentRow));
+        if (statusKey === "active") {
           missionStatusCounts.inProgress += 1;
         }
-        if (normalizedStatus === "complete" || normalizedStatus === "completed" || normalizedStatus === "approved") {
+        if (statusKey === "completed") {
           missionStatusCounts.completed += 1;
+        }
+        if (statusKey === "auto_failed" || statusKey === "failed") {
+          missionStatusCounts.failed += 1;
         }
       });
 
       const gradeSummary = summarizeGradeRecords(gradeDocs);
+      const subjectSummary = summarizeSubjectPerformanceForReport(gradeDocs);
       const attendanceSummary = summarizeAttendanceRecords(attendanceDocs);
       const studentAttendanceAgg = attendanceSummary.studentAgg.get(studentId) || { present: 0, total: 0 };
+      const attendanceStreak = buildStudentAttendanceStreak(attendanceDocs, studentId);
+
+      const allStudentIds = classes
+        .flatMap((cls) => (Array.isArray(cls?.students) ? cls.students : []))
+        .map((student) => toIdString(student?._id))
+        .filter(Boolean);
+      const uniqueStudentIds = [...new Set(allStudentIds)];
+
+      const classmateDocs = uniqueStudentIds.length
+        ? await User.find(scopedQuery(req, {
+          _id: { $in: uniqueStudentIds },
+          role: "student"
+        }))
+          .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled")
+          .lean()
+        : [];
+      const leaderboardStudents = classmateDocs
+        .map((studentDoc) => {
+          const rankSummary = buildRankSummaryFromUser(studentDoc);
+          return {
+            id: toIdString(studentDoc?._id),
+            name: resolveStudentFullName(studentDoc),
+            totalXp: Number(rankSummary?.xp || 0),
+            rankLabel: rankSummary?.displayRankLabel || "F Rank",
+            rankKey: rankSummary?.displayRankKey || "F"
+          };
+        })
+        .sort((left, right) => {
+          const pointDelta = Number(right?.totalXp || 0) - Number(left?.totalXp || 0);
+          if (pointDelta !== 0) return pointDelta;
+          return String(left?.name || "").localeCompare(String(right?.name || ""));
+        });
+      const currentLeaderboardIndex = leaderboardStudents.findIndex((student) => student.id === studentId);
+      const missionRows = buildStudentDashboardMissionRows({
+        missions: visibleMissions,
+        studentId,
+        studentFullName
+      });
+      const actionableMissionRows = missionRows.filter((mission) => mission.statusKey !== "completed");
+      const todayLessons = (actionableMissionRows.length ? actionableMissionRows : missionRows).slice(0, 4);
+      const completedTodayLessons = todayLessons.filter((lesson) => lesson.statusKey === "completed").length;
+      const dailyGoalProgress = todayLessons.length
+        ? Math.round(
+          todayLessons.reduce((sum, lesson) => sum + Number(lesson?.progressPercent || 0), 0) / todayLessons.length
+        )
+        : Number(currentStudentRankSummary?.progressPercent || 0);
+      const dailyGoalDetail = todayLessons.length
+        ? `${completedTodayLessons} of ${todayLessons.length} focus lesson${todayLessons.length === 1 ? "" : "s"} completed`
+        : currentStudentRankSummary.progressLabel;
+      const streakMessage = attendanceStreak > 0
+        ? `You're on a ${attendanceStreak}-day streak. Keep it alive today.`
+        : classes.length
+          ? "Your next check-in starts a fresh attendance streak."
+          : "Join a class and your dashboard will begin tracking streaks automatically.";
+      const recentUpdates = buildStudentDashboardRecentUpdates({
+        announcements: studentAnnouncements,
+        gradeDocs,
+        missionRows
+      });
 
       const dashboardSummary = {
         classCount: classes.length,
@@ -1262,7 +1779,86 @@ module.exports = {
         currentRankLabel: currentStudentRankSummary.displayRankLabel,
         totalXp: currentStudentRankSummary.xp,
         nextRankLabel: currentStudentRankSummary.nextRankLabel,
-        xpToNextRank: currentStudentRankSummary.xpToNextRank
+        xpToNextRank: currentStudentRankSummary.xpToNextRank,
+        attendanceStreak,
+        rankProgressPercent: currentStudentRankSummary.progressPercent,
+        quranProgressLabel: subjectSummary?.quran?.grade || ""
+      };
+
+      const quranProgressLabel = String(subjectSummary?.quran?.grade || "").trim();
+      const studentDashboard = {
+        hero: {
+          greeting: `Keep going, ${String(currentStudent?.firstName || req.user?.firstName || "Student").trim() || "Student"}`,
+          streakMessage,
+          dailyGoalProgress,
+          dailyGoalLabel: "Daily goal progress",
+          dailyGoalDetail,
+          nextRankLabel: currentStudentRankSummary.nextRankLabel,
+          rankProgressLabel: currentStudentRankSummary.progressLabel,
+          xpToNextRank: currentStudentRankSummary.xpToNextRank
+        },
+        quickStats: [
+          {
+            key: "quran-progress",
+            label: "Qur'an Progress",
+            value: quranProgressLabel || "Not tracked",
+            note: quranProgressLabel
+              ? "Based on Qur'an-related grading"
+              : "Qur'an assessments will appear here",
+            icon: "quran"
+          },
+          {
+            key: "streak",
+            label: "Streak",
+            value: `${attendanceStreak}`,
+            note: attendanceStreak === 1 ? "day in a row" : "days in a row",
+            icon: "streak"
+          },
+          {
+            key: "points",
+            label: "Points",
+            value: `${Number(currentStudentRankSummary.xp || 0).toLocaleString()}`,
+            note: currentStudentRankSummary.progressLabel,
+            icon: "points"
+          },
+          {
+            key: "rank",
+            label: "Rank",
+            value: currentStudentRankSummary.displayRankLabel,
+            note: currentStudentRankSummary.xpToNextRank > 0
+              ? `${currentStudentRankSummary.xpToNextRank.toLocaleString()} XP to ${currentStudentRankSummary.nextRankLabel}`
+              : "Maximum rank reached",
+            icon: "rank"
+          }
+        ],
+        todayLessons,
+        inspiration: {
+          verse: randomVerses,
+          reflection: randomReminders
+        },
+        recentUpdates,
+        missionControl: {
+          active: missionStatusCounts.inProgress,
+          completed: missionStatusCounts.completed,
+          points: Number(currentStudentRankSummary.xp || 0),
+          streak: attendanceStreak,
+          nextRankLabel: currentStudentRankSummary.nextRankLabel,
+          progressLabel: currentStudentRankSummary.progressLabel
+        },
+        leaderboard: {
+          students: leaderboardStudents.slice(0, 3).map((student, index) => ({
+            ...student,
+            position: index + 1,
+            isCurrentStudent: student.id === studentId
+          })),
+          totalStudents: leaderboardStudents.length,
+          currentPosition: currentLeaderboardIndex >= 0 ? currentLeaderboardIndex + 1 : null
+        },
+        missionList: missionRows.slice(0, 6),
+        emptyState: {
+          hasClasses: classes.length > 0,
+          hasMissions: missionRows.length > 0
+        }
       };
 
       const baseUserView = typeof req.user?.toObject === "function" ? req.user.toObject() : { ...req.user };
@@ -1278,7 +1874,9 @@ module.exports = {
         verses: randomVerses,
         reflections: randomReminders,
         studentAnnouncements,
-        dashboardSummary
+        dashboardSummary,
+        studentDashboard,
+        recentUpdates
       });
 
     } catch (err) {
@@ -1650,6 +2248,8 @@ module.exports = {
   },
   getTeacherStudentProgress: async (req, res) => {
     try {
+      await sweepExpiredMissionAttempts({ schoolId: req.schoolId });
+
       const studentId = req.params.id;
       const preferredClassId = String(req.query.classId || "").trim();
       const redirectPath = "/teacher/student-progress";
@@ -1677,11 +2277,17 @@ module.exports = {
         return res.redirect(redirectPath);
       }
 
+      const recentPointAdjustments = await PointAdjustment.find(scopedQuery(req, { studentId }))
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean();
+
       return res.render("teacher/teacherStudentProgress.ejs", {
         user: req.user,
         progress,
         rankLadder: RANK_LADDER,
         teacherClass,
+        recentPointAdjustments,
         messages: req.flash()
       });
     } catch (err) {
@@ -1692,6 +2298,7 @@ module.exports = {
   },
   getTeacherStudentProgressDirectory: async (req, res) => {
     try {
+      await sweepExpiredMissionAttempts({ schoolId: req.schoolId });
       const directory = await buildTeacherStudentProgressDirectoryViewModel(req, req.user._id);
 
       return res.render("teacher/teacherStudentDirectory.ejs", {
@@ -1705,65 +2312,17 @@ module.exports = {
       return res.redirect("/teacher/home");
     }
   },
-  getTeacherGrades: async (req, res) => {
+  getTeacherGrades: async (req, res, next) => {
     try {
-      const missions = await Mission.find(scopedQuery(req, { "createdBy._id": req.user._id })).lean();
-      const rawClasses = await Class.find(scopedQuery(req, { 'teachers._id': req.user._id })).lean();
-      const classes = rawClasses.map((cls) => prepareClassWithConfig(cls, req.user._id));
-      const students = classes.flatMap((cls) => (Array.isArray(cls.students) ? cls.students : []));
-      const uniqueStudentIds = [...new Set(students.map((student) => String(student._id)))];
-      const classIds = classes.map(cls => cls._id);
-      const [grades, studentRankDocs] = await Promise.all([
-        Grade.find(scopedQuery(req, { 'classInfo._id': { $in: classIds } })).lean(),
-        User.find(scopedQuery(req, { role: "student", _id: { $in: uniqueStudentIds } }))
-          .select("_id firstName lastName userName points xp rank manualRank rankOverrideEnabled rankOverrideReason rankOverrideSetAt")
-          .lean()
-      ]);
-
-      const rankSummaryByStudentId = {};
-      studentRankDocs.forEach((studentDoc) => {
-        rankSummaryByStudentId[String(studentDoc._id)] = {
-          ...buildRankSummaryFromUser(studentDoc),
-          rankOverrideReason: String(studentDoc.rankOverrideReason || "").trim(),
-          rankOverrideSetAt: studentDoc.rankOverrideSetAt || null
-        };
-      });
-
-      const gradesByClass = new Map();
-      grades.forEach((grade) => {
-        const classKey = grade?.classInfo?.[0]?._id ? String(grade.classInfo[0]._id) : null;
-        if (!classKey) return;
-        if (!gradesByClass.has(classKey)) gradesByClass.set(classKey, []);
-        gradesByClass.get(classKey).push(grade);
-      });
-
-      const decoratedClasses = classes.map((cls) => {
-        const classGrades = gradesByClass.get(String(cls._id)) || [];
-        const catalog = buildDisplayCatalogForClass(cls, classGrades);
-        return {
-          ...cls,
-          displaySubjects: catalog.subjects,
-          displayCategories: catalog.categories
-        };
-      });
+      const gradebookPage = await buildGradingV1TeacherGradebookPage(req);
 
       res.render("teacher/teacherGrades.ejs", {
         user: req.user,
-        classes: decoratedClasses,
-        missions,
-        students,
-        grades,
-        rankSummaryByStudentId,
-        rankLadder: RANK_LADDER,
-        messages: req.flash(),
-        getSubjectAverage,
-        normalizeCategoryKey,
-        getGradeSubjectKey,
-        getGradeCategoryKey
+        gradebookPage,
+        messages: req.flash()
       });
     } catch (err) {
-      console.error(err);
-      res.send("Error loading users");
+      return next(err);
     }
   },
   getTeacherCustomization: async (req, res) => {
@@ -1792,7 +2351,9 @@ module.exports = {
           user: req.user,
           classes: [],
           selectedClass: null,
-          dashboardLayouts: DASHBOARD_LAYOUTS
+          dashboardLayouts: DASHBOARD_LAYOUTS,
+          defaultGradingScaleSet: buildDefaultGradingScaleSet(),
+          messages: req.flash()
         });
       }
 
@@ -1803,7 +2364,9 @@ module.exports = {
         user: req.user,
         classes: decoratedClasses,
         selectedClass,
-        dashboardLayouts: DASHBOARD_LAYOUTS
+        dashboardLayouts: DASHBOARD_LAYOUTS,
+        defaultGradingScaleSet: buildDefaultGradingScaleSet(),
+        messages: req.flash()
       });
     } catch (err) {
       console.error(err);
@@ -1886,7 +2449,8 @@ module.exports = {
   },
   getTeacherMissions: async (req, res) => {
     try {
-      const classes = await Class.find(scopedQuery(req, { 'teachers._id': req.user._id })).lean();
+      const rawClasses = await Class.find(scopedQuery(req, { 'teachers._id': req.user._id })).lean();
+      const classes = rawClasses.map((cls) => prepareClassWithConfig(cls, req.user._id));
       const classIds = classes.map((cls) => cls._id);
       const classStudentIds = Array.from(
         new Set(
@@ -1911,7 +2475,8 @@ module.exports = {
         classes: classes,
         missions: missions,
         students: students,
-        grades: grades
+        grades: grades,
+        messages: req.flash()
       });
     } catch (err) {
       console.error(err);
@@ -2216,7 +2781,7 @@ module.exports = {
           .populate({
             path: "parentInfo.children.childID",
             select: "firstName lastName userName",
-            match: { schoolId: req.schoolId }
+            match: { schoolId: req.schoolId, ...activeLifecycleFilter() }
           })
           .sort({ firstName: 1, lastName: 1, userName: 1 })
         : null;
@@ -2288,6 +2853,58 @@ module.exports = {
     } catch (err) {
       console.error(err);
       return res.status(500).send("Error loading users"); // only 1 response
+    }
+  },
+  getDeletedUsers: async (req, res) => {
+    try {
+      const deletedUsers = await User.find(
+        scopedQuery(req, {
+          includeDeleted: true,
+          ...deletedLifecycleFilter()
+        })
+      )
+        .select("firstName lastName userName email role deletedAt deletedBy deletedReason isDeleted restoredAt restoredBy")
+        .populate({
+          path: "deletedBy",
+          select: "firstName lastName userName email"
+        })
+        .sort({ deletedAt: -1, updatedAt: -1, createdAt: -1 })
+        .lean();
+
+      const deletedSummary = {
+        total: deletedUsers.length,
+        admins: 0,
+        students: 0,
+        teachers: 0,
+        parents: 0
+      };
+
+      deletedUsers.forEach((account) => {
+        const fullName = `${account.firstName || ""} ${account.lastName || ""}`.trim();
+        account.displayName = fullName || account.userName || account.email || "Unknown User";
+        const deletedByName = `${account.deletedBy?.firstName || ""} ${account.deletedBy?.lastName || ""}`.trim();
+        account.deletedByDisplayName = deletedByName
+          || account.deletedBy?.userName
+          || account.deletedBy?.email
+          || "Unknown admin";
+
+        if (account.role === "admin") deletedSummary.admins += 1;
+        if (account.role === "student") deletedSummary.students += 1;
+        if (account.role === "teacher") deletedSummary.teachers += 1;
+        if (account.role === "parent") deletedSummary.parents += 1;
+      });
+
+      return res.render("admin/deleted-users.ejs", {
+        user: req.user,
+        activePage: "students",
+        deletedUsers,
+        deletedSummary,
+        messages: req.flash()
+      });
+    } catch (err) {
+      console.error(err);
+      req.flash("errors", [{ msg: "Error loading deleted accounts." }]);
+      return res.status(500).redirect("/admin/users");
     }
   },
   getResetPassword: async (req, res) => {
@@ -2363,6 +2980,8 @@ module.exports = {
   },
   getStudentMissions: async (req, res) => {
     try {
+      await sweepExpiredMissionAttempts({ schoolId: req.schoolId });
+
       const [classes, currentStudentSnapshot] = await Promise.all([
         Class.find(scopedQuery(req, { 'students._id': req.user._id })).lean(),
         User.findOne(scopedQuery(req, { _id: req.user._id, role: "student" }))
@@ -2424,8 +3043,7 @@ module.exports = {
           const sameId = toIdString(entry?._id) === toIdString(currentStudentView?._id || req.user?._id);
           const sameName = String(entry?.name || "").trim() === fullName;
           if (!sameId && !sameName) return false;
-          const normalizedStatus = String(entry?.status || "").trim().toLowerCase();
-          return normalizedStatus === "started" || normalizedStatus === "in-progress" || normalizedStatus === "active";
+          return normalizeMissionAttemptStatusKey(entry?.status, true) === "active";
         });
       });
 
@@ -2455,6 +3073,149 @@ module.exports = {
     } catch (err) {
       console.log(`Error: ${err}`);
       res.status(500).send("Error loading missions page");
+    }
+  },
+
+  // ─── Teacher Reports ──────────────────────────────────────────────────────
+  getTeacherReports: async (req, res) => {
+    try {
+      const teacherClasses = await Class.find(scopedQuery(req, { "teachers._id": req.user._id }))
+        .select("_id className classCode students")
+        .sort({ className: 1 })
+        .lean();
+
+      const studentIdSet = new Set(
+        teacherClasses.flatMap((c) => (c.students || []).map((s) => String(s._id || s)))
+      );
+      const students = studentIdSet.size
+        ? await User.find(scopedQuery(req, { _id: { $in: [...studentIdSet] }, role: "student" }))
+          .select("_id firstName lastName userName studentInfo.studentNumber")
+          .sort({ firstName: 1, lastName: 1 })
+          .lean()
+        : [];
+
+      const stats = await buildReportGenerationStats(req);
+
+      res.render("teacher/reports.ejs", {
+        user: req.user,
+        students,
+        classes: teacherClasses,
+        reportStats: stats,
+        messages: req.flash()
+      });
+    } catch (err) {
+      console.error("Teacher reports page error:", err);
+      res.status(500).send("Error loading reports");
+    }
+  },
+
+  getTeacherReportStats: async (req, res) => {
+    try {
+      const stats = await buildReportGenerationStats(req);
+      return res.json({ success: true, stats });
+    } catch (err) {
+      console.error("Teacher report stats error:", err);
+      return res.status(500).json({ success: false, error: "REPORT_STATS_FAILED", message: "Failed to load report stats." });
+    }
+  },
+
+  downloadTeacherStudentReportPdf: async (req, res) => {
+    try {
+      const teacherClasses = await Class.find(scopedQuery(req, { "teachers._id": req.user._id }))
+        .select("students")
+        .lean();
+      const allowed = new Set(teacherClasses.flatMap((c) => (c.students || []).map((s) => String(s._id || s))));
+      if (!allowed.has(String(req.params.id))) {
+        req.flash("errors", [{ msg: "Student not found in your classes." }]);
+        return res.redirect("/teacher/reports");
+      }
+
+      const result = await generateStudentReportResult(req, req.params.id);
+      if (!result) {
+        req.flash("errors", [{ msg: "Student not found." }]);
+        return res.redirect("/teacher/reports");
+      }
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${result.fileName}"`);
+      return res.send(result.pdfBuffer);
+    } catch (err) {
+      console.error("Teacher student report failed:", err?.details || err);
+      req.flash("errors", [{ msg: buildReportErrorMessage(err) }]);
+      return res.redirect("/teacher/reports");
+    }
+  },
+
+  generateTeacherStudentReportPdfAsync: async (req, res) => {
+    try {
+      const teacherClasses = await Class.find(scopedQuery(req, { "teachers._id": req.user._id }))
+        .select("students")
+        .lean();
+      const allowed = new Set(teacherClasses.flatMap((c) => (c.students || []).map((s) => String(s._id || s))));
+      if (!allowed.has(String(req.params.id))) {
+        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Student not in your classes." });
+      }
+
+      const result = await generateStudentReportResult(req, req.params.id);
+      if (!result) {
+        return res.status(404).json({ success: false, error: "REPORT_TARGET_NOT_FOUND", message: "Student not found." });
+      }
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${result.fileName}"`);
+      return res.send(result.pdfBuffer);
+    } catch (err) {
+      console.error("Teacher async student report failed:", err?.details || err);
+      const message = buildReportErrorMessage(err);
+      const status = err?.code === "LATEX_COMPILER_MISSING" ? 503 : 500;
+      return res.status(status).json({ success: false, error: err?.code || "REPORT_GENERATION_FAILED", message });
+    }
+  },
+
+  downloadTeacherClassReportPdf: async (req, res) => {
+    try {
+      const teacherClass = await Class.findOne(scopedQuery(req, { _id: req.params.id, "teachers._id": req.user._id }))
+        .select("_id")
+        .lean();
+      if (!teacherClass) {
+        req.flash("errors", [{ msg: "Class not found in your assignments." }]);
+        return res.redirect("/teacher/reports");
+      }
+
+      const result = await generateClassReportResult(req, req.params.id);
+      if (!result) {
+        req.flash("errors", [{ msg: "Class not found." }]);
+        return res.redirect("/teacher/reports");
+      }
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${result.fileName}"`);
+      return res.send(result.pdfBuffer);
+    } catch (err) {
+      console.error("Teacher class report failed:", err?.details || err);
+      req.flash("errors", [{ msg: buildReportErrorMessage(err) }]);
+      return res.redirect("/teacher/reports");
+    }
+  },
+
+  generateTeacherClassReportPdfAsync: async (req, res) => {
+    try {
+      const teacherClass = await Class.findOne(scopedQuery(req, { _id: req.params.id, "teachers._id": req.user._id }))
+        .select("_id")
+        .lean();
+      if (!teacherClass) {
+        return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Class not in your assignments." });
+      }
+
+      const result = await generateClassReportResult(req, req.params.id);
+      if (!result) {
+        return res.status(404).json({ success: false, error: "REPORT_TARGET_NOT_FOUND", message: "Class not found." });
+      }
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${result.fileName}"`);
+      return res.send(result.pdfBuffer);
+    } catch (err) {
+      console.error("Teacher async class report failed:", err?.details || err);
+      const message = buildReportErrorMessage(err);
+      const status = err?.code === "LATEX_COMPILER_MISSING" ? 503 : 500;
+      return res.status(status).json({ success: false, error: err?.code || "REPORT_GENERATION_FAILED", message });
     }
   }
 

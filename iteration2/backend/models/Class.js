@@ -5,6 +5,7 @@ const {
   getDefaultDashboardSections,
   getDefaultGradingCategories
 } = require("../utils/teacherCustomization");
+const { buildDefaultGradingScaleSet } = require("../utils/gradingScales");
 
 const TeacherDashboardSectionSchema = new mongoose.Schema(
   {
@@ -54,6 +55,40 @@ const TeacherGradingCategorySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const TeacherGradingMarkSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true, trim: true },
+    symbol: { type: String, required: true, trim: true },
+    label: { type: String, required: true, trim: true },
+    description: { type: String, trim: true, default: "" },
+    value: { type: Number, required: true, min: 0 },
+    active: { type: Boolean, default: true },
+    sortOrder: { type: Number, default: 0 },
+    countsTowardGrade: { type: Boolean, default: true },
+    isDefault: { type: Boolean, default: false }
+  },
+  { _id: false }
+);
+
+const TeacherGradingScaleSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    description: { type: String, trim: true, default: "" },
+    maxValue: { type: Number, required: true, min: 0 },
+    marks: { type: [TeacherGradingMarkSchema], default: [] }
+  },
+  { _id: false }
+);
+
+const TeacherGradingScaleSetSchema = new mongoose.Schema(
+  {
+    memorization: { type: TeacherGradingScaleSchema, default: () => buildDefaultGradingScaleSet().memorization },
+    subac: { type: TeacherGradingScaleSchema, default: () => buildDefaultGradingScaleSet().subac }
+  },
+  { _id: false }
+);
+
 const GradingConfigVersionSchema = new mongoose.Schema(
   {
     version: { type: Number, required: true, min: 1 },
@@ -63,7 +98,8 @@ const GradingConfigVersionSchema = new mongoose.Schema(
     reason: { type: String, trim: true, default: "" },
     note: { type: String, trim: true, default: "" },
     subjectConfig: { type: [TeacherSubjectConfigSchema], default: [] },
-    gradingCategories: { type: [TeacherGradingCategorySchema], default: getDefaultGradingCategories }
+    gradingCategories: { type: [TeacherGradingCategorySchema], default: getDefaultGradingCategories },
+    gradingScales: { type: TeacherGradingScaleSetSchema, default: buildDefaultGradingScaleSet }
   },
   { _id: false }
 );
@@ -77,6 +113,7 @@ const TeacherClassSettingsSchema = new mongoose.Schema(
     dashboardSections: { type: [TeacherDashboardSectionSchema], default: getDefaultDashboardSections },
     subjectConfig: { type: [TeacherSubjectConfigSchema], default: [] },
     gradingCategories: { type: [TeacherGradingCategorySchema], default: getDefaultGradingCategories },
+    gradingScales: { type: TeacherGradingScaleSetSchema, default: buildDefaultGradingScaleSet },
     currentConfigVersion: { type: Number, min: 1, default: 1 },
     configVersions: { type: [GradingConfigVersionSchema], default: [] },
     lastCustomizedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

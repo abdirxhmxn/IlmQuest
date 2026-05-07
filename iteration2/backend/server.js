@@ -16,6 +16,7 @@ const mainRoutes = require("./routes/main");
 const postRoutes = require("./routes/posts");
 const cookieParser = require("cookie-parser");
 const { ensurePlatformSuperAdminAccount } = require("./utils/platformSuperAdmin");
+const { startMissionDeadlineSweepScheduler } = require("./utils/missionDeadlines");
 const { rejectMongoOperators, isHtmlRequest } = require("./middleware/validate");
 const isProduction = env.NODE_ENV === "production";
 const staticRoot = path.join(__dirname, "../frontend/public");
@@ -37,6 +38,7 @@ mongoose.connection.once("open", async () => {
     if (bootstrap?.created) {
       console.log(`[BOOTSTRAP] Super admin ready: ${bootstrap.email}`);
     }
+    startMissionDeadlineSweepScheduler();
   } catch (err) {
     console.error("[BOOTSTRAP] Failed to ensure platform super admin:", err?.message || err);
   }

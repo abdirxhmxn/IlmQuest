@@ -1,0 +1,143 @@
+.deleted-users-page {
+  display: grid;
+  gap: 14px;
+}
+
+.deleted-users-warning-panel {
+  overflow: hidden;
+}
+
+.deleted-users-warning {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #fff7ed 0%, #fff1f1 100%);
+}
+
+.deleted-users-warning h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.deleted-users-warning p {
+  margin: 0;
+  color: #7a4b12;
+}
+
+.deleted-users-warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(180, 35, 24, 0.1);
+  color: #b42318;
+}
+
+.deleted-users-warning-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.deleted-users-table-panel {
+  overflow: hidden;
+}
+
+.deleted-users-empty {
+  padding: 22px 18px 24px;
+}
+
+.deleted-users-empty h3 {
+  margin: 0 0 6px;
+}
+
+.deleted-users-empty p {
+  margin: 0;
+  color: #5f6e84;
+}
+
+.deleted-users-table {
+  min-width: 1180px;
+}
+
+.deleted-users-name-cell {
+  font-weight: 760;
+  color: #142338;
+}
+
+.deleted-users-reason-cell {
+  min-width: 220px;
+  color: #4f6077;
+}
+
+.deleted-users-actions-cell {
+  min-width: 240px;
+}
+
+.deleted-users-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.deleted-users-inline-form {
+  margin: 0;
+}
+
+.deleted-users-action-note {
+  margin: 8px 0 0;
+  color: #b42318;
+  font-size: 0.77rem;
+}
+
+.deleted-users-role-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #d6e2fb;
+  color: #1f4f8a;
+  font-size: 0.74rem;
+  font-weight: 780;
+  text-transform: capitalize;
+}
+
+.deleted-users-role-chip.role-student {
+  background: #ebf6ef;
+  border-color: #cfe6d8;
+  color: #1f6644;
+}
+
+.deleted-users-role-chip.role-teacher {
+  background: #eef4ff;
+  border-color: #d6e2fb;
+  color: #1f4f8a;
+}
+
+.deleted-users-role-chip.role-parent {
+  background: #fff8e1;
+  border-color: #eedfb0;
+  color: #8a6211;
+}
+
+.deleted-users-role-chip.role-admin {
+  background: #f4efff;
+  border-color: #ddd2ff;
+  color: #5b3ea6;
+}
+
+@media (max-width: 768px) {
+  .deleted-users-warning {
+    grid-template-columns: 1fr;
+  }
+
+  .deleted-users-actions {
+    flex-direction: column;
+  }
+}

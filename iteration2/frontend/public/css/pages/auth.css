@@ -29,13 +29,11 @@
 
 .auth-panel {
   width: min(100%, var(--auth-panel-max));
-  padding: clamp(22px, 3.4vw, 42px) clamp(18px, 3vw, 34px);
-  border-radius: 24px;
-  border: 1px solid color-mix(in srgb, var(--color-brand-700) 26%, #ffffff);
-  box-shadow: var(--shadow-md);
-  background: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), var(--glass-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  padding: clamp(28px, 3.4vw, 44px) clamp(22px, 3vw, 38px);
+  border-radius: 20px;
+  border: 1px solid #d4d9e3;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
   text-align: center;
 }
 

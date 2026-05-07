@@ -50,6 +50,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= resolvedPageTitle %></title>
+    <script src="/js/theme-toggle.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/layout.css" />
     <link rel="stylesheet" href="/css/components.css" />
@@ -58,6 +59,8 @@
       <link rel="stylesheet" href="<%= styleHref %>" />
     <% }) %>
     <link rel="stylesheet" href="/css/pages/app-shell.css" />
+    <link rel="stylesheet" href="/css/animations.css" />
+    <link rel="stylesheet" href="/css/dark-mode.css" />
   </head>
   <body>
     <div
@@ -102,6 +105,14 @@
           <% }) %>
         </nav>
 
+        <button
+          type="button"
+          class="theme-toggle-btn"
+          data-theme-toggle
+          aria-label="Switch to dark mode"
+          aria-pressed="false"
+          style="width:100%;justify-content:flex-start;gap:10px;padding:0 10px;margin-bottom:6px;border-radius:10px;"
+        ><span class="theme-toggle-icon" style="font-size:1rem;">☽</span><span class="role-sidebar-label" style="font-size:0.82rem;font-weight:700;">Dark Mode</span></button>
         <a class="parent-sidebar-profile role-sidebar-profile" href="/profile" aria-label="Open profile">
           <div class="parent-profile-avatar role-profile-avatar">
             <% if (hasParentAvatar) { %>

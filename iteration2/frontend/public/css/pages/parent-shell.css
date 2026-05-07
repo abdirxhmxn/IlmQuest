@@ -17,16 +17,16 @@
 :root {
   color-scheme: light;
 
-  --parent-canvas: #e7dfd3;
-  --parent-shell-bg: #efe8dc;
+  --parent-canvas: #e9eaee;
+  --parent-shell-bg: #f4f5f8;
   --parent-surface: #ffffff;
-  --parent-surface-soft: #f7faf8;
-  --parent-border: #d6ded8;
-  --parent-border-strong: #c5d3ca;
+  --parent-surface-soft: #f7f9fb;
+  --parent-border: #d2d6de;
+  --parent-border-strong: #c2c8d4;
 
-  --parent-text-main: #11261d;
-  --parent-text-muted: #5b7166;
-  --parent-text-soft: #7a8f84;
+  --parent-text-main: #111827;
+  --parent-text-muted: #4b5563;
+  --parent-text-soft: #6b7280;
 
   --parent-sidebar-bg: #0f4f40;
   --parent-sidebar-bg-soft: #0b3f33;
@@ -439,32 +439,36 @@ a {
 }
 
 .parent-empty-state {
-  border: 1px dashed var(--parent-border);
-  border-radius: 10px;
-  padding: 14px;
-  color: var(--parent-text-muted);
-  background: var(--parent-surface-soft);
-  font-size: 0.9rem;
+  border: 1px dashed #c8cfd9;
+  border-radius: 12px;
+  padding: 20px;
+  color: #5d6b82;
+  background: #f8f9fb;
+  font-size: 0.88rem;
+  text-align: center;
 }
 
 .parent-flash {
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 0.86rem;
-  font-weight: 700;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
   border: 1px solid transparent;
+  border-left-width: 4px;
 }
 
 .parent-flash-success {
-  color: #1e5f3f;
-  background: #edf8f1;
-  border-color: #b8ddc6;
+  color: #1a5e3b;
+  background: #f0fbf4;
+  border-color: #b8dfc9;
+  border-left-color: #1e8a55;
 }
 
 .parent-flash-error {
   color: #8b1f2b;
-  background: #fef2f2;
-  border-color: #f5c2c7;
+  background: #fff2f2;
+  border-color: #edc8c8;
+  border-left-color: #c23b3b;
 }
 
 .parent-page-shell {

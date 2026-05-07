@@ -27,7 +27,7 @@
         <p>Your dashboard sections will appear once classes are assigned to you.</p>
       </div>
     <% } else { %>
-      <section class="announcement-stream">
+      <section class="announcement-stream reveal">
         <header>
           <h2>School Announcements</h2>
           <p>Pinned and recently published updates relevant to your classes.</p>
@@ -73,9 +73,9 @@
             </div>
           </header>
 
-          <div class="section-grid layout-<%= cls.teacherSettings?.dashboardLayout || 'comfortable' %>">
+          <div class="section-grid layout-<%= cls.teacherSettings?.dashboardLayout || 'comfortable' %> reveal-stagger">
             <% if (cls.activeSectionKeys.includes('classOverview')) { %>
-              <section class="dashboard-card">
+              <section class="dashboard-card reveal">
                 <h3>Class Overview</h3>
                 <div class="card-metrics">
                   <div>
@@ -95,7 +95,7 @@
             <% } %>
 
             <% if (cls.activeSectionKeys.includes('attendanceSummary')) { %>
-              <section class="dashboard-card">
+              <section class="dashboard-card reveal">
                 <h3>Attendance Summary</h3>
                 <p class="card-value"><%= cls.dashboardMetrics?.attendanceRate !== null ? `${cls.dashboardMetrics?.attendanceRate}%` : 'No data yet' %></p>
                 <p class="card-note">Present rate over the last 30 days.</p>
@@ -103,7 +103,7 @@
             <% } %>
 
             <% if (cls.activeSectionKeys.includes('gradeSummary')) { %>
-              <section class="dashboard-card">
+              <section class="dashboard-card reveal">
                 <h3>Grade Summary</h3>
                 <p class="card-value"><%= cls.dashboardMetrics?.classAveragePercent ? `${cls.dashboardMetrics.classAveragePercent}%` : 'No grades yet' %></p>
                 <p class="card-note"><%= cls.dashboardMetrics?.gradesRecorded || 0 %> assessments recorded.</p>
@@ -111,7 +111,7 @@
             <% } %>
 
             <% if (cls.activeSectionKeys.includes('assignmentsMissions')) { %>
-              <section class="dashboard-card">
+              <section class="dashboard-card reveal">
                 <h3>Assignments & Missions</h3>
                 <p class="card-note">You have created <strong><%= cls.dashboardMetrics?.missionsCreated || 0 %></strong> missions.</p>
                 <div class="quick-links">
@@ -122,7 +122,7 @@
             <% } %>
 
             <% if (cls.activeSectionKeys.includes('leaderboard')) { %>
-              <section class="dashboard-card">
+              <section class="dashboard-card reveal">
                 <h3>Leaderboard</h3>
                 <% if (cls.topStudents && cls.topStudents.length > 0) { %>
                   <ol class="leaderboard-list">

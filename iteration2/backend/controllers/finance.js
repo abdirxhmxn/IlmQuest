@@ -7,6 +7,7 @@ const FinanceBankConnection = require("../models/FinanceBankConnection");
 const FinanceBankAccount = require("../models/FinanceBankAccount");
 const FinanceBankTransaction = require("../models/FinanceBankTransaction");
 const FinanceSyncLog = require("../models/FinanceSyncLog");
+const ParentPayment = require("../models/ParentPayment");
 const { isHtmlRequest } = require("../middleware/validate");
 const { scopedIdQuery, scopedQuery } = require("../utils/tenant");
 const { logAdminAction, simpleDiff } = require("../utils/audit");
@@ -16,7 +17,10 @@ const {
   normalizeFinanceCategoryKey,
   buildActorSnapshot,
   ensureDefaultFinanceCategories,
-  fetchFinanceData
+  fetchFinanceData,
+  formatDateLabel,
+  formatDateTimeLabel,
+  formatCurrencyLabel
 } = require("../utils/finance");
 
 const ENTRY_TYPES = new Set(["income", "expense"]);
@@ -173,8 +177,148 @@ function buildEmptyFinanceState() {
   };
 }
 
+function buildEmptyParentBillingState() {
+  return {
+    summary: {
+      invoiceCount: 0,
+      familyCount: 0,
+      totalOutstanding: 0,
+      totalOutstandingLabel: formatCurrencyLabel(0),
+      totalCollected: 0,
+      totalCollectedLabel: formatCurrencyLabel(0),
+      overdueCount: 0,
+      openCount: 0,
+      paidCount: 0,
+      nextDueLabel: "No upcoming balances"
+    },
+    rows: [],
+    overdueRows: [],
+    upcomingRows: []
+  };
+}
+
+function formatFinanceUserName(userLike, fallback = "Family Account") {
+  const fullName = `${userLike?.firstName || ""} ${userLike?.lastName || ""}`.trim();
+  return fullName || userLike?.userName || fallback;
+}
+
+function resolveParentPaymentStatus(paymentDoc, now = new Date()) {
+  const expectedAmount = Math.max(0, Number(paymentDoc?.expectedAmount || 0));
+  const paidAmount = Math.max(0, Number(paymentDoc?.paidAmount || 0));
+  const balanceAmount = Math.max(0, expectedAmount - paidAmount);
+  const rawStatus = String(paymentDoc?.status || "").trim();
+  const dueDate = paymentDoc?.dueDate ? new Date(paymentDoc.dueDate) : null;
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const dueIsPast = Boolean(
+    dueDate
+    && !Number.isNaN(dueDate.getTime())
+    && new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()) < today
+    && balanceAmount > 0
+  );
+
+  if (balanceAmount <= 0 || rawStatus === "Paid") {
+    return { key: "paid", label: "Paid" };
+  }
+  if (rawStatus === "PendingProcessor") {
+    return { key: "pendingprocessor", label: "Pending" };
+  }
+  if (dueIsPast || rawStatus === "Overdue") {
+    return { key: "overdue", label: "Overdue" };
+  }
+  if (rawStatus === "Partial") {
+    return { key: "partial", label: "Partial" };
+  }
+  return { key: "due", label: "Due" };
+}
+
+async function buildParentBillingSnapshot(req) {
+  const paymentDocs = await ParentPayment.find(scopedQuery(req))
+    .select("parentId studentId title category expectedAmount paidAmount currency dueDate paidAt status method receiptReference processorReference updatedAt createdAt")
+    .populate({
+      path: "parentId",
+      select: "firstName lastName userName"
+    })
+    .populate({
+      path: "studentId",
+      select: "firstName lastName userName"
+    })
+    .sort({ dueDate: -1, createdAt: -1 })
+    .lean();
+
+  if (!paymentDocs.length) {
+    return buildEmptyParentBillingState();
+  }
+
+  const rows = paymentDocs.map((payment) => {
+    const currency = String(payment.currency || "USD").trim().toUpperCase() || "USD";
+    const expectedAmount = Math.max(0, Number(payment.expectedAmount || 0));
+    const paidAmount = Math.max(0, Number(payment.paidAmount || 0));
+    const balanceAmount = Math.max(0, expectedAmount - paidAmount);
+    const statusMeta = resolveParentPaymentStatus(payment);
+    const dueDate = payment?.dueDate ? new Date(payment.dueDate) : null;
+    const paidAt = payment?.paidAt ? new Date(payment.paidAt) : null;
+
+    return {
+      id: String(payment._id),
+      title: String(payment.title || "Tuition Payment").trim() || "Tuition Payment",
+      category: String(payment.category || "Other").trim() || "Other",
+      parentName: formatFinanceUserName(payment.parentId, "Parent"),
+      studentName: payment.studentId ? formatFinanceUserName(payment.studentId, "Student") : "Family Account",
+      statusKey: statusMeta.key,
+      statusLabel: statusMeta.label,
+      currency,
+      expectedAmount,
+      expectedAmountLabel: formatCurrencyLabel(expectedAmount, currency),
+      paidAmount,
+      paidAmountLabel: formatCurrencyLabel(paidAmount, currency),
+      balanceAmount,
+      balanceLabel: formatCurrencyLabel(balanceAmount, currency),
+      dueDate,
+      dueDateLabel: dueDate && !Number.isNaN(dueDate.getTime()) ? formatDateLabel(dueDate) : "No due date",
+      paidAtLabel: paidAt && !Number.isNaN(paidAt.getTime()) ? formatDateTimeLabel(paidAt) : "Not paid yet",
+      method: String(payment.method || "").trim(),
+      receiptReference: String(payment.receiptReference || payment.processorReference || "").trim()
+    };
+  });
+
+  const openRows = rows.filter((row) => row.statusKey !== "paid");
+  const overdueRows = openRows.filter((row) => row.statusKey === "overdue");
+  const paidRows = rows.filter((row) => row.statusKey === "paid");
+  const upcomingRows = [...openRows]
+    .filter((row) => row.dueDate)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+    .slice(0, 4);
+
+  const totalOutstanding = openRows.reduce((sum, row) => sum + Number(row.balanceAmount || 0), 0);
+  const totalCollected = rows.reduce((sum, row) => sum + Number(row.paidAmount || 0), 0);
+  const familyCount = new Set(rows.map((row) => row.parentName)).size;
+  const nextDue = upcomingRows[0] || null;
+
+  return {
+    summary: {
+      invoiceCount: rows.length,
+      familyCount,
+      totalOutstanding,
+      totalOutstandingLabel: formatCurrencyLabel(totalOutstanding),
+      totalCollected,
+      totalCollectedLabel: formatCurrencyLabel(totalCollected),
+      overdueCount: overdueRows.length,
+      openCount: openRows.length,
+      paidCount: paidRows.length,
+      nextDueLabel: nextDue
+        ? `${nextDue.dueDateLabel} · ${nextDue.parentName} · ${nextDue.balanceLabel}`
+        : "No upcoming balances"
+    },
+    rows: rows.slice(0, 8),
+    overdueRows: overdueRows.slice(0, 6),
+    upcomingRows
+  };
+}
+
 async function buildFinancePagePayload(req) {
   let financeLoadError = "";
+  let billingLoadError = "";
 
   try {
     await ensureDefaultFinanceCategories(req, req.user);
@@ -183,7 +327,7 @@ async function buildFinancePagePayload(req) {
     financeLoadError = "Could not seed finance categories.";
   }
 
-  const [financeResult, studentResult, classResult] = await Promise.allSettled([
+  const [financeResult, studentResult, classResult, billingResult] = await Promise.allSettled([
     fetchFinanceData(req, { limit: 25 }),
     User.find(scopedQuery(req, { role: "student" }))
       .select("_id firstName lastName userName")
@@ -192,7 +336,8 @@ async function buildFinancePagePayload(req) {
     Class.find(scopedQuery(req))
       .select("_id className classCode")
       .sort({ className: 1 })
-      .lean()
+      .lean(),
+    buildParentBillingSnapshot(req)
   ]);
 
   if (financeResult.status === "rejected") {
@@ -207,10 +352,17 @@ async function buildFinancePagePayload(req) {
     console.error("Finance class lookup error:", classResult.reason);
     financeLoadError = financeLoadError || "Finance data is temporarily unavailable.";
   }
+  if (billingResult.status === "rejected") {
+    console.error("Finance parent billing lookup error:", billingResult.reason);
+    billingLoadError = "Parent billing data is temporarily unavailable.";
+  }
 
   const finance = financeResult.status === "fulfilled" ? financeResult.value : buildEmptyFinanceState();
   const studentDocs = studentResult.status === "fulfilled" ? studentResult.value : [];
   const classDocs = classResult.status === "fulfilled" ? classResult.value : [];
+  const parentPayments = billingResult.status === "fulfilled"
+    ? billingResult.value
+    : buildEmptyParentBillingState();
 
   const studentsForForm = studentDocs.map((student) => ({
     id: String(student._id),
@@ -223,9 +375,11 @@ async function buildFinancePagePayload(req) {
 
   return {
     finance,
+    parentPayments,
     studentsForForm,
     classesForForm,
-    financeLoadError
+    financeLoadError,
+    billingLoadError
   };
 }
 
@@ -241,6 +395,10 @@ module.exports = {
       if (payload.financeLoadError) {
         const existing = Array.isArray(mergedMessages.error) ? mergedMessages.error : [];
         mergedMessages.error = [...existing, payload.financeLoadError];
+      }
+      if (payload.billingLoadError) {
+        const existing = Array.isArray(mergedMessages.error) ? mergedMessages.error : [];
+        mergedMessages.error = [...existing, payload.billingLoadError];
       }
 
       return res.render("admin/finance.ejs", {

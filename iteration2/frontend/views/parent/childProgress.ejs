@@ -13,6 +13,9 @@
   const attendance = view.attendance || {};
   const missions = view.missions || {};
   const metrics = view.metrics || {};
+  const billing = paymentSummary || {};
+  const billingHistory = Array.isArray(billing.historyRows) ? billing.historyRows : [];
+  const billingUpcoming = Array.isArray(billing.upcomingRows) ? billing.upcomingRows : [];
   const progressWidth = Math.max(0, Math.min(100, Number(rank.progressPercent || 0)));
   const successMessages = Array.isArray(messages?.success) ? messages.success : [];
   const errorMessages = [
@@ -39,6 +42,7 @@
     </div>
     <div class="parent-top-actions">
       <a class="parent-action-link" href="/parent/home">Back to Dashboard</a>
+      <a class="parent-action-link" href="/parent/home#payments">View Billing</a>
       <% if (identity.id) { %>
         <a class="parent-action-link" href="/parent/reports/<%= identity.id %>/download">Download Report</a>
       <% } %>
@@ -103,9 +107,7 @@
       <div class="progress-rank-main">
         <h3>Rank Progress</h3>
         <p><%= rank.progressLabel || '0 / 0 XP' %></p>
-        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= progressWidth %>">
-          <span style="width: <%= progressWidth %>%;"></span>
-        </div>
+        <progress class="progress-native" max="100" value="<%= progressWidth %>"></progress>
         <% if (rank.nextRankLabel) { %>
           <small><%= Number(rank.xpToNextRank || 0).toLocaleString() %> XP needed for <%= rank.nextRankLabel %></small>
         <% } %>
@@ -210,6 +212,80 @@
             </tbody>
           </table>
         </div>
+      </article>
+
+      <article class="progress-panel parent-child-billing-panel">
+        <header class="panel-header">
+          <h3>Billing</h3>
+          <span class="status-chip status-<%= billing.statusChip?.tone || 'neutral' %>"><%= billing.statusChip?.label || 'No Bills Yet' %></span>
+        </header>
+        <div class="attendance-metric-grid">
+          <article>
+            <p class="metric-label">Outstanding</p>
+            <p class="metric-value-sm"><%= billing.totalOutstandingLabel || '$0.00' %></p>
+          </article>
+          <article>
+            <p class="metric-label">Collected</p>
+            <p class="metric-value-sm"><%= billing.totalPaidLabel || '$0.00' %></p>
+          </article>
+          <article>
+            <p class="metric-label">Open Items</p>
+            <p class="metric-value-sm"><%= Number(billing.openCount || 0) %></p>
+          </article>
+          <article>
+            <p class="metric-label">Next Due</p>
+            <p class="metric-value-sm"><%= billing.nextDueDateLabel || 'None' %></p>
+          </article>
+        </div>
+
+        <% if (!billingUpcoming.length && !billingHistory.length) { %>
+          <p class="table-empty">No billing activity is available for this child yet.</p>
+        <% } else { %>
+          <% if (billingUpcoming.length) { %>
+            <div class="parent-child-billing-list">
+              <% billingUpcoming.forEach((row) => { %>
+                <article class="billing-upcoming-item">
+                  <div>
+                    <h4><%= row.title %></h4>
+                    <p><%= row.category %></p>
+                  </div>
+                  <div class="billing-upcoming-meta">
+                    <strong><%= row.balanceLabel %></strong>
+                    <span><%= row.dueDateLabel %></span>
+                  </div>
+                </article>
+              <% }) %>
+            </div>
+          <% } %>
+
+          <div class="table-wrap">
+            <table class="progress-table">
+              <thead>
+                <tr>
+                  <th>Charge</th>
+                  <th>Status</th>
+                  <th>Expected</th>
+                  <th>Paid</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% billingHistory.forEach((row) => { %>
+                  <tr>
+                    <td>
+                      <strong><%= row.title %></strong>
+                      <div class="cell-note"><%= row.dueDateLabel %></div>
+                    </td>
+                    <td><span class="status-chip status-<%= row.statusKey || 'neutral' %>"><%= row.statusLabel %></span></td>
+                    <td><%= row.expectedAmountLabel %></td>
+                    <td><%= row.paidAmountLabel %></td>
+                    <td><strong><%= row.balanceLabel %></strong></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
       </article>
 
       <article class="progress-panel">

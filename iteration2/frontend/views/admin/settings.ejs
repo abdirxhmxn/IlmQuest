@@ -21,33 +21,22 @@
     ...(Array.isArray(messages?.error) ? messages.error : []),
     ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
   ];
+  const headerActions = [
+    { href: '/admin/home', label: 'Dashboard' },
+    { href: '/admin/users', label: 'Manage Users' },
+    { href: '/admin/reports', label: 'Reports' }
+  ];
 %>
 
-<header class="admin-page-header">
-  <button
-    type="button"
-    class="sidebar-toggle"
-    data-sidebar-toggle
-    aria-label="Toggle sidebar"
-    aria-expanded="false"
-    aria-controls="adminSidebar"
-  >
-    <%- icon('menu') %>
-  </button>
-  <div class="admin-page-title">
-    <p class="admin-breadcrumbs">Admin / Workspace / Settings</p>
-    <h1>Admin Settings</h1>
-    <p>Review organization profile, configuration shortcuts, and operational hygiene checks.</p>
-  </div>
-  <div class="admin-icon-actions" aria-hidden="true">
-    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('activity') %></button>
-    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('bell') %></button>
-  </div>
-  <div class="admin-top-actions">
-    <a class="admin-action-link" href="/profile">My Profile</a>
-    <a class="admin-action-link" href="/admin/home">Dashboard</a>
-  </div>
-</header>
+<%- include('../partials/adminPageHeader', {
+  user: typeof user !== 'undefined' ? user : undefined,
+  iconSvg: typeof iconSvg === 'function' ? iconSvg : undefined,
+  showSidebarToggle: true,
+  headerBreadcrumbs: 'Admin / Workspace / Settings',
+  headerTitle: 'Admin Settings',
+  headerSubtitle: 'Review organization profile, configuration shortcuts, and operational hygiene checks.',
+  headerActions
+}) %>
 
 <% if (successMessages.length > 0) { %>
   <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>

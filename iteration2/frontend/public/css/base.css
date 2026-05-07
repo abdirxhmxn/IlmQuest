@@ -13,6 +13,8 @@
  * ============================================================
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 /* 1. Tokens */
 :root {
   color-scheme: light;
@@ -25,8 +27,8 @@
   --color-brand-600: #22a06b;
   --color-brand-100: #ecfdf5;
 
-  --color-surface-page: #fcf8f5;
-  --color-surface-canvas: #f4f6f5;
+  --color-surface-page: #f8f9fb;
+  --color-surface-canvas: #f0f2f5;
   --color-surface-panel: #ffffff;
   --color-surface-panel-soft: #f8faf9;
   --color-border-soft: #dbe3dd;
@@ -112,7 +114,7 @@ body {
 body {
   background: var(--color-surface-canvas);
   color: var(--color-text-main);
-  font-family: "Manrope", "Avenir Next", "Segoe UI", "Inter", Roboto, sans-serif;
+  font-family: "Inter", "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Roboto, sans-serif;
   font-size: var(--font-size-md);
   line-height: var(--line-height-normal);
   text-rendering: optimizeLegibility;

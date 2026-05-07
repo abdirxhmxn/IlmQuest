@@ -7,6 +7,7 @@
 }) %>
 
 <%
+  function to12h(t) { if (!t) return ''; var p = String(t).split(':'); var h = parseInt(p[0], 10); var m = p[1] || '00'; var a = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + m + ' ' + a; }
   const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
   const successMessages = Array.isArray(messages?.success) ? messages.success : [];
   const errorMessages = [
@@ -14,33 +15,22 @@
     ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
   ];
   const activeClassCount = Array.isArray(classes) ? classes.filter((item) => item && item.active).length : 0;
+  const headerActions = [
+    { href: '/admin/home', label: 'Dashboard' },
+    { href: '/admin/users', label: 'Manage Users' },
+    { href: '/admin/reports', label: 'Reports' }
+  ];
 %>
 
-<header class="admin-page-header">
-  <button
-    type="button"
-    class="sidebar-toggle"
-    data-sidebar-toggle
-    aria-label="Toggle sidebar"
-    aria-expanded="false"
-    aria-controls="adminSidebar"
-  >
-    <%- icon('menu') %>
-  </button>
-  <div class="admin-page-title">
-    <p class="admin-breadcrumbs">Admin / Operations / Classes</p>
-    <h1>Class Management</h1>
-    <p>Create classes, assign teachers and students, and keep schedules organized.</p>
-  </div>
-  <div class="admin-icon-actions" aria-hidden="true">
-    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('activity') %></button>
-    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('bell') %></button>
-  </div>
-  <div class="admin-top-actions">
-    <a class="admin-action-link" href="/admin/users">User Administration</a>
-    <a class="admin-action-link" href="/admin/reports">Reports</a>
-  </div>
-</header>
+<%- include('../partials/adminPageHeader', {
+  user: typeof user !== 'undefined' ? user : undefined,
+  iconSvg: typeof iconSvg === 'function' ? iconSvg : undefined,
+  showSidebarToggle: true,
+  headerBreadcrumbs: 'Admin / Operations / Classes',
+  headerTitle: 'Class Management',
+  headerSubtitle: 'Create classes, assign teachers and students, and keep schedules organized.',
+  headerActions
+}) %>
 
 <% if (successMessages.length > 0) { %>
   <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
@@ -245,7 +235,7 @@
               </td>
               <td>
                 <% if (c.schedule && c.schedule.length>0) { %>
-                  <%= c.schedule.map(s=> `${s.day}: ${s.startTime || ''} - ${s.endTime || ''}`).join(" | ") %>
+                  <%= c.schedule.map(s=> `${s.day}: ${to12h(s.startTime) || '—'} – ${to12h(s.endTime) || '—'}`).join(" | ") %>
                 <% } else { %>
                   No schedule
                 <% } %>

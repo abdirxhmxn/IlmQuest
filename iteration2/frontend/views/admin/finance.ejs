@@ -14,6 +14,11 @@
   const entries = finance.entries || {};
   const categories = finance.categories || {};
   const bank = finance.bank || {};
+  const parentPayments = payload.parentPayments || {};
+  const parentPaymentSummary = parentPayments.summary || {};
+  const parentPaymentRows = Array.isArray(parentPayments.rows) ? parentPayments.rows : [];
+  const overduePaymentRows = Array.isArray(parentPayments.overdueRows) ? parentPayments.overdueRows : [];
+  const upcomingPaymentRows = Array.isArray(parentPayments.upcomingRows) ? parentPayments.upcomingRows : [];
   const monthLabel = finance.monthLabel || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
   const studentsForForm = Array.isArray(payload.studentsForForm) ? payload.studentsForForm : [];
@@ -30,33 +35,22 @@
     ...(Array.isArray(messages?.error) ? messages.error : []),
     ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
   ];
+  const headerActions = [
+    { href: '/admin/home', label: 'Dashboard' },
+    { href: '/admin/users', label: 'Manage Users' },
+    { href: '/admin/reports', label: 'Reports' }
+  ];
 %>
 
-<header class="admin-page-header">
-  <button
-    type="button"
-    class="sidebar-toggle"
-    data-sidebar-toggle
-    aria-label="Toggle sidebar"
-    aria-expanded="false"
-    aria-controls="adminSidebar"
-  >
-    <%- icon('menu') %>
-  </button>
-  <div class="admin-page-title">
-    <p class="admin-breadcrumbs">Admin / Operations / Finance</p>
-    <h1>Finance Command Center</h1>
-    <p>Track income, expenses, bank sync health, and reconciliation in one view.</p>
-  </div>
-  <div class="admin-icon-actions" aria-hidden="true">
-    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('activity') %></button>
-    <button class="admin-icon-btn" type="button" tabindex="-1"><%- icon('bell') %></button>
-  </div>
-  <div class="admin-top-actions">
-    <a class="admin-action-link" href="/admin/home">Dashboard</a>
-    <a class="admin-action-link" href="/admin/reports">Reports</a>
-  </div>
-</header>
+<%- include('../partials/adminPageHeader', {
+  user: typeof user !== 'undefined' ? user : undefined,
+  iconSvg: typeof iconSvg === 'function' ? iconSvg : undefined,
+  showSidebarToggle: true,
+  headerBreadcrumbs: 'Admin / Operations / Finance',
+  headerTitle: 'Finance Command Center',
+  headerSubtitle: 'Track income, expenses, bank sync health, and reconciliation in one view.',
+  headerActions
+}) %>
 
 <% if (successMessages.length > 0) { %>
   <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
@@ -240,6 +234,115 @@
             <% }) %>
           </tbody>
         </table>
+      </div>
+    </article>
+
+    <article class="finance-card finance-billing-card" id="parent-billing">
+      <header class="finance-card-header">
+        <h2>Parent Billing Snapshot</h2>
+        <p>School-wide family payment activity with overdue visibility and upcoming balance follow-up.</p>
+      </header>
+
+      <div class="finance-billing-summary-grid">
+        <article class="finance-billing-stat">
+          <span>Invoices</span>
+          <strong><%= Number(parentPaymentSummary.invoiceCount || 0) %></strong>
+          <p><%= Number(parentPaymentSummary.familyCount || 0) %> family account<%= Number(parentPaymentSummary.familyCount || 0) === 1 ? '' : 's' %></p>
+        </article>
+        <article class="finance-billing-stat">
+          <span>Outstanding</span>
+          <strong><%= parentPaymentSummary.totalOutstandingLabel || '$0.00' %></strong>
+          <p><%= Number(parentPaymentSummary.openCount || 0) %> open payment<%= Number(parentPaymentSummary.openCount || 0) === 1 ? '' : 's' %></p>
+        </article>
+        <article class="finance-billing-stat">
+          <span>Collected</span>
+          <strong><%= parentPaymentSummary.totalCollectedLabel || '$0.00' %></strong>
+          <p><%= Number(parentPaymentSummary.paidCount || 0) %> fully paid</p>
+        </article>
+        <article class="finance-billing-stat">
+          <span>Next Due</span>
+          <strong><%= parentPaymentSummary.nextDueLabel || 'No upcoming balances' %></strong>
+          <p><%= Number(parentPaymentSummary.overdueCount || 0) %> overdue item<%= Number(parentPaymentSummary.overdueCount || 0) === 1 ? '' : 's' %></p>
+        </article>
+      </div>
+
+      <div class="finance-billing-layout">
+        <div class="table-shell">
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>Family</th>
+                <th>Student</th>
+                <th>Charge</th>
+                <th>Due</th>
+                <th>Status</th>
+                <th>Expected</th>
+                <th>Paid</th>
+                <th>Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!parentPaymentRows.length) { %>
+                <tr><td colspan="8" class="empty-row">No parent billing records are available yet.</td></tr>
+              <% } %>
+              <% parentPaymentRows.forEach((row) => { %>
+                <tr class="<%= row.statusKey === 'overdue' ? 'row-overdue' : '' %>">
+                  <td><strong><%= row.parentName %></strong></td>
+                  <td><%= row.studentName %></td>
+                  <td>
+                    <strong class="strong-cell"><%= row.title %></strong>
+                    <div class="finance-table-meta"><%= row.category %><%= row.receiptReference ? ` • ${row.receiptReference}` : '' %></div>
+                  </td>
+                  <td><%= row.dueDateLabel %></td>
+                  <td><span class="status-chip status-<%= row.statusKey %>"><%= row.statusLabel %></span></td>
+                  <td class="mono-cell"><%= row.expectedAmountLabel %></td>
+                  <td class="mono-cell"><%= row.paidAmountLabel %></td>
+                  <td class="mono-cell"><strong><%= row.balanceLabel %></strong></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <aside class="finance-billing-rail">
+          <section class="finance-billing-side-card">
+            <h3>Overdue Follow-up</h3>
+            <% if (!overduePaymentRows.length) { %>
+              <div class="empty-callout">No overdue family balances right now.</div>
+            <% } else { %>
+              <div class="breakdown-list">
+                <% overduePaymentRows.forEach((row) => { %>
+                  <div class="breakdown-row">
+                    <div>
+                      <p class="breakdown-label"><%= row.parentName %></p>
+                      <p class="breakdown-meta"><%= row.studentName %> · <%= row.dueDateLabel %></p>
+                    </div>
+                    <strong><%= row.balanceLabel %></strong>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+          </section>
+
+          <section class="finance-billing-side-card">
+            <h3>Upcoming Due</h3>
+            <% if (!upcomingPaymentRows.length) { %>
+              <div class="empty-callout">No upcoming balances scheduled yet.</div>
+            <% } else { %>
+              <div class="breakdown-list">
+                <% upcomingPaymentRows.forEach((row) => { %>
+                  <div class="breakdown-row">
+                    <div>
+                      <p class="breakdown-label"><%= row.parentName %></p>
+                      <p class="breakdown-meta"><%= row.title %> · <%= row.dueDateLabel %></p>
+                    </div>
+                    <strong><%= row.balanceLabel %></strong>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+          </section>
+        </aside>
       </div>
     </article>
 

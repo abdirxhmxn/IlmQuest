@@ -1,7 +1,7 @@
 <%
   const teacherActivePage = 'customize';
   const teacherPageTitle = 'Class Customization';
-  const teacherPageSubtitle = 'Configure class dashboard layout, subject visibility, and grading categories.';
+  const teacherPageSubtitle = 'Configure class dashboard layout, subjects, and grading systems.';
 %>
 <%- include('../partials/teacherHeader') %>
 
@@ -12,7 +12,7 @@
     <header class="teacher-page-hero settings-header">
       <div>
         <h1>Class Customization</h1>
-        <p>Configure your dashboard layout, subjects, and grading structure for each class.</p>
+        <p>Configure your dashboard layout, subjects, grading categories, and the two teacher-facing grading systems for each class.</p>
       </div>
       <a href="/teacher/home" class="btn-secondary">Back To Dashboard</a>
     </header>
@@ -45,6 +45,14 @@
       </div>
 
       <% if (selectedClass) { %>
+        <%
+          const selectedScaleSet = selectedClass.teacherSettings?.gradingScales || defaultGradingScaleSet;
+          const memorizationScale = selectedScaleSet?.memorization || defaultGradingScaleSet.memorization;
+          const subacScale = selectedScaleSet?.subac || defaultGradingScaleSet.subac;
+          const activeSubjectCount = (selectedClass.activeSubjects || []).length;
+          const activeCategoryCount = (selectedClass.activeGradingCategories || []).length;
+        %>
+
         <article class="settings-card">
           <header class="card-header">
             <div>
@@ -54,11 +62,15 @@
             <div class="meta-grid">
               <div>
                 <span class="meta-label">Subjects</span>
-                <span class="meta-value"><%= (selectedClass.activeSubjects || []).length %></span>
+                <span class="meta-value"><%= activeSubjectCount %></span>
               </div>
               <div>
                 <span class="meta-label">Categories</span>
-                <span class="meta-value"><%= (selectedClass.activeGradingCategories || []).length %></span>
+                <span class="meta-value"><%= activeCategoryCount %></span>
+              </div>
+              <div>
+                <span class="meta-label">Grading Systems</span>
+                <span class="meta-value">2</span>
               </div>
               <div>
                 <span class="meta-label">Schema Version</span>
@@ -74,7 +86,7 @@
           <% if ((selectedClass.gradeCount || 0) > 0) { %>
             <div class="history-warning">
               <strong>Historical Data Notice:</strong>
-              This class already has recorded grades. Structural grading changes will create a new schema version and older grades will remain tied to previous versions.
+              This class already has recorded grades. Structural grading changes will create a new schema version, while older grades keep the mark snapshot that was saved at the time.
             </div>
           <% } %>
 
@@ -83,6 +95,8 @@
             <input type="hidden" name="sectionsJson" id="sectionsJson">
             <input type="hidden" name="subjectsJson" id="subjectsJson">
             <input type="hidden" name="gradingCategoriesJson" id="gradingCategoriesJson">
+            <input type="hidden" name="memorizationScaleJson" id="memorizationScaleJson">
+            <input type="hidden" name="subacScaleJson" id="subacScaleJson">
 
             <section class="form-section">
               <h3>Page Setup</h3>
@@ -130,7 +144,7 @@
                   name="customizationReason"
                   type="text"
                   maxlength="160"
-                  placeholder="e.g., Archived midterm category after term close"
+                  placeholder="e.g., Updated Subac settings for weekend revision cycle"
                 >
               </div>
             </section>
@@ -241,223 +255,137 @@
               <button type="button" class="btn-secondary add-row" id="addCategoryBtn">Add Category</button>
             </section>
 
+            <section class="form-section">
+              <div class="section-head">
+                <h3>Grading Systems</h3>
+                <p>Manage the default Al Bayaan memorization scale separately from the Subac revision scale. Hidden marks stay readable in historical records because saved grades keep their original snapshot.</p>
+              </div>
+
+              <div class="scale-stack">
+                <% [
+                  {
+                    key: 'memorization',
+                    title: memorizationScale.name,
+                    helper: 'Used for daily Cashar, Writing, and Subject grading in the spreadsheet chart.',
+                    restoreLabel: 'Restore Al Bayaan Default',
+                    scale: memorizationScale
+                  },
+                  {
+                    key: 'subac',
+                    title: subacScale.name,
+                    helper: 'Used only for Subac / revision review entries, counts, and percentage calculations.',
+                    restoreLabel: 'Restore Subac Default',
+                    scale: subacScale
+                  }
+                ].forEach((scaleSection) => { %>
+                  <article class="scale-card" data-scale-editor="<%= scaleSection.key %>">
+                    <header class="scale-card-header">
+                      <div>
+                        <h4><%= scaleSection.title %></h4>
+                        <p><%= scaleSection.helper %></p>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn-secondary scale-reset-btn"
+                        data-scale-restore="<%= scaleSection.key %>"
+                      >
+                        <%= scaleSection.restoreLabel %>
+                      </button>
+                    </header>
+
+                    <div class="scale-card-grid">
+                      <% (scaleSection.scale.marks || []).forEach((mark) => { %>
+                        <div class="scale-row" data-scale-row data-scale-system="<%= scaleSection.key %>">
+                          <input type="hidden" class="scale-mark-key" value="<%= mark.key %>">
+                          <input type="hidden" class="scale-mark-symbol" value="<%= mark.symbol %>">
+
+                          <div class="scale-symbol-card">
+                            <span class="scale-symbol"><%= mark.symbol %></span>
+                            <small class="row-meta">Key: <%= mark.key %></small>
+                          </div>
+
+                          <div class="scale-field scale-field-wide">
+                            <label>Label</label>
+                            <input
+                              type="text"
+                              class="scale-mark-label"
+                              maxlength="90"
+                              value="<%= mark.label %>"
+                              required
+                            >
+                          </div>
+
+                          <div class="scale-field scale-field-wide">
+                            <label>Description</label>
+                            <input
+                              type="text"
+                              class="scale-mark-description"
+                              maxlength="200"
+                              value="<%= mark.description || '' %>"
+                              placeholder="Optional description shown in grade details"
+                            >
+                          </div>
+
+                          <div class="scale-field">
+                            <label>Points</label>
+                            <input
+                              type="number"
+                              class="scale-mark-value"
+                              min="0"
+                              max="<%= scaleSection.scale.maxValue %>"
+                              step="0.1"
+                              value="<%= mark.value %>"
+                            >
+                          </div>
+
+                          <div class="scale-field">
+                            <label>Order</label>
+                            <input
+                              type="number"
+                              class="scale-mark-order"
+                              min="0"
+                              step="1"
+                              value="<%= mark.sortOrder %>"
+                            >
+                          </div>
+
+                          <label class="scale-toggle">
+                            <span>Active</span>
+                            <input type="checkbox" class="scale-mark-active" <%= mark.active ? 'checked' : '' %>>
+                          </label>
+
+                          <label class="scale-toggle">
+                            <span>Counts In Grade</span>
+                            <input type="checkbox" class="scale-mark-counts" <%= mark.countsTowardGrade ? 'checked' : '' %>>
+                          </label>
+
+                          <div class="scale-row-meta">
+                            <span class="status-badge scale-status-badge"></span>
+                            <small class="row-meta">Saved records keep this mark snapshot even if you later hide or reweight it.</small>
+                          </div>
+                        </div>
+                      <% }) %>
+                    </div>
+                  </article>
+                <% }) %>
+              </div>
+            </section>
+
             <div class="form-actions">
               <button type="submit" class="btn-primary">Save Customization</button>
             </div>
           </form>
         </article>
+
+        <script id="teacherCustomizationState" type="application/json"><%- JSON.stringify({
+          defaultGradingScaleSet,
+          selectedGradingScaleSet: selectedScaleSet
+        }) %></script>
       <% } %>
     <% } %>
   </section>
 </main>
 
-<script>
-  const form = document.getElementById("customizationForm");
-  const subjectsList = document.getElementById("subjectsList");
-  const categoriesList = document.getElementById("categoriesList");
-  const weightSummary = document.getElementById("weightSummary");
-  const sectionsInput = document.getElementById("sectionsJson");
-  const subjectsInput = document.getElementById("subjectsJson");
-  const categoriesInput = document.getElementById("gradingCategoriesJson");
-
-  function toSlug(value) {
-    return String(value || "")
-      .trim()
-      .toLowerCase()
-      .replace(/['’]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "category";
-  }
-
-  function addSubjectRow() {
-    const row = document.createElement("div");
-    row.className = "list-row subject-row";
-    row.dataset.isArchived = "false";
-    row.innerHTML = `
-      <input type="hidden" class="subject-key" value="">
-      <div class="row-main">
-        <label>Subject Label</label>
-        <input type="text" class="subject-name" maxlength="60" required>
-        <small class="row-meta">Key will be generated on save</small>
-      </div>
-      <div class="row-small">
-        <label>Visible</label>
-        <input type="checkbox" class="subject-active" checked>
-      </div>
-      <div class="row-small">
-        <label>Order</label>
-        <input type="number" class="subject-order" min="0" value="0">
-      </div>
-      <div class="row-actions">
-        <span class="status-badge active">Active</span>
-        <button type="button" class="btn-danger remove-row">Remove</button>
-      </div>
-    `;
-    subjectsList.appendChild(row);
-  }
-
-  function addCategoryRow() {
-    const row = document.createElement("div");
-    row.className = "list-row category-row";
-    row.dataset.isDefault = "false";
-    row.dataset.isArchived = "false";
-    row.innerHTML = `
-      <input type="hidden" class="category-key" value="">
-      <input type="hidden" class="category-default" value="false">
-      <div class="row-main">
-        <label>Category Label</label>
-        <input type="text" class="category-name" maxlength="60" required>
-        <small class="row-meta">Key will be generated on save</small>
-      </div>
-      <div class="row-small">
-        <label>Weight %</label>
-        <input type="number" class="category-weight" min="0" max="100" step="0.1" value="0" required>
-      </div>
-      <div class="row-small">
-        <label>Active</label>
-        <input type="checkbox" class="category-active" checked>
-      </div>
-      <div class="row-small">
-        <label>Order</label>
-        <input type="number" class="category-order" min="0" value="0">
-      </div>
-      <div class="row-actions">
-        <span class="status-badge active">Active</span>
-        <button type="button" class="btn-danger remove-row">Remove</button>
-      </div>
-    `;
-    categoriesList.appendChild(row);
-    updateWeightSummary();
-  }
-
-  function updateWeightSummary() {
-    if (!weightSummary) return;
-    const total = Array.from(document.querySelectorAll(".category-row")).reduce((sum, row) => {
-      const active = row.querySelector(".category-active")?.checked;
-      if (!active) return sum;
-      const weight = Number(row.querySelector(".category-weight")?.value || 0);
-      return sum + (Number.isFinite(weight) ? weight : 0);
-    }, 0);
-
-    const rounded = Math.round(total * 100) / 100;
-    weightSummary.textContent = `Active Weight Total: ${rounded}%`;
-    if (Math.abs(rounded - 100) <= 0.01) {
-      weightSummary.classList.remove("error");
-    } else {
-      weightSummary.classList.add("error");
-    }
-  }
-
-  function updateRowStatus(row, type) {
-    const badge = row?.querySelector(".status-badge");
-    if (!badge) return;
-
-    const active = row.querySelector(`.${type}-active`)?.checked;
-    const archived = row.dataset.isArchived === "true";
-
-    badge.classList.remove("active", "inactive", "archived");
-
-    if (active) {
-      badge.textContent = "Active";
-      badge.classList.add("active");
-      return;
-    }
-
-    if (archived) {
-      badge.textContent = "Archived";
-      badge.classList.add("archived");
-      return;
-    }
-
-    badge.textContent = "Hidden";
-    badge.classList.add("inactive");
-  }
-
-  document.getElementById("addSubjectBtn")?.addEventListener("click", addSubjectRow);
-  document.getElementById("addCategoryBtn")?.addEventListener("click", addCategoryRow);
-
-  document.addEventListener("click", (event) => {
-    if (!event.target.classList.contains("remove-row")) return;
-    const row = event.target.closest(".list-row");
-    if (!row) return;
-    row.remove();
-    updateWeightSummary();
-  });
-
-  document.addEventListener("input", (event) => {
-    if (event.target.classList.contains("category-weight") || event.target.classList.contains("category-active")) {
-      updateWeightSummary();
-    }
-  });
-
-  document.addEventListener("change", (event) => {
-    if (event.target.classList.contains("subject-active")) {
-      const row = event.target.closest(".subject-row");
-      if (row && event.target.checked && row.dataset.isArchived === "true") {
-        // Checking an archived subject explicitly restores it for future grading.
-        row.dataset.isArchived = "false";
-      }
-      updateRowStatus(row, "subject");
-    }
-    if (event.target.classList.contains("category-active")) {
-      const row = event.target.closest(".category-row");
-      if (row && event.target.checked && row.dataset.isArchived === "true") {
-        // Checking an archived category explicitly restores it for future grading.
-        row.dataset.isArchived = "false";
-      }
-      updateRowStatus(row, "category");
-    }
-  });
-
-  form?.addEventListener("submit", (event) => {
-    const sections = Array.from(document.querySelectorAll(".section-row")).map((row, index) => ({
-      key: row.querySelector(".section-key")?.value,
-      label: row.querySelector(".section-label")?.value || "",
-      visible: row.querySelector(".section-visible")?.checked || false,
-      order: Number(row.querySelector(".section-order")?.value ?? index)
-    }));
-
-    const subjects = Array.from(document.querySelectorAll(".subject-row")).map((row, index) => ({
-      key: row.querySelector(".subject-key")?.value || "",
-      label: row.querySelector(".subject-name")?.value || "",
-      name: row.querySelector(".subject-name")?.value || "",
-      active: row.querySelector(".subject-active")?.checked || false,
-      order: Number(row.querySelector(".subject-order")?.value ?? index),
-      isArchived: row.dataset.isArchived === "true"
-    }));
-
-    const categories = Array.from(document.querySelectorAll(".category-row")).map((row, index) => {
-      const name = row.querySelector(".category-name")?.value || "";
-      const key = row.querySelector(".category-key")?.value || toSlug(name);
-      return {
-        key,
-        label: name,
-        name,
-        weight: Number(row.querySelector(".category-weight")?.value || 0),
-        active: row.querySelector(".category-active")?.checked || false,
-        order: Number(row.querySelector(".category-order")?.value ?? index),
-        isDefault: row.querySelector(".category-default")?.value === "true",
-        isArchived: row.dataset.isArchived === "true"
-      };
-    });
-
-    const activeTotal = categories.reduce((sum, category) => (
-      category.active ? sum + Number(category.weight || 0) : sum
-    ), 0);
-    if (Math.abs(activeTotal - 100) > 0.01) {
-      event.preventDefault();
-      window.alert("Active grading category weights must total exactly 100%.");
-      return;
-    }
-
-    sectionsInput.value = JSON.stringify(sections);
-    subjectsInput.value = JSON.stringify(subjects);
-    categoriesInput.value = JSON.stringify(categories);
-  });
-
-  updateWeightSummary();
-  document.querySelectorAll(".subject-row").forEach((row) => updateRowStatus(row, "subject"));
-  document.querySelectorAll(".category-row").forEach((row) => updateRowStatus(row, "category"));
-</script>
+<script src="/js/teacher-customization.js"></script>
 
 <%- include('../partials/teacherFooter') %>

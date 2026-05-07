@@ -9,6 +9,7 @@ const platformController = require("../controllers/platform");
 const announcementsController = require("../controllers/announcements");
 const teacherLibraryController = require("../controllers/teacherLibrary");
 const financeController = require("../controllers/finance");
+const gradingController = require("../controllers/grading");
 const postsController = require("../controllers/posts");
 const profileController = require("../controllers/profile");
 const upload = require("../middleware/multer");
@@ -42,6 +43,7 @@ const ALL_ROLES = ["admin", "teacher", "student", "parent"];
 // =============================================
 router.get("/", homeController.getIndex);
 router.get("/login", authController.getLogin);
+router.get("/login-success", ensureAuth, authController.getLoginSuccess);
 router.get("/signup", authController.getSignup);
 router.get("/logout", authController.logout);
 router.get("/forgot-password", authController.getForgotPassword);
@@ -168,6 +170,7 @@ router.use("/admin", (req, res, next) => {
 // --- GET ---
 router.get("/admin/home", homeController.getAdmin);
 router.get("/admin/users", homeController.getUsers);
+router.get("/admin/users/deleted", homeController.getDeletedUsers);
 router.get("/admin/classes", homeController.getClasses);
 router.get("/admin/attendance", homeController.getAdminAttendance);
 router.get("/admin/announcements", announcementsController.getAdminAnnouncements);
@@ -185,8 +188,6 @@ router.post("/admin/teachers/add", requireFields(["firstName", "lastName", "emai
 router.post("/admin/parents/add", requireFields(["firstName", "lastName", "email", "userName", "password"]), validateEmailField("email"), postsController.createParent);
 router.post("/admin/classes/add", requireFields(["className"]), postsController.createClass);
 router.post("/admin/school", requireFields(["schoolName", "schoolEmail", "password", "adminUser"]), validateEmailField("schoolEmail"), postsController.createSchool);
-router.post("/admin/reports/student/:id/generate", reportGenerationLimiter, validateObjectIdParam("id"), homeController.generateStudentReportPdfAsync);
-router.post("/admin/reports/class/:id/generate", reportGenerationLimiter, validateObjectIdParam("id"), homeController.generateClassReportPdfAsync);
 router.post("/admin/announcements", requireFields(["title", "content"]), announcementsController.createAnnouncement);
 router.post("/admin/announcements/:id/update", validateObjectIdParam("id"), requireFields(["title", "content"]), announcementsController.updateAnnouncement);
 router.post("/admin/announcements/:id/publish", validateObjectIdParam("id"), announcementsController.toggleAnnouncementPublish);
@@ -221,6 +222,7 @@ router.post("/admin/classes/:id/customize", validateObjectIdParam("id"), require
 router.post("/admin/finance/entries/:id/archive", validateObjectIdParam("id"), financeController.archiveEntry);
 
 // --- DELETE ---
+router.delete("/admin/users/:id/permanent", validateObjectIdParam("id"), postsController.permanentDeleteUser);
 router.delete("/admin/users/:id", validateObjectIdParam("id"), postsController.deleteUser);
 router.delete("/admin/classes/delete/:id", validateObjectIdParam("id"), postsController.deleteClass);
 router.patch("/admin/users/:id/restore", validateObjectIdParam("id"), postsController.restoreUser);
@@ -228,24 +230,58 @@ router.patch("/admin/classes/:id/restore", validateObjectIdParam("id"), postsCon
 // =============================================
 // 5. TEACHER ROUTES
 // =============================================
+router.use("/api/teacher", ensureAuth, requireTenant, requireRole("teacher"));
 router.use("/teacher", ensureAuth, requireTenant, requireRole("teacher"));
+
+router.get(
+  "/api/teacher/students/:studentId/points-adjustments",
+  validateObjectIdParam("studentId"),
+  postsController.getStudentPointAdjustments
+);
+router.post(
+  "/api/teacher/students/:studentId/points-adjustments",
+  validateObjectIdParam("studentId"),
+  postsController.createStudentPointAdjustment
+);
+router.get("/api/teacher/gradebook/cell/detail", gradingController.getGradebookCellDetail);
+router.post("/api/teacher/gradebook/cell", gradingController.saveGradebookCell);
+router.post("/api/teacher/gradebook/cell/detail", gradingController.saveGradebookCellDetail);
+router.post("/api/teacher/gradebook/cell/undo", gradingController.undoGradebookCell);
+router.post("/api/teacher/gradebook/bulk", gradingController.bulkSaveGradebookCells);
 
 // --- GET ---
 router.get("/teacher/home", homeController.getTeacher);
-router.get("/teacher/manage-grades", homeController.getTeacherGrades);
+router.get("/teacher/manage-grades", gradingController.getTeacherGradebook);
+router.get("/teacher/manage-grades/export.csv", gradingController.exportGradebookCsv);
+router.get("/teacher/manage-grades/student-summary.json", gradingController.exportStudentSummaryJson);
 router.get("/teacher/student-progress", homeController.getTeacherStudentProgressDirectory);
 router.get("/teacher/manage-missions", homeController.getTeacherMissions);
 router.get("/teacher/manage-attendance", homeController.getTeacherAttendance);
 router.get("/teacher/customize", homeController.getTeacherCustomization);
 router.get("/teacher/students/:id/progress", validateObjectIdParam("id"), homeController.getTeacherStudentProgress);
 router.get("/teacher/library", teacherLibraryController.getTeacherLibrary);
+router.get("/teacher/reports", homeController.getTeacherReports);
+router.get("/teacher/reports/stats", homeController.getTeacherReportStats);
+router.get("/teacher/reports/student/:id/pdf", validateObjectIdParam("id"), homeController.downloadTeacherStudentReportPdf);
+router.get("/teacher/reports/class/:id/pdf", validateObjectIdParam("id"), homeController.downloadTeacherClassReportPdf);
 
 // --- POST (Create) ---
 router.post("/teacher/manage-missions/create-mission", requireFields(["missionTitle", "missionDescription", "type", "category", "rank"]), postsController.createMission);
 router.post("/teacher/manage-attendance/save", requireFields(["classId", "studentId", "date", "status"]), postsController.createAttendance);
+router.post("/teacher/manage-grades/assessments", requireFields(["classId", "title"]), gradingController.createAssessment);
+router.post("/teacher/manage-grades/tracker-columns", requireFields(["classId", "dateKey", "shortLabel"]), gradingController.createTrackerColumn);
 router.post("/teacher/customize/:id", validateObjectIdParam("id"), postsController.updateTeacherClassCustomization);
 router.post("/teacher/students/:id/rank", validateObjectIdParam("id"), postsController.updateStudentRankOverride);
+router.post(
+  "/teacher/students/:studentId/missions/:missionId/reopen",
+  validateObjectIdParam("studentId"),
+  validateObjectIdParam("missionId"),
+  requireFields(["reason"]),
+  postsController.reopenStudentMissionAttempt
+);
 router.post("/teacher/library", upload.single("resourceImage"), teacherLibraryController.createTeacherLibraryResource);
+router.post("/teacher/reports/student/:id/generate", reportGenerationLimiter, validateObjectIdParam("id"), homeController.generateTeacherStudentReportPdfAsync);
+router.post("/teacher/reports/class/:id/generate", reportGenerationLimiter, validateObjectIdParam("id"), homeController.generateTeacherClassReportPdfAsync);
 
 // Grade Routes (both paths supported for now)
 router.post("/teacher/manage-grades/add", requireFields(["student", "classId", "subject", "quarter"]), postsController.createGrade);

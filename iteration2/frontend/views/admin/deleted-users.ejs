@@ -1,0 +1,159 @@
+<%# Deleted accounts workspace for restore-first account recovery and permanent deletion. %>
+<%- include('../partials/adminShellStart', {
+  pageTitle: 'IlmQuest Deleted Accounts',
+  pageStyles: ['/css/pages/admin-deleted-users.css'],
+  activePage: activePage || 'students',
+  user
+}) %>
+
+<%
+  const icon = typeof iconSvg === 'function' ? iconSvg : (() => '');
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+  const accounts = Array.isArray(deletedUsers) ? deletedUsers : [];
+  const summary = deletedSummary || {};
+  const headerActions = [
+    { href: '/admin/users', label: 'Active Users' },
+    { href: '/admin/classes', label: 'Manage Classes' },
+    { href: '/admin/reports', label: 'Reports' }
+  ];
+%>
+
+<%- include('../partials/adminPageHeader', {
+  user: typeof user !== 'undefined' ? user : undefined,
+  iconSvg: typeof iconSvg === 'function' ? iconSvg : undefined,
+  showSidebarToggle: true,
+  headerBreadcrumbs: 'Admin / Operations / Users / Deleted Accounts',
+  headerTitle: 'Deleted Accounts',
+  headerSubtitle: 'Restore accounts when possible. Permanent deletion cannot be undone.',
+  headerActions
+}) %>
+
+<% if (successMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="admin-flash admin-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="deleted-users-page">
+  <section class="deleted-users-stats admin-stat-grid" aria-label="Deleted accounts summary">
+    <article class="admin-stat-card">
+      <p class="admin-stat-eyebrow">Deleted Accounts</p>
+      <p class="admin-stat-value"><%= Number(summary.total || accounts.length || 0) %></p>
+      <p class="admin-stat-meta">Accounts currently removed from active use</p>
+    </article>
+    <article class="admin-stat-card">
+      <p class="admin-stat-eyebrow">Students</p>
+      <p class="admin-stat-value"><%= Number(summary.students || 0) %></p>
+      <p class="admin-stat-meta">Enrollment records awaiting review</p>
+    </article>
+    <article class="admin-stat-card">
+      <p class="admin-stat-eyebrow">Teachers</p>
+      <p class="admin-stat-value"><%= Number(summary.teachers || 0) %></p>
+      <p class="admin-stat-meta">Instruction accounts removed from access</p>
+    </article>
+    <article class="admin-stat-card">
+      <p class="admin-stat-eyebrow">Parents + Admins</p>
+      <p class="admin-stat-value"><%= Number(summary.parents || 0) + Number(summary.admins || 0) %></p>
+      <p class="admin-stat-meta">Guardian and admin recovery queue</p>
+    </article>
+  </section>
+
+  <section class="panel deleted-users-warning-panel">
+    <div class="deleted-users-warning">
+      <span class="deleted-users-warning-icon"><%- icon('delete') %></span>
+      <div>
+        <h2>Handle with care</h2>
+        <p>Restore is the safe default. Permanent deletion cannot be undone.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel deleted-users-table-panel">
+    <div class="panel-header">
+      <h2>Deleted User Directory</h2>
+      <a class="admin-action-link" href="/admin/users">Back to Active Users</a>
+    </div>
+
+    <% if (accounts.length === 0) { %>
+      <div class="deleted-users-empty">
+        <h3>No deleted accounts</h3>
+        <p>Soft-deleted users will appear here for review, restoration, or permanent deletion.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="deleted-users-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Deleted Date</th>
+              <th>Deleted By</th>
+              <th>Deleted Reason</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% accounts.forEach((account) => { %>
+              <tr>
+                <td class="deleted-users-name-cell"><%= account.displayName %></td>
+                <td><%= account.userName || 'N/A' %></td>
+                <td><%= account.email || 'N/A' %></td>
+                <td><span class="deleted-users-role-chip role-<%= account.role %>"><%= account.role %></span></td>
+                <td><%= account.deletedAt ? new Date(account.deletedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A' %></td>
+                <td><%= account.deletedByDisplayName %></td>
+                <td class="deleted-users-reason-cell"><%= account.deletedReason || 'No reason provided.' %></td>
+                <td class="deleted-users-actions-cell">
+                  <div class="deleted-users-actions">
+                    <form
+                      class="deleted-users-inline-form"
+                      action="/admin/users/<%= account._id %>/restore?_method=PATCH"
+                      method="POST"
+                    >
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                      <button class="action-btn save-btn" type="submit">Restore</button>
+                    </form>
+                    <form
+                      class="deleted-users-inline-form"
+                      action="/admin/users/<%= account._id %>/permanent?_method=DELETE"
+                      method="POST"
+                      data-permanent-delete-form
+                      data-user-name="<%= account.displayName %>"
+                    >
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                      <button class="action-btn delete-btn" type="submit">Permanent Delete</button>
+                    </form>
+                  </div>
+                  <p class="deleted-users-action-note">Permanent deletion cannot be undone.</p>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</section>
+
+<dialog id="permanentDeleteDialog" class="dialog" aria-labelledby="permanentDeleteDialogTitle">
+  <div class="dialog-card">
+    <h3 id="permanentDeleteDialogTitle" data-dialog-title>Confirm Permanent Delete</h3>
+    <p data-dialog-message>Are you sure?</p>
+    <p class="dialog-copy">Permanent deletion cannot be undone.</p>
+    <div class="dialog-actions">
+      <button class="action-btn cancel-btn" type="button" data-dialog-cancel>Cancel</button>
+      <button class="action-btn delete-btn" type="button" data-dialog-confirm>Permanent Delete</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="/js/adminViewEdit.js"></script>
+<script src="/js/admin-deleted-users.js"></script>
+
+<%- include('../partials/adminShellEnd') %>

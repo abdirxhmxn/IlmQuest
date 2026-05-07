@@ -1,0 +1,31 @@
+<aside
+  class="gradebook-v1-drawer-shell"
+  data-gradebook-drawer-shell
+  x-cloak
+  hidden
+  x-bind:hidden="!open"
+  x-bind:data-open="open ? 'true' : 'false'"
+  x-bind:aria-hidden="open ? 'false' : 'true'"
+>
+  <button
+    class="gradebook-v1-drawer-backdrop"
+    data-gradebook-drawer-backdrop
+    type="button"
+    x-on:click="close()"
+    x-bind:tabindex="open ? 0 : -1"
+    x-bind:aria-hidden="open ? 'false' : 'true'"
+    aria-label="Close grade cell panel"
+  ></button>
+  <section class="gradebook-v1-drawer" x-on:click.stop>
+    <header class="gradebook-v1-drawer-top">
+      <div>
+        <p class="gradebook-v1-kicker">Spreadsheet Details</p>
+        <h2>Grade Cell</h2>
+      </div>
+      <button class="gradebook-v1-drawer-close" data-gradebook-drawer-close type="button" x-on:click="close()">×</button>
+    </header>
+    <div id="gradebookDrawerContent" class="gradebook-v1-drawer-body">
+      <%- include('./teacherGradebookDrawerContent', { detail: null, savedMessage: '' }) %>
+    </div>
+  </section>
+</aside>

@@ -28,20 +28,34 @@ function assertTenantContext(reqOrSchoolId, contextLabel = "tenant-scoped query"
   return String(schoolId).trim();
 }
 
+function activeLifecycleFilter() {
+  return {
+    isDeleted: { $ne: true },
+    deletedAt: null
+  };
+}
+
+function deletedLifecycleFilter() {
+  return {
+    isDeleted: true,
+    deletedAt: { $ne: null }
+  };
+}
+
 function scopedQuery(reqOrSchoolId, extra = {}) {
   const schoolId = assertTenantContext(reqOrSchoolId);
-  const base = { schoolId };
-  if (!extra.includeDeleted) base.deletedAt = null;
   const { includeDeleted, ...rest } = extra;
-  return { ...base, ...rest };
+  const base = { schoolId, ...rest };
+  if (includeDeleted) return base;
+  return { ...base, ...activeLifecycleFilter() };
 }
 
 function scopedIdQuery(reqOrSchoolId, id, extra = {}) {
   const schoolId = assertTenantContext(reqOrSchoolId);
-  const base = { _id: id, schoolId };
-  if (!extra.includeDeleted) base.deletedAt = null;
   const { includeDeleted, ...rest } = extra;
-  return { ...base, ...rest };
+  const base = { _id: id, schoolId, ...rest };
+  if (includeDeleted) return base;
+  return { ...base, ...activeLifecycleFilter() };
 }
 
 function scopedInsertData(reqOrSchoolId, payload = {}) {
@@ -54,6 +68,8 @@ function scopedInsertData(reqOrSchoolId, payload = {}) {
 module.exports = {
   resolveSchoolId,
   assertTenantContext,
+  activeLifecycleFilter,
+  deletedLifecycleFilter,
   scopedQuery,
   scopedIdQuery,
   scopedInsertData

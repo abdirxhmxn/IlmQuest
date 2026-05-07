@@ -46,7 +46,7 @@
           <input id="ownerInviteLink" type="text" readonly value="<%= provisioningResult.inviteLink %>" />
           <button type="button" data-copy-invite>Copy Link</button>
         </div>
-        <p class="invite-expiry">Expires: <%= new Date(provisioningResult.expiresAt).toLocaleString() %></p>
+        <p class="invite-expiry">Expires: <%= new Date(provisioningResult.expiresAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) %></p>
       </section>
     <% } %>
 

@@ -1,0 +1,33 @@
+<link rel="stylesheet" href="/css/components/login-animation.css" />
+
+<section
+  class="login-splash"
+  data-login-animation
+  data-duration="5000"
+  data-logo-src="/imgs/finalLogo.jpg"
+  data-redirect-url="<%= typeof redirectUrl === 'string' ? redirectUrl : '' %>"
+  data-hide-on-complete="<%= hideOnComplete === true ? 'true' : 'false' %>"
+  data-preview-mode="<%= previewMode === true ? 'true' : 'false' %>"
+  aria-label="IlmQuest login splash animation"
+>
+  <div class="login-splash__backdrop" aria-hidden="true"></div>
+  <div class="login-splash__mesh" aria-hidden="true"></div>
+  <div class="login-splash__aurora login-splash__aurora--left" aria-hidden="true"></div>
+  <div class="login-splash__aurora login-splash__aurora--right" aria-hidden="true"></div>
+
+  <div class="login-splash__composition" data-login-animation-composition>
+    <div class="login-splash__halo" aria-hidden="true"></div>
+    <div class="login-splash__canvas-shell">
+      <canvas class="login-splash__canvas" data-login-animation-canvas aria-hidden="true"></canvas>
+      <div class="login-splash__logo-ring" aria-hidden="true"></div>
+      <div class="login-splash__logo-echo" aria-hidden="true"></div>
+    </div>
+    <p class="login-splash__wordmark" data-login-animation-wordmark>IlmQuest</p>
+  </div>
+
+  <button type="button" class="login-splash__replay" data-login-animation-replay hidden>
+    Replay splash
+  </button>
+</section>
+
+<script src="/js/login-animation.js" defer></script>

@@ -85,26 +85,33 @@ body.platform-page {
 
 .flash-item {
   border-radius: 12px;
-  padding: 0.75rem 0.9rem;
+  padding: 11px 14px;
   border: 1px solid transparent;
-  background: #f2f7f4;
+  border-left-width: 4px;
+  background: #f8f9fb;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .flash-error {
-  border-color: #efc2c7;
+  border-color: #edc8c8;
+  border-left-color: #c23b3b;
   color: var(--platform-danger);
-  background: #fdf2f4;
+  background: #fff2f2;
 }
 
 .flash-success {
-  border-color: #b8e4cb;
+  border-color: #b8dfc9;
+  border-left-color: #1e8a55;
   color: var(--platform-success);
-  background: #edf9f2;
+  background: #f0fbf4;
 }
 
 .flash-info {
-  border-color: #c7ddd1;
-  color: #2d5c4a;
+  border-color: #c5d8ef;
+  border-left-color: #2f6aad;
+  background: #eef4fd;
+  color: #1a4f8e;
 }
 
 .platform-grid {

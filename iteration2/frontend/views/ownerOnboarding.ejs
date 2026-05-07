@@ -40,7 +40,7 @@
 
           <div class="owner-summary">
             <p><strong>Owner Email:</strong> <%= owner.email %></p>
-            <p><strong>Invite Expires:</strong> <%= owner.expiresAt ? new Date(owner.expiresAt).toLocaleString() : "Soon" %></p>
+            <p><strong>Invite Expires:</strong> <%= owner.expiresAt ? new Date(owner.expiresAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : "Soon" %></p>
           </div>
 
           <form action="/owner-onboarding/<%= token %>" method="POST" class="auth-form owner-onboarding-form">

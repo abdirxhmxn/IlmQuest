@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment variables and secrets (NEVER commit these)
+.env
+.env.*
+*.env.local
+!.env.example
+!.env.sample
+
+# Local database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build artifacts
+dist/
+build/
+.cache/
+
+# OS files
+.DS_Store

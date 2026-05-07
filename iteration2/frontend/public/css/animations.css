@@ -1,0 +1,85 @@
+/*
+ * ============================================================
+ *  animations.css
+ *  IlmQuest - Scroll-Based Reveal Animation System
+ *
+ *  Architecture:
+ *    - Zero external dependencies
+ *    - GPU-only transforms: opacity + translateY (no layout props)
+ *    - Driven by IntersectionObserver in scroll-animations.js
+ *    - Fully respects prefers-reduced-motion
+ *    - Safe to remove: removing this file + the JS leaves the
+ *      UI pixel-identical, just without motion
+ *
+ *  Usage:
+ *    Add .reveal to any element to opt into scroll animation.
+ *    Add .reveal-stagger to a container to stagger its direct
+ *    .reveal children in sequence.
+ *
+ *    <div class="reveal-stagger">
+ *      <article class="reveal">...</article>
+ *      <article class="reveal">...</article>
+ *    </div>
+ *
+ *  The .is-revealed class is added by scroll-animations.js when
+ *  the element enters the viewport.
+ * ============================================================
+ */
+
+/* -----------------------------------------------------------
+   1. Pre-reveal state
+   Starts hidden + shifted down. Only applies once the JS engine
+   has marked the page ready via [data-animations-ready] on <html>.
+   This prevents invisible content when JS is disabled or slow.
+   ----------------------------------------------------------- */
+[data-animations-ready] .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+  /* Prevent layout shift on hidden elements */
+  backface-visibility: hidden;
+}
+
+/* -----------------------------------------------------------
+   2. Revealed state
+   JS adds .is-revealed when the element enters the viewport.
+   ----------------------------------------------------------- */
+[data-animations-ready] .reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+/* -----------------------------------------------------------
+   3. Stagger timing
+   Applied to direct .reveal children of a .reveal-stagger
+   container. Each child is delayed slightly for a cascading
+   reveal effect. Caps at 7+ to prevent very long waits.
+   ----------------------------------------------------------- */
+.reveal-stagger > .reveal:nth-child(1)  { transition-delay:   0ms; }
+.reveal-stagger > .reveal:nth-child(2)  { transition-delay:  55ms; }
+.reveal-stagger > .reveal:nth-child(3)  { transition-delay: 100ms; }
+.reveal-stagger > .reveal:nth-child(4)  { transition-delay: 225ms; }
+.reveal-stagger > .reveal:nth-child(5)  { transition-delay: 300ms; }
+.reveal-stagger > .reveal:nth-child(6)  { transition-delay: 375ms; }
+.reveal-stagger > .reveal:nth-child(n+7) { transition-delay: 450ms; }
+
+/* -----------------------------------------------------------
+   4. Reduced-motion override
+   Users who prefer reduced motion never see hidden content.
+   This overrides the [data-animations-ready] rule above.
+   base.css already cuts all transition durations to 0.01ms,
+   but this ensures opacity is never 0 for these users.
+   ----------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-animations-ready] .reveal,
+  [data-animations-ready] .reveal.is-revealed {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
+}

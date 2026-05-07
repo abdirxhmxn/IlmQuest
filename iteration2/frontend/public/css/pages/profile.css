@@ -61,22 +61,25 @@
 
 .profile-flash {
   border: 1px solid var(--profile-border);
-  border-radius: 11px;
-  padding: 10px 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
+  border-left-width: 4px;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .profile-flash-success {
-  background: #ecf8f1;
-  border-color: #b8ddc7;
-  color: #1f6a45;
+  background: #f0fbf4;
+  border-color: #b8dfc9;
+  border-left-color: #1e8a55;
+  color: #1a5e3b;
 }
 
 .profile-flash-error {
-  background: #fff1f1;
-  border-color: #efc4c4;
-  color: #b43535;
+  background: #fff2f2;
+  border-color: #edc8c8;
+  border-left-color: #c23b3b;
+  color: #a02f2f;
 }
 
 .profile-card {

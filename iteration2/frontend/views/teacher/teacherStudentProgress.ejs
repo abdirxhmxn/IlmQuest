@@ -17,10 +17,12 @@
   const metrics = view.metrics || {};
   const insights = view.teacherInsights || {};
   const rankTiers = Array.isArray(rankLadder) ? rankLadder : [];
+  const pointAdjustments = Array.isArray(recentPointAdjustments) ? recentPointAdjustments : [];
   const progressWidth = Math.max(0, Math.min(100, Number(rank.progressPercent || 0)));
   const rankReturnTo = identity.id
     ? `/teacher/students/${identity.id}/progress${identity.classId ? `?classId=${identity.classId}` : ''}`
     : '/teacher/student-progress';
+  const pointsApiPath = identity.id ? `/api/teacher/students/${identity.id}/points-adjustments` : '';
   const successMessages = Array.isArray(messages?.success) ? messages.success : [];
   const errorMessages = [
     ...(Array.isArray(messages?.error) ? messages.error : []),
@@ -121,7 +123,80 @@
       </form>
     </section>
 
+    <section class="progress-rank-panel progress-adjustment-panel">
+      <div class="progress-rank-main">
+        <h2>Manual Points Adjustment</h2>
+        <p>Adjust XP for classroom reasons without changing mission history. Every change is recorded with your name, time, and reason.</p>
+        <small>Current total: <strong><%= Number(rank.xp || 0).toLocaleString() %> XP</strong> · Display rank: <strong><%= rank.displayRankLabel || 'F Rank' %></strong></small>
+      </div>
+      <form
+        id="teacherPointsAdjustmentForm"
+        class="progress-rank-form"
+        action="<%= pointsApiPath %>"
+        method="POST"
+        data-api-path="<%= pointsApiPath %>"
+      >
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="classId" value="<%= teacherClass?._id || identity.classId || '' %>" />
+        <label for="adjustmentDirection">Adjustment</label>
+        <select id="adjustmentDirection" name="direction" required>
+          <option value="add">Add points</option>
+          <option value="subtract">Subtract points</option>
+        </select>
+        <label for="adjustmentAmount">Amount</label>
+        <input id="adjustmentAmount" type="number" name="amount" min="1" step="1" required placeholder="10" />
+        <label for="adjustmentReason">Reason</label>
+        <textarea
+          id="adjustmentReason"
+          name="reason"
+          rows="3"
+          maxlength="300"
+          required
+          placeholder="Excellent participation, bonus effort, missed conduct goal..."
+        ></textarea>
+        <p class="progress-form-note">This action is recorded in the student’s adjustment history.</p>
+        <button type="submit" class="btn-primary">Record Adjustment</button>
+      </form>
+    </section>
+
     <section class="progress-grid">
+      <article class="progress-panel">
+        <header class="panel-header">
+          <h2>Manual Adjustment History</h2>
+          <span class="panel-subtitle">Most recent teacher-entered point changes</span>
+        </header>
+
+        <div class="table-wrap">
+          <table class="progress-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Change</th>
+                <th>Reason</th>
+                <th>Recorded By</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!pointAdjustments.length) { %>
+                <tr><td colspan="4" class="table-empty">No manual adjustments recorded yet.</td></tr>
+              <% } else { %>
+                <% pointAdjustments.forEach((entry) => { %>
+                  <tr>
+                    <td><%= entry.createdAt ? new Date(entry.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : '—' %></td>
+                    <td>
+                      <strong><%= entry.direction === 'subtract' ? '-' : '+' %><%= Number(entry.amount || 0) %> XP</strong>
+                      <div class="cell-note"><%= Number(entry.beforeXp || 0).toLocaleString() %> -> <%= Number(entry.afterXp || 0).toLocaleString() %> · <%= entry.beforeRank || 'F' %> -> <%= entry.afterRank || 'F' %></div>
+                    </td>
+                    <td><%= entry.reason || '—' %></td>
+                    <td><%= entry.teacherNameSnapshot || 'Teacher' %></td>
+                  </tr>
+                <% }) %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
       <article class="progress-panel">
         <header class="panel-header">
           <h2>Academic Performance</h2>
@@ -194,6 +269,7 @@
           <span class="status-chip status-started">Active <strong><%= Number(missions.counts?.active || 0) %></strong></span>
           <span class="status-chip status-pending">Pending <strong><%= Number(missions.counts?.pending || 0) %></strong></span>
           <span class="status-chip status-danger">Rejected <strong><%= Number(missions.counts?.rejected || 0) %></strong></span>
+          <span class="status-chip status-danger">Failed <strong><%= Number(missions.counts?.failed || 0) %></strong></span>
           <span class="status-chip status-completed">Completed <strong><%= Number(missions.counts?.completed || 0) %></strong></span>
         </div>
 
@@ -206,11 +282,13 @@
                 <th>XP</th>
                 <th>Status</th>
                 <th>Due</th>
+                <th>Notes</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               <% if (!Array.isArray(missions.recentRows) || missions.recentRows.length === 0) { %>
-                <tr><td colspan="5" class="table-empty">No mission activity found.</td></tr>
+                <tr><td colspan="7" class="table-empty">No mission activity found.</td></tr>
               <% } else { %>
                 <% missions.recentRows.slice(0, 10).forEach((entry) => { %>
                   <tr>
@@ -219,6 +297,26 @@
                     <td><%= Number(entry.pointsXP || 0) %></td>
                     <td><span class="status-chip status-<%= entry.statusKey || 'neutral' %>"><%= entry.statusLabel %></span></td>
                     <td><%= entry.dueDateLabel %></td>
+                    <td>
+                      <% if (entry.statusKey === 'failed') { %>
+                        <div><strong><%= entry.failureReason || 'Deadline missed' %></strong></div>
+                        <% if (entry.failedAtLabel) { %><div class="cell-note"><%= entry.failedAtLabel %></div><% } %>
+                      <% } else { %>
+                        <span class="cell-note">—</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (entry.statusKey === 'failed') { %>
+                        <form method="POST" action="/teacher/students/<%= identity.id %>/missions/<%= entry.missionId %>/reopen" class="inline-reopen-form">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                          <input type="hidden" name="classId" value="<%= teacherClass?._id || identity.classId || '' %>" />
+                          <input type="text" name="reason" maxlength="240" required placeholder="Reason for reopening" />
+                          <button type="submit" class="btn-outline btn-inline">Reopen</button>
+                        </form>
+                      <% } else { %>
+                        <span class="cell-note">—</span>
+                      <% } %>
+                    </td>
                   </tr>
                 <% }) %>
               <% } %>
@@ -345,3 +443,4 @@
 </main>
 
 <%- include('../partials/teacherFooter') %>
+<script src="/js/teacher-student-progress.js" defer></script>

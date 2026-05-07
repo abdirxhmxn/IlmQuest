@@ -1,4 +1,8 @@
 const DASHBOARD_LAYOUTS = ["comfortable", "compact", "focus"];
+const {
+  buildDefaultGradingScaleSet,
+  normalizeGradingScaleSet
+} = require("./gradingScales");
 
 const DASHBOARD_SECTION_DEFINITIONS = [
   { key: "classOverview", label: "Class Overview" },
@@ -265,6 +269,7 @@ function buildGradingConfigVersion({
   version,
   subjectConfig,
   gradingCategories,
+  gradingScales,
   createdAt = now(),
   createdBy = null,
   createdByRole = "",
@@ -279,17 +284,19 @@ function buildGradingConfigVersion({
     reason: normalizeName(reason),
     note: normalizeName(note),
     subjectConfig: normalizeSubjectConfig(subjectConfig || []),
-    gradingCategories: normalizeGradingCategories(gradingCategories || [])
+    gradingCategories: normalizeGradingCategories(gradingCategories || []),
+    gradingScales: normalizeGradingScaleSet(gradingScales || buildDefaultGradingScaleSet())
   };
 }
 
-function normalizeConfigVersions(rawVersions, fallbackSubjects, fallbackCategories) {
+function normalizeConfigVersions(rawVersions, fallbackSubjects, fallbackCategories, fallbackScales) {
   const source = Array.isArray(rawVersions) ? rawVersions : [];
   const versions = source
     .map((entry, index) => buildGradingConfigVersion({
       version: Number(entry?.version) || (index + 1),
       subjectConfig: entry?.subjectConfig || fallbackSubjects,
       gradingCategories: entry?.gradingCategories || fallbackCategories,
+      gradingScales: entry?.gradingScales || fallbackScales,
       createdAt: asDateOrNull(entry?.createdAt) || now(),
       createdBy: entry?.createdBy || null,
       createdByRole: entry?.createdByRole || "",
@@ -313,6 +320,7 @@ function normalizeConfigVersions(rawVersions, fallbackSubjects, fallbackCategori
       version: 1,
       subjectConfig: fallbackSubjects,
       gradingCategories: fallbackCategories,
+      gradingScales: fallbackScales,
       createdAt: now(),
       createdBy: null,
       createdByRole: "system",
@@ -324,10 +332,12 @@ function normalizeConfigVersions(rawVersions, fallbackSubjects, fallbackCategori
 function buildDefaultTeacherSettings({ teacherId, className, classSubjects }) {
   const subjectConfig = getDefaultSubjectConfig(classSubjects);
   const gradingCategories = getDefaultGradingCategories();
+  const gradingScales = buildDefaultGradingScaleSet();
   const baseVersion = buildGradingConfigVersion({
     version: 1,
     subjectConfig,
     gradingCategories,
+    gradingScales,
     createdAt: now(),
     createdBy: teacherId || null,
     createdByRole: "teacher",
@@ -342,6 +352,7 @@ function buildDefaultTeacherSettings({ teacherId, className, classSubjects }) {
     dashboardSections: getDefaultDashboardSections(),
     subjectConfig,
     gradingCategories,
+    gradingScales,
     currentConfigVersion: 1,
     configVersions: [baseVersion],
     lastCustomizedBy: null,
@@ -376,10 +387,12 @@ function resolveTeacherSettings(classDoc, teacherId = null) {
 
   const resolvedSubjectConfig = normalizeSubjectConfig(selected?.subjectConfig, fallback.subjectConfig);
   const resolvedCategories = normalizeGradingCategories(selected?.gradingCategories || fallback.gradingCategories);
+  const resolvedScales = normalizeGradingScaleSet(selected?.gradingScales || fallback.gradingScales);
   const resolvedVersions = normalizeConfigVersions(
     selected?.configVersions,
     resolvedSubjectConfig,
-    resolvedCategories
+    resolvedCategories,
+    resolvedScales
   );
 
   const selectedCurrentVersion = Number(selected?.currentConfigVersion || 0);
@@ -398,6 +411,7 @@ function resolveTeacherSettings(classDoc, teacherId = null) {
     dashboardSections: normalizeDashboardSections(selected?.dashboardSections || fallback.dashboardSections),
     subjectConfig: resolvedSubjectConfig,
     gradingCategories: resolvedCategories,
+    gradingScales: resolvedScales,
     currentConfigVersion,
     configVersions: resolvedVersions,
     lastCustomizedBy: selected?.lastCustomizedBy || null,
@@ -566,10 +580,12 @@ module.exports = {
   normalizeName,
   getDefaultDashboardSections,
   getDefaultGradingCategories,
+  buildDefaultGradingScaleSet,
   getDefaultSubjectConfig,
   normalizeDashboardSections,
   normalizeSubjectConfig,
   normalizeGradingCategories,
+  normalizeGradingScaleSet,
   buildGradingConfigVersion,
   buildDefaultTeacherSettings,
   resolveTeacherSettings,

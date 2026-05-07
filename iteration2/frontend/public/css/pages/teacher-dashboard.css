@@ -32,15 +32,17 @@
 
 .dashboard-header h1 {
   margin: 0;
-  color: #12271d;
+  color: #111827;
   font-size: clamp(1.5rem, 1.18rem + 0.9vw, 2.05rem);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  font-weight: 800;
 }
 
 .dashboard-header p {
-  margin: 8px 0 0;
-  font-size: 0.96rem;
-  color: #5d7267;
+  margin: 6px 0 0;
+  font-size: 0.94rem;
+  color: #4b5563;
+  font-weight: 400;
 }
 
 .dashboard-header .btn-secondary {
@@ -65,13 +67,14 @@
 .announcement-stream {
   display: grid;
   gap: 14px;
-  background: linear-gradient(180deg, #ffffff, #fbfdfb 72%);
+  background: #ffffff;
 }
 
 .announcement-stream header h2 {
   margin: 0;
-  font-size: 1.2rem;
-  color: #163126;
+  font-size: 1.12rem;
+  color: #111827;
+  font-weight: 700;
 }
 
 .announcement-stream header p {
@@ -85,12 +88,18 @@
 }
 
 .announcement-stream-item {
-  border: 1px solid #dfeae4;
+  border: 1px solid #e2e6ed;
   border-radius: 12px;
   background: #ffffff;
-  padding: 13px;
+  padding: 14px;
   display: grid;
   gap: 8px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.announcement-stream-item:hover {
+  border-color: #c8cfd9;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .announcement-stream-head {
@@ -102,28 +111,31 @@
 
 .announcement-stream-item h3 {
   margin: 0;
-  font-size: 0.98rem;
-  color: #153126;
+  font-size: 0.96rem;
+  color: #111827;
+  font-weight: 700;
 }
 
 .announcement-stream-item p {
   margin: 0;
-  color: #4f665b;
-  line-height: 1.45;
+  color: #4b5563;
+  line-height: 1.55;
+  font-size: 0.9rem;
 }
 
 .announcement-stream-item small {
-  color: #74897d;
+  color: #6b7280;
   font-size: 0.8rem;
 }
 
 .announcement-empty {
-  border: 1px dashed #c9dccf;
-  border-radius: 11px;
-  background: #f8fbf9;
-  color: #607569;
-  padding: 12px;
-  font-weight: 600;
+  border: 1px dashed #cbd0da;
+  border-radius: 12px;
+  background: #f8f9fb;
+  color: #5d6b82;
+  padding: 16px;
+  font-weight: 500;
+  text-align: center;
 }
 
 /* 3. Class Panels */
@@ -210,33 +222,41 @@
 }
 
 .dashboard-card {
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid #dae7df;
-  background: linear-gradient(180deg, #ffffff, #fafdfb 84%);
-  box-shadow: 0 8px 20px rgba(16, 58, 41, 0.06);
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #dde1ea;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
   display: grid;
   gap: 10px;
   align-content: start;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.dashboard-card:hover {
+  border-color: #c6ccda;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.09);
 }
 
 .dashboard-card h3 {
   margin: 0;
-  font-size: 1.01rem;
-  color: #133024;
+  font-size: 0.98rem;
+  color: #111827;
+  font-weight: 700;
 }
 
 .card-value {
   margin: 0;
   font-size: clamp(1.38rem, 1.24rem + 0.44vw, 1.68rem);
-  color: #0f3d2e;
+  color: #111827;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .card-note {
   margin: 0;
-  font-size: 0.89rem;
-  color: #4f665a;
+  font-size: 0.88rem;
+  color: #4b5563;
 }
 
 .card-metrics {
@@ -246,24 +266,26 @@
 }
 
 .card-metrics > div {
-  border: 1px solid #dce8e0;
+  border: 1px solid #e2e6ed;
   border-radius: 10px;
-  background: #ffffff;
+  background: #f8f9fb;
   padding: 10px;
 }
 
 .card-metrics strong {
-  font-size: 1.02rem;
-  color: #103a2b;
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 700;
 }
 
 .metric-label {
   display: block;
   margin-bottom: 6px;
-  font-size: 0.76rem;
-  color: #5e7569;
-  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  color: #6b7280;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  font-weight: 700;
 }
 
 .leaderboard-list,
@@ -277,9 +299,9 @@
 
 .leaderboard-list li,
 .announcement-list li {
-  border: 1px solid #dce8e0;
+  border: 1px solid #e2e6ed;
   border-radius: 10px;
-  background: #ffffff;
+  background: #f8f9fb;
   padding: 10px 12px;
   display: flex;
   justify-content: space-between;
@@ -289,11 +311,12 @@
 
 .leaderboard-list li a {
   font-weight: 700;
-  color: #13432f;
+  color: #0f4f40;
   text-decoration: none;
 }
 
 .leaderboard-list li a:hover {
+  color: #0b3f33;
   text-decoration: underline;
 }
 
@@ -308,18 +331,21 @@
 }
 
 .quick-links a {
-  border: 1px solid #dce8e0;
+  border: 1px solid #e2e6ed;
   border-radius: 10px;
-  background: #ffffff;
-  color: #0f3d2e;
+  background: #f8f9fb;
+  color: #111827;
   font-size: 0.88rem;
-  font-weight: 700;
-  padding: 10px 11px;
+  font-weight: 600;
+  padding: 10px 12px;
   text-decoration: none;
+  transition: border-color 0.16s ease, background 0.16s ease;
 }
 
 .quick-links a:hover {
-  background: #eff6f1;
+  background: #eef6f0;
+  border-color: #c0d4ca;
+  color: #0f4f40;
 }
 
 /* 5. Responsive */

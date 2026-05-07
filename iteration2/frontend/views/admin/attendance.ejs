@@ -18,20 +18,29 @@
     ...(Array.isArray(messages?.error) ? messages.error : []),
     ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
   ];
+  const headerActions = [
+    { href: '/admin/home', label: 'Dashboard' },
+    { href: '/admin/reports', label: 'Reports' },
+    {
+      href: '/admin/announcements',
+      label: 'Manage Announcements',
+      className: 'attendance-create-btn',
+      prefixSymbol: '+',
+      prefixClass: 'attendance-create-btn-plus'
+    }
+  ];
 %>
 
-<header class="admin-page-header">
-  <div class="admin-page-title">
-    <h1>Attendance Highlights</h1>
-    <p><%= activeCount %> active · <%= expiredCount %> expired</p>
-  </div>
-  <div class="admin-top-actions attendance-header-actions">
-    <a class="attendance-create-btn" href="/admin/announcements">
-      <span class="attendance-create-btn-plus" aria-hidden="true">+</span>
-      Manage Announcements
-    </a>
-  </div>
-</header>
+<%- include('../partials/adminPageHeader', {
+  user: typeof user !== 'undefined' ? user : undefined,
+  iconSvg: typeof iconSvg === 'function' ? iconSvg : undefined,
+  showSidebarToggle: true,
+  headerBreadcrumbs: 'Admin / Operations / Attendance',
+  headerTitle: 'Attendance Highlights',
+  headerSubtitle: `${activeCount} active · ${expiredCount} expired`,
+  headerActions,
+  headerTopActionsClass: 'attendance-header-actions'
+}) %>
 
 <% if (successMessages.length > 0) { %>
   <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>

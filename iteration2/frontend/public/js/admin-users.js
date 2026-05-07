@@ -31,20 +31,30 @@
   }
 
   function deleteUserRow({ userId, rowEl, type, deleteLabel }) {
+    const deleteReasonInput = deleteDialog?.querySelector("[data-delete-reason]");
+    if (deleteReasonInput) {
+      deleteReasonInput.value = "";
+    }
+
     AdminViewEdit.openConfirmDialog(deleteDialog, {
       title: `Delete ${deleteLabel}`,
       message: `This ${type} will be soft-deleted. You can restore later.`,
       onConfirm: async () => {
+        const deletedReason = String(deleteReasonInput?.value || "").trim();
         const { response } = await AdminViewEdit.jsonFetch(`/admin/users/${userId}`, {
           method: "DELETE",
-          csrfToken
+          csrfToken,
+          data: deletedReason ? { deletedReason } : {}
         });
         if (response.ok) {
           if (sharedState.activeEditor && sharedState.activeEditor.rowEl === rowEl) {
             sharedState.activeEditor = null;
           }
           rowEl.remove();
+          return;
         }
+
+        window.alert("Delete failed. Please refresh and try again.");
       }
     });
   }

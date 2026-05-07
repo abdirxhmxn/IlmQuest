@@ -63,6 +63,69 @@
   align-items: start;
 }
 
+.finance-billing-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.finance-billing-stat {
+  border: 1px solid #e4ebf3;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+  padding: 14px;
+  display: grid;
+  gap: 5px;
+}
+
+.finance-billing-stat span {
+  color: var(--admin-text-subtle);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.finance-billing-stat strong {
+  color: var(--admin-text-main);
+  font-size: 1.02rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.finance-billing-stat p {
+  margin: 0;
+  color: var(--admin-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.finance-billing-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 14px;
+}
+
+.finance-billing-rail {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.finance-billing-side-card {
+  border: 1px solid #e4ebf3;
+  border-radius: 14px;
+  background: #fbfcfe;
+  padding: 14px;
+}
+
+.finance-billing-side-card h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--admin-text-main);
+}
+
 .finance-card {
   padding: 14px;
   min-width: 0;
@@ -237,6 +300,13 @@
   vertical-align: top;
 }
 
+.finance-table-meta {
+  margin-top: 4px;
+  color: var(--admin-text-subtle);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
 .finance-table .strong-cell {
   color: var(--admin-text-main);
   font-weight: 730;
@@ -343,12 +413,14 @@
 }
 
 @media (max-width: 1280px) {
-  .finance-kpi-grid {
+  .finance-kpi-grid,
+  .finance-billing-summary-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 1024px) {
+  .finance-billing-layout,
   .form-grid-three,
   .category-columns {
     grid-template-columns: 1fr;
@@ -365,6 +437,7 @@
 
 @media (max-width: 768px) {
   .finance-kpi-grid,
+  .finance-billing-summary-grid,
   .form-grid-two {
     grid-template-columns: minmax(0, 1fr);
   }

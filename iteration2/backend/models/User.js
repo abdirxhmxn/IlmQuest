@@ -142,14 +142,19 @@ const UserSchema = new mongoose.Schema({
   ownerOnboardingCompletedAt: { type: Date, default: null },
   resetPasswordTokenHash: { type: String, default: null, select: false, index: true },
   resetPasswordExpiresAt: { type: Date, default: null, select: false },
+  isDeleted: { type: Boolean, default: false, index: true },
   deletedAt: { type: Date, default: null, index: true },
-  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  deletedReason: { type: String, trim: true, default: "" },
+  restoredAt: { type: Date, default: null },
+  restoredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
 
 }, { timestamps: true });
 
 UserSchema.index({ schoolId: 1, userNameNormalized: 1, deletedAt: 1 });
 UserSchema.index({ emailNormalized: 1, deletedAt: 1 });
 UserSchema.index({ schoolId: 1, role: 1, deletedAt: 1, createdAt: -1 });
+UserSchema.index({ schoolId: 1, isDeleted: 1, deletedAt: -1 });
 UserSchema.index({ schoolId: 1, "studentInfo.classId": 1, role: 1, deletedAt: 1 });
 UserSchema.index({ schoolId: 1, "parentInfo.children.childID": 1, role: 1, deletedAt: 1 });
 UserSchema.index({ schoolId: 1, "studentInfo.parents.parentID": 1, role: 1, deletedAt: 1 });

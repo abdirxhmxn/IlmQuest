@@ -1,135 +1,593 @@
 <%
   const teacherActivePage = 'missions';
   const teacherPageTitle = 'Mission Management';
-  const teacherPageSubtitle = 'Create mission workflows and review assigned mission records.';
+  const teacherPageSubtitle = 'Create mission workflows, review submissions, and monitor class progress without losing context.';
 %>
 <%- include('../partials/teacherHeader') -%>
 
-<link rel="stylesheet" href="/css/teacherMissions.css">
+<link rel="stylesheet" href="/css/pages/teacher-missions.css">
+
+<%
+  const assignedClasses = Array.isArray(classes) ? classes : [];
+  const missionCatalog = Array.isArray(missions) ? missions : [];
+  const studentCatalog = Array.isArray(students) ? students : [];
+  const gradeCatalog = Array.isArray(grades) ? grades : [];
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((entry) => entry?.msg || entry).filter(Boolean) : [])
+  ];
+  const todayValue = new Date().toISOString().slice(0, 10);
+
+  const classNameById = new Map(
+    assignedClasses.map((classDoc) => [String(classDoc?._id || ''), classDoc.className || 'Class'])
+  );
+
+  function missionStatusMeta(rawStatus) {
+    const value = String(rawStatus || '').trim().toLowerCase();
+    if (value === 'started' || value === 'in-progress' || value === 'active') {
+      return { key: 'in-progress', label: 'In Progress' };
+    }
+    if (value === 'complete' || value === 'completed' || value === 'approved') {
+      return { key: 'completed', label: 'Completed' };
+    }
+    if (value === 'pending' || value === 'submitted') {
+      return { key: 'pending-review', label: 'Pending Review' };
+    }
+    if (value === 'rejected' || value === 'needs-revision') {
+      return { key: 'needs-revision', label: 'Needs Revision' };
+    }
+    if (value === 'auto_failed' || value === 'failed') {
+      return { key: 'failed', label: 'Failed' };
+    }
+    return { key: 'assigned', label: 'Assigned' };
+  }
+
+  const missionRows = missionCatalog.map((mission) => {
+    const activeStudents = Array.isArray(mission?.active?.studentInfo) ? mission.active.studentInfo : [];
+    const assignedClassInfo = Array.isArray(mission?.assignedTo?.classInfo) ? mission.assignedTo.classInfo : [];
+    const assignedStudentInfo = Array.isArray(mission?.assignedTo?.studentInfo) ? mission.assignedTo.studentInfo : [];
+
+    const classNames = assignedClassInfo
+      .map((entry) => entry?.name || classNameById.get(String(entry?._id || entry)) || '')
+      .filter(Boolean);
+
+    const participantIds = new Set();
+    activeStudents.forEach((entry) => {
+      const id = String(entry?._id || '').trim();
+      if (id) participantIds.add(id);
+    });
+    assignedStudentInfo.forEach((entry) => {
+      const id = String(entry?._id || entry || '').trim();
+      if (id) participantIds.add(id);
+    });
+
+    const submissions = activeStudents
+      .map((entry) => {
+        const status = missionStatusMeta(entry?.status);
+        const recordedAt = entry?.completedAt || entry?.failedAt || entry?.startedAt || mission.updatedAt || mission.createdAt;
+        return {
+          studentName: String(entry?.name || '').trim() || 'Student',
+          attempt: Number(entry?.attempt || 0),
+          statusKey: status.key,
+          statusLabel: status.label,
+          startedAtLabel: entry?.startedAt ? new Date(entry.startedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : 'Not started',
+          recordedAtValue: recordedAt ? new Date(recordedAt).getTime() : 0,
+          recordedAtLabel: recordedAt ? new Date(recordedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : '—',
+          failureReason: String(entry?.failureReason || '').trim(),
+          reopenReason: String(entry?.reopenReason || '').trim()
+        };
+      })
+      .sort((a, b) => Number(b.recordedAtValue || 0) - Number(a.recordedAtValue || 0));
+
+    const statusCounts = {
+      assigned: 0,
+      active: 0,
+      pending: 0,
+      completed: 0,
+      needsRevision: 0,
+      failed: 0
+    };
+
+    submissions.forEach((entry) => {
+      if (entry.statusKey === 'in-progress') statusCounts.active += 1;
+      else if (entry.statusKey === 'pending-review') statusCounts.pending += 1;
+      else if (entry.statusKey === 'completed') statusCounts.completed += 1;
+      else if (entry.statusKey === 'needs-revision') statusCounts.needsRevision += 1;
+      else if (entry.statusKey === 'failed') statusCounts.failed += 1;
+      else statusCounts.assigned += 1;
+    });
+
+    return {
+      mission,
+      classNames,
+      audienceLabel: classNames.length
+        ? classNames.join(', ')
+        : (assignedClasses.length ? `Visible across ${assignedClasses.length} class${assignedClasses.length === 1 ? '' : 'es'}` : 'No assigned class audience yet'),
+      participantCount: participantIds.size || activeStudents.length,
+      assignedStudentCount: assignedStudentInfo.length,
+      submissions,
+      statusCounts
+    };
+  });
+
+  const submissionRows = missionRows
+    .flatMap((row) =>
+      row.submissions.map((submission) => ({
+        missionTitle: row.mission.title,
+        missionRank: row.mission.rank,
+        missionPoints: Number(row.mission.pointsXP || 0),
+        audienceLabel: row.audienceLabel,
+        ...submission
+      }))
+    )
+    .sort((a, b) => {
+      const left = Number(a.recordedAtValue || 0);
+      const right = Number(b.recordedAtValue || 0);
+      return right - left;
+    });
+
+  const totalParticipants = missionRows.reduce((sum, row) => sum + Number(row.participantCount || 0), 0);
+  const activeSubmissionCount = submissionRows.filter((row) => row.statusKey === 'in-progress').length;
+  const pendingReviewCount = submissionRows.filter((row) => row.statusKey === 'pending-review').length;
+  const completedSubmissionCount = submissionRows.filter((row) => row.statusKey === 'completed').length;
+  const attentionCount = submissionRows.filter((row) => row.statusKey === 'needs-revision' || row.statusKey === 'failed').length;
+  const gradeEntryClasses = assignedClasses
+    .map((classDoc) => ({
+      id: String(classDoc?._id || ''),
+      name: classDoc?.className || classDoc?.classCode || 'Class',
+      classCode: classDoc?.classCode || '',
+      students: Array.isArray(classDoc?.students)
+        ? classDoc.students
+          .map((student) => ({
+            id: String(student?._id || ''),
+            name: String(student?.name || '').trim() || 'Student'
+          }))
+          .filter((student) => student.id)
+        : [],
+      subjects: Array.isArray(classDoc?.activeSubjects)
+        ? classDoc.activeSubjects
+          .map((subject) => ({
+            value: String(subject?.label || subject?.name || '').trim(),
+            label: String(subject?.label || subject?.name || '').trim()
+          }))
+          .filter((subject) => subject.value)
+        : [],
+      categories: Array.isArray(classDoc?.activeGradingCategories)
+        ? classDoc.activeGradingCategories
+          .map((category) => ({
+            value: String(category?.key || '').trim(),
+            label: String(category?.label || category?.name || '').trim(),
+            weight: Number(category?.weight || 0)
+          }))
+          .filter((category) => category.value && category.label)
+        : []
+    }))
+    .filter((entry) => entry.id);
+  const gradeEnabledClasses = gradeEntryClasses.filter(
+    (entry) => entry.students.length > 0 && entry.subjects.length > 0 && entry.categories.length > 0
+  );
+%>
 
 <main class="teacher-main teacher-missions-page">
-  <div class="teacher-page-shell">
-    <div class="teacher-page-hero header-section">
-      <div class="welcome">
-        <h1>Mission Management</h1>
-        <p>Welcome back, <%= user.firstName %>. Create, assign, and monitor mission performance.</p>
-      </div>
-      <div class="user-badge">
-        <div class="role"><%= user.role %></div>
-      </div>
-    </div>
+  <section class="teacher-page-shell teacher-mission-shell">
+    <% if (successMessages.length > 0) { %>
+      <div class="teacher-flash teacher-flash-success"><%= successMessages.join(' ') %></div>
+    <% } %>
+    <% if (errorMessages.length > 0) { %>
+      <div class="teacher-flash teacher-flash-error"><%= errorMessages.join(' ') %></div>
+    <% } %>
 
-    <section class="section">
-      <h2 class="section-title">Create Mission</h2>
-      <div class="form-container">
-        <form action="/teacher/manage-missions/create-mission" method="POST">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="missionTitle">Mission Title *</label>
-              <input type="text" name="missionTitle" id="missionTitle" required>
-            </div>
-            <div class="form-group">
-              <label for="missionDescription">Mission Description *</label>
-              <input type="text" name="missionDescription" id="missionDescription" required>
-            </div>
-            <div class="form-group">
-              <label for="type">Mission Type *</label>
-              <select id="type" name="type" required>
-                <option value="">Select Type</option>
-                <option value="Ilm">Knowledge</option>
-                <option value="Adab & Akhlaq">Characters and Morals</option>
-                <option value="Ihsaan">Pursuit of Excellence</option>
-                <option value="Amanah">Trust and Responsibility</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="category">Mission Category *</label>
-              <select id="category" name="category" required>
-                <option value="">Select Category</option>
-                <option value="Solo">Solo</option>
-                <option value="Team">Team</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="rank">Mission Rank *</label>
-              <select id="rank" name="rank" required>
-                <option value="">Select Rank</option>
-                <option value="F">F</option>
-                <option value="E">E</option>
-                <option value="D">D</option>
-                <option value="C">C</option>
-                <option value="B">B</option>
-                <option value="A">A</option>
-                <option value="S">S</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="missionPoints">Mission Points *</label>
-              <input type="number" name="missionPoints" id="missionPoints" min="0" required>
-            </div>
-            <div class="form-group">
-              <label for="timeLimit">Time Limit *</label>
-              <select id="timeLimit" name="timeLimit" required>
-                <option value="">Select</option>
-                <option value="Daily">Daily</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Timed">Timed</option>
-                <option value="None">None</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="dueDate">Due Date</label>
-              <input type="date" id="dueDate" name="dueDate" />
-            </div>
-          </div>
-          <button type="submit" class="btn">Create Mission</button>
-        </form>
+    <section class="teacher-mission-hero">
+      <div class="teacher-mission-hero-copy">
+        <p class="teacher-mission-kicker">Mission Operations</p>
+        <h1>Mission workspace for <%= user.firstName %></h1>
+        <p>Build missions, watch submission flow, and keep your classes moving through rank-based work with less friction.</p>
+        <div class="teacher-mission-meta">
+          <span><strong><%= assignedClasses.length %></strong> class<%= assignedClasses.length === 1 ? '' : 'es' %></span>
+          <span><strong><%= studentCatalog.length %></strong> learner<%= studentCatalog.length === 1 ? '' : 's' %></span>
+          <span><strong><%= missionCatalog.length %></strong> mission<%= missionCatalog.length === 1 ? '' : 's' %> created</span>
+        </div>
+      </div>
+      <div class="teacher-mission-hero-panel">
+        <article>
+          <span>Assessments Recorded</span>
+          <strong><%= gradeCatalog.length %></strong>
+        </article>
+        <article>
+          <span>Pending Review</span>
+          <strong><%= pendingReviewCount %></strong>
+        </article>
+        <article>
+          <span>Needs Attention</span>
+          <strong><%= attentionCount %></strong>
+        </article>
       </div>
     </section>
 
-    <section class="section">
-      <h2 class="section-title">Mission Records</h2>
-      <div class="table-container">
-        <% if (missions && missions.length > 0) { %>
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Description</th>
-                <th>Category</th>
-                <th>Rank</th>
-                <th>Points</th>
-                <th>Time Limit / Due</th>
-                <th>Assigned Classes</th>
-                <th>Assigned Students</th>
-                <th>Created By</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% missions.forEach(mission => { %>
-                <tr>
-                  <td><%= mission.title %></td>
-                  <td><%= mission.description %></td>
-                  <td><%= mission.type %></td>
-                  <td><%= mission.rank %></td>
-                  <td><%= mission.pointsXP %></td>
-                  <td><%= mission.timeLimit %> / <%= mission.dueDate ? mission.dueDate.toDateString() : '—' %></td>
-                  <td>—</td>
-                  <td>—</td>
-                  <td><%= mission.createdBy?.name || 'Teacher' %></td>
-                </tr>
+    <section class="teacher-mission-stat-grid">
+      <article class="teacher-mission-stat-card">
+        <p class="teacher-stat-label">Created Missions</p>
+        <p class="teacher-stat-value"><%= missionCatalog.length %></p>
+        <p class="teacher-stat-note">Mission records in your catalog</p>
+      </article>
+      <article class="teacher-mission-stat-card">
+        <p class="teacher-stat-label">Tracked Learners</p>
+        <p class="teacher-stat-value"><%= studentCatalog.length %></p>
+        <p class="teacher-stat-note">Students across assigned classes</p>
+      </article>
+      <article class="teacher-mission-stat-card">
+        <p class="teacher-stat-label">Active Submissions</p>
+        <p class="teacher-stat-value"><%= activeSubmissionCount %></p>
+        <p class="teacher-stat-note">Currently in progress</p>
+      </article>
+      <article class="teacher-mission-stat-card">
+        <p class="teacher-stat-label">Completed</p>
+        <p class="teacher-stat-value"><%= completedSubmissionCount %></p>
+        <p class="teacher-stat-note">Approved or completed attempts</p>
+      </article>
+      <article class="teacher-mission-stat-card">
+        <p class="teacher-stat-label">Pending Review</p>
+        <p class="teacher-stat-value"><%= pendingReviewCount %></p>
+        <p class="teacher-stat-note">Waiting on your review</p>
+      </article>
+      <article class="teacher-mission-stat-card">
+        <p class="teacher-stat-label">Participation</p>
+        <p class="teacher-stat-value"><%= totalParticipants %></p>
+        <p class="teacher-stat-note">Tracked mission participants</p>
+      </article>
+    </section>
+
+    <section class="teacher-mission-layout">
+      <div class="teacher-mission-main">
+        <article class="teacher-mission-card teacher-create-card">
+          <header class="teacher-mission-card-header">
+            <div>
+              <h2>Create Mission</h2>
+              <p>Publish a new mission with clear rank, reward, and timing rules.</p>
+            </div>
+          </header>
+          <form action="/teacher/manage-missions/create-mission" method="POST" class="teacher-mission-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="teacher-form-grid">
+              <div class="teacher-form-group teacher-form-group-wide">
+                <label for="missionTitle">Mission Title *</label>
+                <input type="text" name="missionTitle" id="missionTitle" required>
+              </div>
+              <div class="teacher-form-group teacher-form-group-wide">
+                <label for="missionDescription">Mission Description *</label>
+                <input type="text" name="missionDescription" id="missionDescription" required>
+              </div>
+              <div class="teacher-form-group">
+                <label for="type">Mission Type *</label>
+                <select id="type" name="type" required>
+                  <option value="">Select Type</option>
+                  <option value="Ilm">Knowledge</option>
+                  <option value="Adab & Akhlaq">Character and Morals</option>
+                  <option value="Ihsaan">Pursuit of Excellence</option>
+                  <option value="Amanah">Trust and Responsibility</option>
+                </select>
+              </div>
+              <div class="teacher-form-group">
+                <label for="category">Mission Category *</label>
+                <select id="category" name="category" required>
+                  <option value="">Select Category</option>
+                  <option value="Solo">Solo</option>
+                  <option value="Team">Team</option>
+                </select>
+              </div>
+              <div class="teacher-form-group">
+                <label for="rank">Mission Rank *</label>
+                <select id="rank" name="rank" required>
+                  <option value="">Select Rank</option>
+                  <option value="F">F</option>
+                  <option value="E">E</option>
+                  <option value="D">D</option>
+                  <option value="C">C</option>
+                  <option value="B">B</option>
+                  <option value="A">A</option>
+                  <option value="S">S</option>
+                </select>
+              </div>
+              <div class="teacher-form-group">
+                <label for="missionPoints">Mission Points *</label>
+                <input type="number" name="missionPoints" id="missionPoints" min="0" required>
+              </div>
+              <div class="teacher-form-group">
+                <label for="timeLimit">Time Limit *</label>
+                <select id="timeLimit" name="timeLimit" required>
+                  <option value="">Select</option>
+                  <option value="Daily">Daily</option>
+                  <option value="Weekly">Weekly</option>
+                  <option value="Timed">Timed</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+              <div class="teacher-form-group">
+                <label for="dueDate">Due Date</label>
+                <input type="date" id="dueDate" name="dueDate" />
+              </div>
+            </div>
+            <div class="teacher-form-actions">
+              <button type="submit" class="teacher-primary-btn">Create Mission</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="teacher-mission-card teacher-grade-card">
+          <header class="teacher-mission-card-header">
+            <div>
+              <h2>Quick Grade Entry</h2>
+              <p>Record a student grade here without leaving mission operations. The existing gradebook flow stays intact.</p>
+            </div>
+            <a class="teacher-secondary-link" href="/teacher/manage-grades">Open Full Gradebook</a>
+          </header>
+          <% if (!gradeEnabledClasses.length) { %>
+            <div class="teacher-empty-state">
+              No class is fully ready for grade entry yet. Make sure the class has enrolled students, active subjects, and grading categories configured.
+            </div>
+          <% } else { %>
+            <form action="/teacher/manage-grades/add" method="POST" class="teacher-mission-form teacher-grade-form">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="redirectTo" value="/teacher/manage-missions" />
+
+              <div class="teacher-grade-form-grid">
+                <div class="teacher-form-group">
+                  <label for="quickGradeClass">Class *</label>
+                  <select id="quickGradeClass" name="classId" required>
+                    <% gradeEnabledClasses.forEach((classEntry, index) => { %>
+                      <option value="<%= classEntry.id %>" <%= index === 0 ? 'selected' : '' %>><%= classEntry.name %><%= classEntry.classCode ? ` (${classEntry.classCode})` : '' %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeStudent">Student *</label>
+                  <select id="quickGradeStudent" name="student" required>
+                    <option value="">Select student</option>
+                    <% gradeEnabledClasses.forEach((classEntry) => { %>
+                      <% classEntry.students.forEach((student) => { %>
+                        <option value="<%= student.id %>" data-class-id="<%= classEntry.id %>"><%= student.name %></option>
+                      <% }) %>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeSubject">Subject *</label>
+                  <select id="quickGradeSubject" name="subject" required>
+                    <option value="">Select subject</option>
+                    <% gradeEnabledClasses.forEach((classEntry) => { %>
+                      <% classEntry.subjects.forEach((subject) => { %>
+                        <option value="<%= subject.value %>" data-class-id="<%= classEntry.id %>"><%= subject.label %></option>
+                      <% }) %>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeCategory">Category *</label>
+                  <select id="quickGradeCategory" name="Assignment[type]" required>
+                    <option value="">Select category</option>
+                    <% gradeEnabledClasses.forEach((classEntry) => { %>
+                      <% classEntry.categories.forEach((category) => { %>
+                        <option value="<%= category.value %>" data-class-id="<%= classEntry.id %>"><%= category.label %> (<%= category.weight %>%)</option>
+                      <% }) %>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="teacher-form-group teacher-form-group-wide">
+                  <label for="quickGradeAssignmentName">Assignment Name *</label>
+                  <input type="text" id="quickGradeAssignmentName" name="Assignment[name]" required placeholder="e.g. Surah Al-Fatihah Quiz" />
+                </div>
+                <div class="teacher-form-group teacher-form-group-wide">
+                  <label for="quickGradeDescription">Description</label>
+                  <textarea id="quickGradeDescription" name="Assignment[description]" rows="3" placeholder="Topics covered, notes, or instructions."></textarea>
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeScore">Score Earned *</label>
+                  <input type="number" id="quickGradeScore" name="Assignment[grade]" required min="0" step="0.1" placeholder="95" />
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeMaxScore">Out Of</label>
+                  <input type="number" id="quickGradeMaxScore" name="Assignment[maxScore]" min="1" step="0.1" value="100" />
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeQuarter">Quarter *</label>
+                  <select id="quickGradeQuarter" name="quarter" required>
+                    <option value="">Select quarter</option>
+                    <option value="Q1">Q1</option>
+                    <option value="Q2">Q2</option>
+                    <option value="Q3">Q3</option>
+                    <option value="Q4">Q4</option>
+                  </select>
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeAssignedDate">Assigned Date *</label>
+                  <input type="date" id="quickGradeAssignedDate" name="assignedDate" required value="<%= todayValue %>" />
+                </div>
+                <div class="teacher-form-group">
+                  <label for="quickGradeDueDate">Due Date</label>
+                  <input type="date" id="quickGradeDueDate" name="dueDate" />
+                </div>
+                <div class="teacher-form-group teacher-form-group-full">
+                  <label for="quickGradeFeedback">Feedback</label>
+                  <textarea id="quickGradeFeedback" name="feedback" rows="3" placeholder="Helpful feedback for the student."></textarea>
+                </div>
+              </div>
+
+              <div class="teacher-form-actions">
+                <button type="submit" class="teacher-primary-btn">Save Grade</button>
+                <a class="teacher-secondary-link" href="/teacher/manage-grades">Review Existing Grades</a>
+              </div>
+            </form>
+          <% } %>
+        </article>
+
+        <article class="teacher-mission-card">
+          <header class="teacher-mission-card-header">
+            <div>
+              <h2>Submission Review</h2>
+              <p>Prioritize pending, returned, or missed mission attempts from your learners.</p>
+            </div>
+            <span class="teacher-mini-chip"><%= submissionRows.length %> records</span>
+          </header>
+          <% if (!submissionRows.length) { %>
+            <div class="teacher-empty-state">No student mission activity has been recorded yet. Submissions will appear here automatically as learners begin missions.</div>
+          <% } else { %>
+            <div class="teacher-table-wrap">
+              <table class="teacher-mission-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Mission</th>
+                    <th>Status</th>
+                    <th>Attempt</th>
+                    <th>Started</th>
+                    <th>Latest Activity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% submissionRows.slice(0, 12).forEach((row) => { %>
+                    <tr>
+                      <td><strong><%= row.studentName %></strong></td>
+                      <td>
+                        <strong><%= row.missionTitle %></strong>
+                        <div class="table-note"><%= row.missionRank %> Rank · +<%= row.missionPoints %> XP</div>
+                      </td>
+                      <td><span class="teacher-status-pill status-<%= row.statusKey %>"><%= row.statusLabel %></span></td>
+                      <td><%= row.attempt || '—' %></td>
+                      <td><%= row.startedAtLabel %></td>
+                      <td>
+                        <strong><%= row.recordedAtLabel %></strong>
+                        <% if (row.failureReason || row.reopenReason) { %>
+                          <div class="table-note"><%= row.failureReason || row.reopenReason %></div>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </article>
+
+        <article class="teacher-mission-card">
+          <header class="teacher-mission-card-header">
+            <div>
+              <h2>Created Missions</h2>
+              <p>Each mission card shows audience, status breakdown, and mission reward details.</p>
+            </div>
+          </header>
+          <% if (!missionRows.length) { %>
+            <div class="teacher-empty-state">No missions yet. Create your first mission above to start the workflow.</div>
+          <% } else { %>
+            <div class="teacher-mission-grid">
+              <% missionRows.forEach((row) => { %>
+                <article class="teacher-mission-item">
+                  <div class="teacher-mission-item-top">
+                    <span class="teacher-rank-chip"><%= row.mission.rank %> Rank</span>
+                    <span class="teacher-xp-chip">+<%= row.mission.pointsXP %> XP</span>
+                  </div>
+                  <h3><%= row.mission.title %></h3>
+                  <p><%= row.mission.description %></p>
+                  <div class="teacher-mission-tags">
+                    <span><%= row.mission.type %></span>
+                    <span><%= row.mission.category %></span>
+                    <span><%= row.mission.timeLimit || 'None' %></span>
+                  </div>
+                  <div class="teacher-mission-audience">
+                    <strong>Audience</strong>
+                    <p><%= row.audienceLabel %></p>
+                  </div>
+                  <div class="teacher-mission-stats">
+                    <div><span>Participants</span><strong><%= row.participantCount %></strong></div>
+                    <div><span>Pending</span><strong><%= row.statusCounts.pending %></strong></div>
+                    <div><span>Completed</span><strong><%= row.statusCounts.completed %></strong></div>
+                    <div><span>Attention</span><strong><%= row.statusCounts.needsRevision + row.statusCounts.failed %></strong></div>
+                  </div>
+                  <div class="teacher-mission-footer">
+                    <small><%= row.mission.dueDate ? row.mission.dueDate.toDateString() : 'No due date' %></small>
+                    <small><%= row.mission.createdBy?.name || 'Teacher' %></small>
+                  </div>
+                </article>
               <% }) %>
-            </tbody>
-          </table>
-        <% } else { %>
-          <div class="empty-state">
-            <p>No missions yet. Create your first mission above.</p>
-          </div>
-        <% } %>
+            </div>
+          <% } %>
+        </article>
       </div>
+
+      <aside class="teacher-mission-rail">
+        <article class="teacher-mission-card teacher-rail-card">
+          <header class="teacher-mission-card-header">
+            <div>
+              <h3>Quick Links</h3>
+              <p>Jump into adjacent workflows from the mission workspace.</p>
+            </div>
+          </header>
+          <div class="teacher-link-stack">
+            <a href="/teacher/student-progress">Student Progress</a>
+            <a href="/teacher/manage-grades">Manage Grades</a>
+            <a href="/teacher/manage-attendance">Attendance</a>
+            <a href="/teacher/library">Library</a>
+          </div>
+        </article>
+
+        <article class="teacher-mission-card teacher-rail-card">
+          <header class="teacher-mission-card-header">
+            <div>
+              <h3>Mission Pulse</h3>
+              <p>High-level status counts across mission activity.</p>
+            </div>
+          </header>
+          <div class="teacher-pulse-list">
+            <div><span>In Progress</span><strong><%= activeSubmissionCount %></strong></div>
+            <div><span>Pending Review</span><strong><%= pendingReviewCount %></strong></div>
+            <div><span>Completed</span><strong><%= completedSubmissionCount %></strong></div>
+            <div><span>Needs Attention</span><strong><%= attentionCount %></strong></div>
+          </div>
+        </article>
+      </aside>
     </section>
-  </div>
+  </section>
 </main>
+
+<script>
+  const quickGradeClass = document.getElementById("quickGradeClass");
+  const quickGradeStudent = document.getElementById("quickGradeStudent");
+  const quickGradeSubject = document.getElementById("quickGradeSubject");
+  const quickGradeCategory = document.getElementById("quickGradeCategory");
+
+  function syncQuickGradeSelect(select, classId) {
+    if (!select) return;
+
+    const scopedOptions = Array.from(select.querySelectorAll("option[data-class-id]"));
+    let firstMatch = "";
+
+    scopedOptions.forEach((option) => {
+      const isMatch = String(option.dataset.classId || "") === String(classId || "");
+      option.hidden = !isMatch;
+      option.disabled = !isMatch;
+      if (isMatch && !firstMatch) {
+        firstMatch = option.value;
+      }
+    });
+
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption || selectedOption.disabled) {
+      select.value = firstMatch || "";
+    }
+  }
+
+  function syncQuickGradeForm() {
+    if (!quickGradeClass) return;
+    const classId = quickGradeClass.value;
+    syncQuickGradeSelect(quickGradeStudent, classId);
+    syncQuickGradeSelect(quickGradeSubject, classId);
+    syncQuickGradeSelect(quickGradeCategory, classId);
+  }
+
+  if (quickGradeClass) {
+    syncQuickGradeForm();
+    quickGradeClass.addEventListener("change", syncQuickGradeForm);
+  }
+</script>
 
 <%- include('../partials/teacherFooter') -%>

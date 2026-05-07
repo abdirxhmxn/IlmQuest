@@ -1,0 +1,772 @@
+/*
+ * ============================================================
+ *  teacher-grades.css
+ *  IlmQuest - Teacher Gradebook
+ * ============================================================
+ */
+
+body.drawer-open {
+  overflow: hidden;
+}
+
+.teacher-gradebook-page {
+  display: grid;
+  gap: 18px;
+}
+
+.teacher-gradebook-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.teacher-gradebook-flash {
+  border-radius: 12px;
+  padding: 11px 14px;
+  border: 1px solid #d6e3db;
+  border-left-width: 4px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.teacher-gradebook-flash-success {
+  background: #f0fbf4;
+  border-color: #b8dfc9;
+  border-left-color: #1e8a55;
+  color: #1a5e3b;
+}
+
+.teacher-gradebook-flash-error {
+  background: #fff2f2;
+  border-color: #edc8c8;
+  border-left-color: #c23b3b;
+  color: #9f2f2f;
+}
+
+.teacher-gradebook-hero,
+.gradebook-sheet-card,
+.teacher-gradebook-empty,
+.teacher-gradebook-class {
+  border: 1px solid #d6e2da;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 18px 32px rgba(13, 47, 33, 0.08);
+}
+
+.teacher-gradebook-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+  gap: 18px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 34%),
+    linear-gradient(135deg, #174f3c 0%, #1f6c49 55%, #2c8559 100%);
+  border-color: rgba(23, 79, 60, 0.45);
+  color: #edf8f2;
+}
+
+.gradebook-kicker {
+  margin: 0;
+  color: rgba(237, 248, 242, 0.76);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.teacher-gradebook-hero h1 {
+  margin: 12px 0 10px;
+  color: #ffffff;
+  font-size: clamp(1.9rem, 1.55rem + 0.9vw, 2.65rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.teacher-gradebook-hero > div > p:last-child {
+  margin: 0;
+  max-width: 42rem;
+  color: rgba(237, 248, 242, 0.92);
+  font-size: 0.96rem;
+  line-height: 1.7;
+}
+
+.teacher-gradebook-hero-meta {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.teacher-gradebook-hero-meta article,
+.teacher-gradebook-stat-grid article {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.11);
+  padding: 15px 16px;
+}
+
+.teacher-gradebook-hero-meta span,
+.teacher-gradebook-stat-grid span {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.teacher-gradebook-hero-meta span {
+  color: rgba(237, 248, 242, 0.72);
+}
+
+.teacher-gradebook-hero-meta strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.teacher-gradebook-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.teacher-gradebook-tab {
+  min-height: 48px;
+  border-radius: 999px;
+  border: 1px solid #d3e0d8;
+  background: #ffffff;
+  color: #1b362b;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 22px rgba(13, 47, 33, 0.06);
+}
+
+.teacher-gradebook-tab small {
+  color: #688073;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.teacher-gradebook-tab.is-active {
+  background: #1e6e4b;
+  border-color: #1e6e4b;
+  color: #f3fff8;
+}
+
+.teacher-gradebook-tab.is-active small {
+  color: rgba(243, 255, 248, 0.78);
+}
+
+.teacher-gradebook-class {
+  display: none;
+  gap: 16px;
+  padding: 18px;
+}
+
+.teacher-gradebook-class.is-active {
+  display: grid;
+}
+
+.teacher-gradebook-class-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.teacher-gradebook-class-head h2 {
+  margin: 0;
+  color: #14291f;
+  font-size: 1.35rem;
+}
+
+.teacher-gradebook-class-head p {
+  margin: 8px 0 0;
+  color: #60766a;
+  font-size: 0.9rem;
+}
+
+.gradebook-link-btn,
+.gradebook-primary-btn,
+.gradebook-secondary-btn {
+  min-height: 42px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 800;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.gradebook-link-btn,
+.gradebook-secondary-btn {
+  border: 1px solid #cfe0d7;
+  background: #f8fbf9;
+  color: #1f523c;
+}
+
+.gradebook-primary-btn {
+  border: 1px solid #1d6f4b;
+  background: #1d6f4b;
+  color: #f4fff9;
+}
+
+.teacher-gradebook-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.teacher-gradebook-stat-grid article {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+  border-color: #d8e4dc;
+}
+
+.teacher-gradebook-stat-grid strong {
+  display: block;
+  margin-top: 8px;
+  color: #163126;
+  font-size: 1.05rem;
+}
+
+.gradebook-sheet-card {
+  overflow: hidden;
+}
+
+.gradebook-sheet-header {
+  padding: 18px 18px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.gradebook-sheet-header h3 {
+  margin: 0;
+  color: #14291f;
+  font-size: 1.08rem;
+}
+
+.gradebook-sheet-header p {
+  margin: 6px 0 0;
+  color: #60766a;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.gradebook-scale-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.scale-chip {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #d7e3db;
+  background: #f6faf7;
+  color: #254f3b;
+  font-size: 0.76rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+}
+
+.scale-chip.is-hidden {
+  background: #f3f5f7;
+  color: #6d7784;
+}
+
+.gradebook-table-scroll {
+  overflow: auto;
+  padding: 18px;
+}
+
+.gradebook-table {
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.gradebook-table th,
+.gradebook-table td {
+  border-right: 1px solid #e3ebe6;
+  border-bottom: 1px solid #e3ebe6;
+  background: #ffffff;
+  padding: 0;
+  vertical-align: top;
+}
+
+.gradebook-table th:first-child,
+.gradebook-table td:first-child {
+  border-left: 1px solid #e3ebe6;
+}
+
+.gradebook-table thead th {
+  position: sticky;
+  z-index: 4;
+  background: #f7fbf8;
+}
+
+.gradebook-table-regular thead tr:nth-child(1) th {
+  top: 0;
+}
+
+.gradebook-table-regular thead tr:nth-child(2) th {
+  top: 58px;
+}
+
+.gradebook-table-subac thead tr:nth-child(1) th {
+  top: 0;
+}
+
+.gradebook-table-subac thead tr:nth-child(2) th {
+  top: 58px;
+}
+
+.gradebook-table-subac thead tr:nth-child(3) th {
+  top: 110px;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #fbfdfc;
+}
+
+.sticky-student {
+  min-width: 220px;
+  max-width: 220px;
+}
+
+.student-cell {
+  padding: 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.student-cell strong {
+  color: #163126;
+  font-size: 0.88rem;
+}
+
+.student-cell small {
+  color: #70867a;
+  font-size: 0.76rem;
+}
+
+.date-group {
+  min-width: 168px;
+  text-align: center;
+  padding: 10px 8px;
+}
+
+.gradebook-table-subac .date-group {
+  min-width: 156px;
+}
+
+.date-group div {
+  display: grid;
+  gap: 4px;
+}
+
+.date-group strong,
+.summary-group {
+  color: #173227;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.date-group span {
+  color: #6f8579;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summary-group,
+.sub-column,
+.subac-meta {
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #5f7569;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subac-meta {
+  min-width: 156px;
+  letter-spacing: normal;
+  text-transform: none;
+  font-size: 0.73rem;
+  color: #62786c;
+}
+
+.gradebook-cell {
+  min-width: 56px;
+  background: #ffffff;
+}
+
+.gradebook-cell-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+}
+
+.gradebook-select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid #d5e3db;
+  border-radius: 12px;
+  background: #fbfdfc;
+  color: #163126;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.gradebook-select:focus {
+  outline: none;
+  border-color: #77ab8d;
+  box-shadow: 0 0 0 3px rgba(119, 171, 141, 0.2);
+}
+
+.gradebook-cell-detail {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  border: 1px solid #d6e3db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #315845;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.gradebook-cell-state {
+  display: block;
+  min-height: 20px;
+  padding: 0 8px 8px;
+  color: #6f8579;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.gradebook-cell.is-saving .gradebook-select {
+  border-color: #f0c87e;
+  background: #fffaf0;
+}
+
+.gradebook-cell.is-saved .gradebook-select {
+  border-color: #bcdcc8;
+  background: #f3fbf6;
+}
+
+.gradebook-cell.is-error .gradebook-select {
+  border-color: #efc7c7;
+  background: #fff4f4;
+}
+
+.summary-cell {
+  min-width: 112px;
+  padding: 13px 10px;
+  text-align: center;
+  color: #173227;
+  font-size: 0.82rem;
+  font-weight: 800;
+  background: #fcfefd;
+}
+
+.gradebook-empty-inline,
+.teacher-gradebook-empty {
+  padding: 22px;
+  text-align: center;
+  color: #667d71;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.teacher-gradebook-empty h2 {
+  margin: 0 0 8px;
+  color: #173227;
+}
+
+.legacy-note {
+  margin-top: 4px;
+  color: #6d8478;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.gradebook-drawer-shell[hidden] {
+  display: none;
+}
+
+.gradebook-drawer-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.gradebook-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(7, 20, 14, 0.46);
+}
+
+.gradebook-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(460px, 100vw);
+  height: 100%;
+  border-left: 1px solid #d7e3db;
+  background: #ffffff;
+  box-shadow: -24px 0 44px rgba(6, 23, 16, 0.18);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.gradebook-drawer-header {
+  padding: 20px;
+  border-bottom: 1px solid #e2ebe5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.gradebook-drawer-header h2 {
+  margin: 10px 0 6px;
+  color: #152e24;
+  font-size: 1.22rem;
+}
+
+.gradebook-drawer-header p:last-child {
+  margin: 0;
+  color: #62786c;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.gradebook-drawer-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid #d6e3db;
+  background: #ffffff;
+  color: #274e3b;
+  font-size: 1.35rem;
+  cursor: pointer;
+}
+
+.gradebook-drawer-form {
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr auto;
+  gap: 18px;
+  min-height: 0;
+  padding: 20px;
+  overflow: auto;
+}
+
+.gradebook-drawer-context {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gradebook-drawer-context article {
+  border: 1px solid #dbe7e0;
+  border-radius: 14px;
+  background: #f8fbf9;
+  padding: 12px 13px;
+  display: grid;
+  gap: 5px;
+}
+
+.gradebook-drawer-context span,
+.gradebook-drawer-section-head p {
+  color: #70867a;
+  font-size: 0.76rem;
+}
+
+.gradebook-drawer-context strong,
+.gradebook-drawer-section-head h3 {
+  color: #173227;
+}
+
+.gradebook-drawer-section {
+  display: grid;
+  gap: 12px;
+}
+
+.gradebook-drawer-section-head h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.gradebook-drawer-section-head p {
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+.gradebook-mark-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gradebook-mark-btn {
+  border: 1px solid #d5e3db;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #183127;
+  padding: 12px 14px;
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gradebook-mark-btn strong {
+  font-size: 1rem;
+}
+
+.gradebook-mark-btn span {
+  font-size: 0.78rem;
+  color: #688073;
+  font-weight: 700;
+}
+
+.gradebook-mark-btn.is-active {
+  border-color: #3d8b62;
+  background: #eef8f2;
+}
+
+.gradebook-mark-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gradebook-drawer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.gradebook-drawer-grid label,
+.gradebook-drawer-notes {
+  display: grid;
+  gap: 6px;
+}
+
+.gradebook-drawer-grid span,
+.gradebook-drawer-notes span {
+  color: #486458;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.gradebook-drawer-grid input,
+.gradebook-drawer-notes textarea {
+  min-height: 44px;
+  border: 1px solid #d4e2da;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #143026;
+  font: inherit;
+  padding: 0 12px;
+}
+
+.gradebook-drawer-notes textarea {
+  min-height: 132px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.gradebook-drawer-status {
+  margin: 0;
+  min-height: 20px;
+  color: #5e7468;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.gradebook-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+@media (max-width: 1280px) {
+  .teacher-gradebook-hero,
+  .teacher-gradebook-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .teacher-gradebook-class-head,
+  .gradebook-sheet-header {
+    flex-direction: column;
+  }
+
+  .gradebook-drawer {
+    width: min(100vw, 560px);
+  }
+}
+
+@media (max-width: 720px) {
+  .teacher-gradebook-hero,
+  .teacher-gradebook-class,
+  .gradebook-table-scroll,
+  .gradebook-sheet-header {
+    padding: 16px;
+  }
+
+  .teacher-gradebook-tabs {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .gradebook-table {
+    min-width: 1040px;
+  }
+
+  .gradebook-drawer {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: min(88vh, 740px);
+    border-left: 0;
+    border-top: 1px solid #d7e3db;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .gradebook-drawer-context,
+  .gradebook-mark-grid {
+    grid-template-columns: 1fr;
+  }
+}

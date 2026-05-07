@@ -1,0 +1,44 @@
+<%
+  const summaryCells = student?.summaryCells || {};
+  const casharSummary = summaryCells?.cashar || { display: '—', value: null };
+  const writingSummary = summaryCells?.writing || { display: '—', value: null };
+  const subjectSummary = summaryCells?.subject || { display: '—', value: null };
+  const subacSummary = summaryCells?.subac || { display: '—', value: null };
+  const attendanceSummary = summaryCells?.attendance || { display: '—', value: null };
+  const behaviorSummary = summaryCells?.behavior || { display: '—', value: null };
+  const assessmentSummary = summaryCells?.assessment || { display: '—', value: null };
+  const finalSummary = summaryCells?.final || { display: '—', value: null };
+%>
+<tr
+  class="gradebook-v1-row"
+  data-gradebook-row
+  data-class-id="<%= classView.id %>"
+  data-student-id="<%= student.id %>"
+>
+  <th class="gradebook-v1-student sticky-col">
+    <div class="gradebook-v1-student-card">
+      <strong><%= student.name %></strong>
+      <small><%= student.missionRankLabel %> · <%= student.missionXpLabel %> XP</small>
+      <em>Academic <%= student.periodRankLabel %></em>
+    </div>
+  </th>
+
+  <% (student.dailyGroups || []).forEach((dateGroup) => { %>
+    <% (dateGroup.cells || []).forEach((cell) => { %>
+      <%- include('./teacherGradebookCell', { classView, student, cell, csrfToken }) %>
+    <% }) %>
+  <% }) %>
+
+  <% (student.assessmentCells || []).forEach((cell) => { %>
+    <%- include('./teacherGradebookCell', { classView, student, cell, csrfToken }) %>
+  <% }) %>
+
+  <td class="gradebook-v1-summary"><%= casharSummary.display || '—' %></td>
+  <td class="gradebook-v1-summary"><%= writingSummary.display || '—' %></td>
+  <td class="gradebook-v1-summary"><%= subjectSummary.display || '—' %></td>
+  <td class="gradebook-v1-summary"><%= subacSummary.display || '—' %></td>
+  <td class="gradebook-v1-summary"><%= attendanceSummary.display || '—' %></td>
+  <td class="gradebook-v1-summary"><%= behaviorSummary.display || '—' %></td>
+  <td class="gradebook-v1-summary"><%= assessmentSummary.display || '—' %></td>
+  <td class="gradebook-v1-summary gradebook-v1-summary-final"><%= finalSummary.display || '—' %></td>
+</tr>

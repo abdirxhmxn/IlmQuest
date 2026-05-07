@@ -41,6 +41,14 @@
       statusKey = "needs-revision";
       statusLabel = "Needs Revision";
       nextAction = "Update and resubmit";
+    } else if (rawStatus === "auto_failed") {
+      statusKey = "failed";
+      statusLabel = "Auto-Failed";
+      nextAction = "Ask teacher to reopen";
+    } else if (rawStatus === "failed") {
+      statusKey = "failed";
+      statusLabel = "Failed";
+      nextAction = "Ask teacher to reopen";
     }
 
     return {
@@ -48,7 +56,9 @@
       statusKey,
       statusLabel,
       nextAction,
-      rankKey: String(mission?.rank || "").trim().toUpperCase()
+      rankKey: String(mission?.rank || "").trim().toUpperCase(),
+      failureReason: String(studentEntry?.failureReason || "").trim(),
+      failedAtLabel: studentEntry?.failedAt ? new Date(studentEntry.failedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : ""
     };
   });
 
@@ -56,10 +66,14 @@
   const activeRows = missionRows.filter((row) => row.statusKey === "in-progress");
   const pendingRows = missionRows.filter((row) => row.statusKey === "pending-review");
   const completedRows = missionRows.filter((row) => row.statusKey === "completed");
+  const failedRows = missionRows.filter((row) => row.statusKey === "failed" || row.statusKey === "needs-revision");
 
   const totalXp = Number(rankSummary?.xp ?? user?.points ?? 0);
   const displayRank = rankSummary?.displayRankLabel || `${String(user?.rank || "F").toUpperCase()} Rank`;
   const currentRankKey = String(rankSummary?.displayRankKey || user?.rank || "F").toUpperCase();
+  const rankProgressPercent = Math.max(0, Math.min(100, Number(rankSummary?.progressPercent || 0)));
+  const completionPercent = missionRows.length ? Math.round((completedRows.length / missionRows.length) * 100) : 0;
+  const leaderboardPreview = classmates.slice(0, 5);
   const rankFilterKeys = Array.from(
     new Set(
       missionRows
@@ -73,7 +87,7 @@
   <header class="student-page-header">
     <div class="student-page-title">
       <h1>Mission Center</h1>
-      <p>Choose missions by rank, track your progress, and complete tasks in a clear step-by-step flow.</p>
+      <p>See what is available now, what needs attention, and how close you are to the next rank tier.</p>
     </div>
     <div class="student-top-actions">
       <a class="student-header-link" href="/student/home">Dashboard</a>
@@ -83,202 +97,306 @@
 
   <section class="missions-hero student-card">
     <div class="missions-hero-main">
-      <p class="missions-kicker">My Mission Journey</p>
+      <p class="missions-kicker">Mission Journey</p>
       <h2>Welcome, <%= user?.firstName || 'Student' %></h2>
-      <p>Focus on one mission at a time: start, progress, and complete to earn XP and climb rank tiers.</p>
+      <p>Work through missions one step at a time, keep your progress visible, and turn consistent completions into XP.</p>
+      <div class="missions-hero-copy-meta">
+        <span>Current tier <strong><%= displayRank %></strong></span>
+        <span><strong><%= missionRows.length %></strong> total visible mission<%= missionRows.length === 1 ? '' : 's' %></span>
+      </div>
     </div>
-    <div class="missions-hero-metrics">
-      <article>
-        <p class="metric-label">Current Rank</p>
-        <p class="metric-value"><%= displayRank %></p>
-      </article>
-      <article>
-        <p class="metric-label">Total XP</p>
-        <p class="metric-value"><%= totalXp.toLocaleString() %></p>
-      </article>
-      <article>
-        <p class="metric-label">In Progress</p>
-        <p class="metric-value"><%= activeRows.length %></p>
-      </article>
-      <article>
-        <p class="metric-label">Completed</p>
-        <p class="metric-value"><%= completedRows.length %></p>
-      </article>
+    <div class="missions-hero-progress">
+      <div class="missions-hero-progress-head">
+        <div>
+          <p class="metric-label">Rank Progress</p>
+          <p class="mission-progress-summary"><%= rankSummary?.progressLabel || '0 / 0 XP' %></p>
+        </div>
+        <span class="mission-progress-percent"><%= rankProgressPercent %>%</span>
+      </div>
+      <progress class="mission-progress-bar" max="100" value="<%= rankProgressPercent %>"></progress>
+      <div class="missions-hero-progress-meta">
+        <article>
+          <span>Current Rank</span>
+          <strong><%= displayRank %></strong>
+        </article>
+        <article>
+          <span>Total XP</span>
+          <strong><%= totalXp.toLocaleString() %></strong>
+        </article>
+        <article>
+          <span>Next Rank</span>
+          <strong><%= rankSummary?.nextRankLabel || 'Max Rank' %></strong>
+        </article>
+      </div>
     </div>
   </section>
 
   <section class="mission-workflow-grid">
     <article class="workflow-card student-card">
-      <p class="workflow-label">Not Started</p>
+      <p class="workflow-label">Available</p>
       <p class="workflow-value"><%= availableRows.length %></p>
-      <p class="workflow-note">Pick a mission to begin your next challenge.</p>
+      <p class="workflow-note">Ready to begin in your current rank tier.</p>
     </article>
     <article class="workflow-card student-card">
       <p class="workflow-label">In Progress</p>
       <p class="workflow-value"><%= activeRows.length %></p>
-      <p class="workflow-note">Complete your active missions to claim XP.</p>
+      <p class="workflow-note">Finish active work to keep momentum high.</p>
     </article>
     <article class="workflow-card student-card">
       <p class="workflow-label">Pending Review</p>
       <p class="workflow-value"><%= pendingRows.length %></p>
-      <p class="workflow-note">Waiting for teacher review where applicable.</p>
+      <p class="workflow-note">Waiting on teacher review where needed.</p>
     </article>
     <article class="workflow-card student-card">
       <p class="workflow-label">Completed</p>
       <p class="workflow-value"><%= completedRows.length %></p>
-      <p class="workflow-note">Keep your streak by starting another mission.</p>
+      <p class="workflow-note"><%= completionPercent %>% of visible missions completed.</p>
+    </article>
+    <article class="workflow-card student-card">
+      <p class="workflow-label">Needs Attention</p>
+      <p class="workflow-value"><%= failedRows.length %></p>
+      <p class="workflow-note">Missed or returned missions stay visible for follow-up.</p>
     </article>
   </section>
 
-  <section class="mission-filter-panel student-card">
-    <div class="mission-filter-head">
-      <h3>Available Missions</h3>
-      <p>Only missions for your current rank tier are available. Current tier: <strong><%= displayRank %></strong>.</p>
-    </div>
-    <div class="rank-filter">
-      <button class="rank-btn active" data-rank="all">All Ranks</button>
-      <% rankFilterKeys.forEach((rankKey) => { %>
-        <button class="rank-btn" data-rank="<%= rankKey %>"><%= rankKey %> Rank</button>
-      <% }) %>
-    </div>
+  <section class="mission-layout-grid">
+    <div class="mission-main-column">
+      <section class="mission-filter-panel student-card">
+        <div class="mission-filter-head">
+          <h3>Mission Board</h3>
+          <p>Only missions in your current rank tier are unlocked here. Higher-rank missions stay locked until you level up.</p>
+        </div>
 
-    <div class="missions-grid">
-      <% if (!missionRows.length) { %>
-        <article class="mission-card mission-card-empty">
-          <% if (!Number(missionVisibility.classCount || 0)) { %>
-            <h4 class="mission-title">No Class Enrollment Yet</h4>
-            <p class="mission-desc">Mission access starts after class enrollment. Once you are assigned to a class, missions for your rank tier will appear here.</p>
-          <% } else if (Number(missionVisibility.totalTeacherMissions || 0) <= 0) { %>
-            <h4 class="mission-title">No Missions Published Yet</h4>
-            <p class="mission-desc">Your teachers have not published mission content yet. Check back soon for new assignments.</p>
-          <% } else { %>
-            <h4 class="mission-title">No Missions in <%= currentRankKey %> Rank Yet</h4>
-            <p class="mission-desc">There are missions in your classes, but none match your current rank tier (<%= displayRank %>) yet.</p>
-          <% } %>
-        </article>
-      <% } %>
-
-      <% missionRows.forEach((row) => { %>
-        <% const mission = row.mission; %>
-        <article class="mission-card" data-rank="<%= row.rankKey || 'F' %>" data-status="<%= row.statusKey %>">
-          <div class="mission-card-head">
-            <h4 class="mission-title"><%= mission.title %></h4>
-            <span class="status-pill status-<%= row.statusKey %>"><%= row.statusLabel %></span>
+        <div class="mission-filter-stack">
+          <div class="rank-filter">
+            <button class="rank-btn active" data-rank="all" type="button">All Ranks</button>
+            <% rankFilterKeys.forEach((rankKey) => { %>
+              <button class="rank-btn" data-rank="<%= rankKey %>" type="button"><%= rankKey %> Rank</button>
+            <% }) %>
           </div>
-          <p class="mission-desc"><%= mission.description %></p>
-          <div class="mission-tags">
-            <span class="tag"><%= mission.type %></span>
-            <span class="tag"><%= mission.category %></span>
-            <span class="tag"><%= mission.rank %> Rank</span>
-            <span class="tag">+<%= mission.pointsXP %> XP</span>
-          </div>
-          <p class="mission-next-action"><strong>Next:</strong> <%= row.nextAction %></p>
-          <small class="mission-byline">by <%= mission.createdBy?.name || "Teacher" %></small>
-          <% if (row.statusKey === "not-started") { %>
-            <button
-              class="select-mission"
-              data-id="<%= mission._id %>"
-              data-title="<%= mission.title %>"
-              data-desc="<%= mission.description %>"
-              data-type="<%= mission.type %>"
-              data-cat="<%= mission.category %>"
-              data-rank="<%= mission.rank %>"
-              data-xp="<%= mission.pointsXP %>"
-              data-time="<%= mission.timeLimit %>"
-              data-creator="<%= mission.createdBy?.name || 'Teacher' %>"
-            >
-              Start Mission
-            </button>
-          <% } else if (row.statusKey === "in-progress") { %>
-            <form method="POST" action="/student/missions/complete?_method=PUT" class="inline-form">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="missionId" value="<%= mission._id %>" />
-              <button type="submit" class="complete-btn">Mark Complete</button>
-            </form>
-          <% } else { %>
-            <button type="button" class="status-action-btn" disabled><%= row.statusLabel %></button>
-          <% } %>
-        </article>
-      <% }) %>
-    </div>
-  </section>
 
-  <section class="mission-table-panel student-card">
-    <div class="mission-filter-head">
-      <h3>Active Missions</h3>
-      <p>Complete active missions to convert progress into earned XP.</p>
-    </div>
-    <div class="table-wrap">
-      <table class="missions-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Rank</th>
-            <th>XP</th>
-            <th>Due</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (activeRows.length > 0) { %>
-            <% activeRows.forEach((row) => { %>
-              <% const mission = row.mission; %>
-              <tr>
-                <td><strong><%= mission.title %></strong></td>
-                <td><%= mission.description %></td>
-                <td><%= mission.rank %></td>
-                <td>+<%= mission.pointsXP %> XP</td>
-                <td><%= mission.dueDate ? mission.dueDate.toDateString() : "No limit" %></td>
-                <td>
+          <div class="status-filter">
+            <button class="status-filter-btn active" data-status="all" type="button">All Statuses</button>
+            <button class="status-filter-btn" data-status="not-started" type="button">Available</button>
+            <button class="status-filter-btn" data-status="in-progress" type="button">In Progress</button>
+            <button class="status-filter-btn" data-status="pending-review" type="button">Pending</button>
+            <button class="status-filter-btn" data-status="completed" type="button">Completed</button>
+            <button class="status-filter-btn" data-status="failed" type="button">Needs Attention</button>
+          </div>
+        </div>
+
+        <div class="missions-grid">
+          <% if (!missionRows.length) { %>
+            <article class="mission-card mission-card-empty">
+              <% if (!Number(missionVisibility.classCount || 0)) { %>
+                <h4 class="mission-title">No Class Enrollment Yet</h4>
+                <p class="mission-desc">Mission access starts after class enrollment. Once you are assigned to a class, missions for your rank tier will appear here.</p>
+              <% } else if (Number(missionVisibility.totalTeacherMissions || 0) <= 0) { %>
+                <h4 class="mission-title">No Missions Published Yet</h4>
+                <p class="mission-desc">Your teachers have not published mission content yet. Check back soon for new assignments.</p>
+              <% } else { %>
+                <h4 class="mission-title">No Missions in <%= currentRankKey %> Rank Yet</h4>
+                <p class="mission-desc">There are missions in your classes, but none match your current rank tier (<%= displayRank %>) yet.</p>
+              <% } %>
+            </article>
+          <% } %>
+
+          <% missionRows.forEach((row) => { %>
+            <% const mission = row.mission; %>
+            <article class="mission-card" data-rank="<%= row.rankKey || 'F' %>" data-status="<%= row.statusKey === 'needs-revision' ? 'failed' : row.statusKey %>">
+              <div class="mission-card-topline">
+                <span class="mission-rank-chip"><%= mission.rank %> Rank</span>
+                <span class="status-pill status-<%= row.statusKey %>"><%= row.statusLabel %></span>
+              </div>
+              <div class="mission-card-head">
+                <h4 class="mission-title"><%= mission.title %></h4>
+                <span class="mission-xp-pill">+<%= mission.pointsXP %> XP</span>
+              </div>
+              <p class="mission-desc"><%= mission.description %></p>
+              <div class="mission-tags">
+                <span class="tag"><%= mission.type %></span>
+                <span class="tag"><%= mission.category %></span>
+                <span class="tag"><%= mission.timeLimit || 'No limit' %></span>
+              </div>
+              <div class="mission-card-meta">
+                <p class="mission-next-action"><strong>Next:</strong> <%= row.nextAction %></p>
+                <small class="mission-byline">by <%= mission.createdBy?.name || "Teacher" %></small>
+              </div>
+              <% if (row.statusKey === 'failed' || row.statusKey === 'needs-revision') { %>
+                <div class="mission-warning">
+                  <strong><%= row.failureReason || 'Deadline or review issue needs follow-up.' %></strong>
+                  <% if (row.failedAtLabel) { %><span><%= row.failedAtLabel %></span><% } %>
+                </div>
+              <% } %>
+              <div class="mission-action-row">
+                <% if (row.statusKey === "not-started") { %>
+                  <button
+                    class="select-mission"
+                    data-id="<%= mission._id %>"
+                    data-title="<%= mission.title %>"
+                    data-desc="<%= mission.description %>"
+                    data-type="<%= mission.type %>"
+                    data-cat="<%= mission.category %>"
+                    data-rank="<%= mission.rank %>"
+                    data-xp="<%= mission.pointsXP %>"
+                    data-time="<%= mission.timeLimit %>"
+                    data-creator="<%= mission.createdBy?.name || 'Teacher' %>"
+                    type="button"
+                  >
+                    Start Mission
+                  </button>
+                <% } else if (row.statusKey === "in-progress") { %>
                   <form method="POST" action="/student/missions/complete?_method=PUT" class="inline-form">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                     <input type="hidden" name="missionId" value="<%= mission._id %>" />
-                    <button type="submit" class="complete-btn">Complete</button>
+                    <button type="submit" class="complete-btn">Mark Complete</button>
                   </form>
-                </td>
-              </tr>
-            <% }) %>
-          <% } else { %>
-            <tr><td colspan="6" class="table-empty table-empty-muted">No active missions yet. Start one from the board above.</td></tr>
-          <% } %>
-        </tbody>
-      </table>
-    </div>
-  </section>
+                <% } else { %>
+                  <button type="button" class="status-action-btn" disabled><%= row.statusLabel %></button>
+                <% } %>
+              </div>
+            </article>
+          <% }) %>
+        </div>
 
-  <section class="mission-table-panel student-card">
-    <div class="mission-filter-head">
-      <h3>Top Students</h3>
-      <p>Leaderboard updates based on total XP across your class community.</p>
-    </div>
-    <div class="table-wrap">
-      <table class="missions-table">
-        <thead>
-          <tr>
-            <th>Position</th>
-            <th>Student</th>
-            <th>Rank</th>
-            <th>XP</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (classmates.length > 0) { %>
-            <% classmates.forEach((student, i) => { %>
-              <% const isMe = String(student._id) === String(user._id); %>
-              <tr class="<%= isMe ? 'leader-me' : '' %>">
-                <td><%= i + 1 %></td>
-                <td><%= student.firstName %> <%= student.lastName %> <%= isMe ? '(You)' : '' %></td>
-                <td><%= student.rank %> Rank</td>
-                <td><%= Number(student.points || 0).toLocaleString() %></td>
+        <div class="mission-filter-empty" id="missionFilterEmpty" hidden>
+          No missions match the current filter. Try another status or rank.
+        </div>
+      </section>
+
+      <section class="mission-table-panel student-card">
+        <div class="mission-filter-head">
+          <h3>Active Missions</h3>
+          <p>Finish active missions to convert progress into earned XP.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="missions-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Rank</th>
+                <th>XP</th>
+                <th>Due</th>
+                <th>Action</th>
               </tr>
-            <% }) %>
-          <% } else { %>
-            <tr><td colspan="4" class="table-empty">No students yet</td></tr>
-          <% } %>
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              <% if (activeRows.length > 0) { %>
+                <% activeRows.forEach((row) => { %>
+                  <% const mission = row.mission; %>
+                  <tr>
+                    <td><strong><%= mission.title %></strong></td>
+                    <td><%= mission.description %></td>
+                    <td><%= mission.rank %></td>
+                    <td>+<%= mission.pointsXP %> XP</td>
+                    <td><%= mission.dueDate ? mission.dueDate.toDateString() : "No limit" %></td>
+                    <td>
+                      <form method="POST" action="/student/missions/complete?_method=PUT" class="inline-form">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                        <input type="hidden" name="missionId" value="<%= mission._id %>" />
+                        <button type="submit" class="complete-btn">Complete</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr><td colspan="6" class="table-empty table-empty-muted">No active missions yet. Start one from the board above.</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mission-table-panel student-card">
+        <div class="mission-filter-head">
+          <h3>Needs Attention</h3>
+          <p>Returned or missed attempts stay visible so you always know what still needs follow-up.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="missions-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Due</th>
+                <th>Reason</th>
+                <th>Recorded</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (failedRows.length > 0) { %>
+                <% failedRows.forEach((row) => { %>
+                  <% const mission = row.mission; %>
+                  <tr>
+                    <td><strong><%= mission.title %></strong></td>
+                    <td><span class="status-pill status-<%= row.statusKey %>"><%= row.statusLabel %></span></td>
+                    <td><%= mission.dueDate ? mission.dueDate.toDateString() : 'No limit' %></td>
+                    <td><%= row.failureReason || 'Teacher follow-up or revision is required.' %></td>
+                    <td><%= row.failedAtLabel || '—' %></td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr><td colspan="5" class="table-empty table-empty-muted">No missions need attention right now.</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
+
+    <aside class="mission-side-column">
+      <section class="mission-side-card student-card">
+        <div class="mission-filter-head">
+          <h3>Rank Snapshot</h3>
+          <p>Your current progression and unlocked mission state.</p>
+        </div>
+        <div class="mission-snapshot-list">
+          <article>
+            <span>Rank</span>
+            <strong><%= displayRank %></strong>
+          </article>
+          <article>
+            <span>Completion</span>
+            <strong><%= completionPercent %>%</strong>
+          </article>
+          <article>
+            <span>XP to Next</span>
+            <strong><%= Number(rankSummary?.xpToNextRank || 0).toLocaleString() %></strong>
+          </article>
+        </div>
+        <p class="mission-side-note">Missions shown here are already unlocked for <strong><%= displayRank %></strong>. Keep earning XP to reach the next tier.</p>
+      </section>
+
+      <section class="mission-side-card student-card">
+        <div class="mission-filter-head">
+          <h3>Leaderboard Preview</h3>
+          <p>Top learners by XP in your class community.</p>
+        </div>
+        <% if (!leaderboardPreview.length) { %>
+          <div class="student-empty-state student-empty-state-center">
+            <h3>No leaderboard data yet</h3>
+            <p>Rankings will appear once your class starts earning XP.</p>
+          </div>
+        <% } else { %>
+          <ol class="mission-leaderboard-list">
+            <% leaderboardPreview.forEach((student, i) => { %>
+              <% const isMe = String(student._id) === String(user._id); %>
+              <li class="mission-leaderboard-item <%= isMe ? 'is-current' : '' %>">
+                <div class="mission-leaderboard-main">
+                  <span class="mission-leaderboard-position">#<%= i + 1 %></span>
+                  <div>
+                    <h4><%= student.firstName %> <%= student.lastName %> <%= isMe ? '(You)' : '' %></h4>
+                    <p><%= student.rank %> Rank</p>
+                  </div>
+                </div>
+                <strong><%= Number(student.points || 0).toLocaleString() %> XP</strong>
+              </li>
+            <% }) %>
+          </ol>
+        <% } %>
+      </section>
+    </aside>
   </section>
 </section>
 
@@ -307,6 +425,11 @@
   const modal = document.getElementById("missionModal");
   const closeModal = document.getElementById("closeModal");
   const missionCards = Array.from(document.querySelectorAll(".mission-card"));
+  const missionFilterEmpty = document.getElementById("missionFilterEmpty");
+  const missionFilters = {
+    rank: "ALL",
+    status: "ALL"
+  };
 
   document.querySelectorAll(".select-mission").forEach((button) => {
     button.addEventListener("click", () => {
@@ -331,17 +454,43 @@
     if (event.target === modal) modal.style.display = "none";
   });
 
+  function applyMissionFilters() {
+    let visibleCards = 0;
+
+    missionCards.forEach((card) => {
+      const rank = String(card.dataset.rank || "").toUpperCase();
+      const status = String(card.dataset.status || "").toUpperCase();
+      const rankMatch = missionFilters.rank === "ALL" || rank === missionFilters.rank;
+      const statusMatch = missionFilters.status === "ALL" || status === missionFilters.status;
+      const shouldShow = rankMatch && statusMatch;
+      card.hidden = !shouldShow;
+      if (shouldShow) visibleCards += 1;
+    });
+
+    if (missionFilterEmpty) {
+      missionFilterEmpty.hidden = visibleCards !== 0;
+    }
+  }
+
   document.querySelectorAll(".rank-btn").forEach((button) => {
     button.addEventListener("click", () => {
       document.querySelectorAll(".rank-btn").forEach((entry) => entry.classList.remove("active"));
       button.classList.add("active");
-      const selectedRank = String(button.dataset.rank || "all").toUpperCase();
-      missionCards.forEach((card) => {
-        const rank = String(card.dataset.rank || "").toUpperCase();
-        card.style.display = selectedRank === "ALL" || rank === selectedRank ? "block" : "none";
-      });
+      missionFilters.rank = String(button.dataset.rank || "all").toUpperCase();
+      applyMissionFilters();
     });
   });
+
+  document.querySelectorAll(".status-filter-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".status-filter-btn").forEach((entry) => entry.classList.remove("active"));
+      button.classList.add("active");
+      missionFilters.status = String(button.dataset.status || "all").toUpperCase();
+      applyMissionFilters();
+    });
+  });
+
+  applyMissionFilters();
 </script>
 
 <%- include('../partials/studentShellEnd') -%>

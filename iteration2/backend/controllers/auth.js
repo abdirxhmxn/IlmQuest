@@ -13,6 +13,7 @@ const {
   hasPendingPasswordSetup,
   clearPasswordSetupFlags
 } = require("../utils/passwordSetup");
+const { activeLifecycleFilter } = require("../utils/tenant");
 
 const RESET_TOKEN_BYTES = 32;
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -30,6 +31,13 @@ function getRoleHome(role) {
   };
 
   return routes[role] || "/student/home";
+}
+
+function buildPostLoginSplashState(user) {
+  return {
+    redirectUrl: getRoleHome(user?.role),
+    issuedAt: Date.now()
+  };
 }
 
 function createResetTokenPair() {
@@ -61,6 +69,36 @@ exports.getLogin = (req, res) => {
     return res.redirect(getRoleHome(req.user.role));
   }
   return res.render("login", { title: "Login" });
+};
+
+exports.getLoginSuccess = (req, res) => {
+  if (!req.user) {
+    return res.redirect("/login");
+  }
+  if (hasPendingPasswordSetup(req.user)) {
+    return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
+  }
+
+  const splashState = req.session?.postLoginSplash;
+  if (!splashState) {
+    return res.redirect(getRoleHome(req.user.role));
+  }
+  const redirectUrl = typeof splashState?.redirectUrl === "string" && splashState.redirectUrl
+    ? splashState.redirectUrl
+    : getRoleHome(req.user.role);
+
+  if (req.session?.postLoginSplash) {
+    delete req.session.postLoginSplash;
+  }
+
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+
+  return res.render("loginSuccess", {
+    title: "Welcome Back",
+    redirectUrl
+  });
 };
 
 exports.postLogin = (req, res, next) => {
@@ -102,6 +140,10 @@ exports.postLogin = (req, res, next) => {
         return next(loginErr);
       }
 
+      if (!hasPendingPasswordSetup(user)) {
+        req.session.postLoginSplash = buildPostLoginSplashState(user);
+      }
+
       req.session.save((sessionErr) => {
         if (sessionErr) {
           return next(sessionErr);
@@ -109,7 +151,7 @@ exports.postLogin = (req, res, next) => {
         if (hasPendingPasswordSetup(req.user)) {
           return res.redirect(FORCE_PASSWORD_CHANGE_ROUTE);
         }
-        return res.redirect(getRoleHome(req.user.role));
+        return res.redirect("/login-success");
       });
     });
   })(req, res, next);
@@ -194,7 +236,7 @@ exports.postForgotPassword = async (req, res, next) => {
     }
 
     const users = await User.find({
-      deletedAt: null,
+      ...activeLifecycleFilter(),
       $or: [{ emailNormalized: email }, { email }]
     }).select("_id role schoolId");
 
@@ -219,7 +261,7 @@ exports.postForgotPassword = async (req, res, next) => {
       for (const account of users) {
         const { rawToken, tokenHash } = createResetTokenPair();
         await User.updateOne(
-          { _id: account._id, deletedAt: null },
+          { _id: account._id, ...activeLifecycleFilter() },
           {
             $set: {
               resetPasswordTokenHash: tokenHash,
@@ -275,7 +317,7 @@ exports.getResetPasswordByToken = async (req, res, next) => {
     const user = await User.findOne({
       resetPasswordTokenHash: tokenHash,
       resetPasswordExpiresAt: { $gt: new Date() },
-      deletedAt: null
+      ...activeLifecycleFilter()
     }).select("_id");
 
     if (!user) {
@@ -320,7 +362,7 @@ exports.postResetPasswordByToken = async (req, res, next) => {
     const user = await User.findOne({
       resetPasswordTokenHash: tokenHash,
       resetPasswordExpiresAt: { $gt: new Date() },
-      deletedAt: null
+      ...activeLifecycleFilter()
     }).select("+password");
 
     if (!user) {
@@ -349,7 +391,7 @@ exports.putResetPassword = async (req, res) => {
     const user = await User.findOne({
       _id: req.user._id,
       schoolId: req.schoolId,
-      deletedAt: null
+      ...activeLifecycleFilter()
     }).select("+password");
 
     if (!user) {
@@ -399,7 +441,7 @@ exports.putForcePasswordChange = async (req, res) => {
     const user = await User.findOne({
       _id: req.user._id,
       schoolId: req.schoolId,
-      deletedAt: null
+      ...activeLifecycleFilter()
     }).select("+password");
 
     if (!user) {

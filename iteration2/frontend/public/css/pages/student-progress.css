@@ -26,20 +26,23 @@
 .flash-message {
   border-radius: 12px;
   border: 1px solid transparent;
-  padding: 10px 12px;
-  font-size: 0.9rem;
+  border-left-width: 4px;
+  padding: 11px 14px;
+  font-size: 0.88rem;
   font-weight: 600;
 }
 
 .flash-message.success {
-  background: #edf8f1;
-  border-color: #b8ddc6;
-  color: #1e5f3f;
+  background: #f0fbf4;
+  border-color: #b8dfc9;
+  border-left-color: #1e8a55;
+  color: #1a5e3b;
 }
 
 .flash-message.error {
-  background: #fef2f2;
-  border-color: #f5c2c7;
+  background: #fff2f2;
+  border-color: #edc8c8;
+  border-left-color: #c23b3b;
   color: #8b1f2b;
 }
 
@@ -171,6 +174,28 @@
   background: linear-gradient(90deg, #2f8b60, #4db381);
 }
 
+.progress-native {
+  margin-top: 0.5rem;
+  width: 100%;
+  height: 0.65rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
+  background: #dce8e1;
+}
+
+.progress-native::-webkit-progress-bar {
+  background: #dce8e1;
+  border-radius: 999px;
+}
+
+.progress-native::-webkit-progress-value,
+.progress-native::-moz-progress-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f8b60 0%, #4db381 100%);
+}
+
 .progress-rank-form {
   display: grid;
   gap: 0.4rem;
@@ -186,7 +211,9 @@
 }
 
 .progress-rank-form select,
-.progress-rank-form input[type="text"] {
+.progress-rank-form input[type="text"],
+.progress-rank-form input[type="number"],
+.progress-rank-form textarea {
   min-height: 2.2rem;
   border: 1px solid #cfded5;
   border-radius: 10px;
@@ -194,6 +221,12 @@
   color: #11251b;
   padding: 0 0.7rem;
   font-size: 0.88rem;
+}
+
+.progress-rank-form textarea {
+  min-height: 5.5rem;
+  padding: 0.7rem;
+  resize: vertical;
 }
 
 .progress-grid {
@@ -224,6 +257,11 @@
   margin: 0;
   color: #11271c;
   font-size: 1.06rem;
+}
+
+.panel-subtitle {
+  color: #698074;
+  font-size: 0.8rem;
 }
 
 .subsection-title {
@@ -263,6 +301,35 @@
 .progress-table .table-empty {
   color: #748a7d;
   font-style: italic;
+}
+
+.cell-note {
+  margin-top: 0.2rem;
+  color: #698074;
+  font-size: 0.76rem;
+}
+
+.progress-form-note {
+  margin: -0.05rem 0 0.1rem;
+  color: #6a8074;
+  font-size: 0.78rem;
+}
+
+.inline-reopen-form {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.inline-reopen-form input[type="text"] {
+  min-height: 2rem;
+  border: 1px solid #cfded5;
+  border-radius: 9px;
+  padding: 0 0.62rem;
+  font-size: 0.8rem;
+}
+
+.btn-inline {
+  min-height: 2rem;
 }
 
 .attendance-metric-grid {
@@ -443,6 +510,7 @@
 
 .status-danger,
 .status-overdue,
+.status-failed,
 .status-rejected,
 .status-absent {
   color: #b42318;

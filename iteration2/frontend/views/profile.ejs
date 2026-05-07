@@ -77,27 +77,20 @@ function statToneClass(tone) {
 
 <section class="profile-hub <%= usesShell ? 'profile-shell-mode' : 'profile-legacy-mode' %>">
   <% if (isAdmin) { %>
-    <% const icon = typeof iconSvg === 'function' ? iconSvg : (() => ''); %>
-    <header class="admin-page-header profile-shell-header">
-      <button
-        type="button"
-        class="sidebar-toggle"
-        data-sidebar-toggle
-        aria-label="Toggle sidebar"
-        aria-expanded="false"
-        aria-controls="adminSidebar"
-      >
-        <%- icon('menu') %>
-      </button>
-      <div class="admin-page-title profile-title-wrap">
-        <h1>Profile Center</h1>
-        <p>Manage account identity, role context, and security settings.</p>
-      </div>
-      <div class="admin-top-actions">
-        <a class="admin-action-link" href="<%= dashboardPath %>">Dashboard</a>
-        <a class="admin-action-link" href="/logout">Logout</a>
-      </div>
-    </header>
+    <%- include('partials/adminPageHeader', {
+      user: typeof user !== 'undefined' ? user : undefined,
+      iconSvg: typeof iconSvg === 'function' ? iconSvg : undefined,
+      showSidebarToggle: true,
+      headerClass: 'profile-shell-header',
+      headerTitleClass: 'profile-title-wrap',
+      headerBreadcrumbs: 'Admin / Account / Profile',
+      headerTitle: 'Profile Center',
+      headerSubtitle: 'Manage account identity, role context, and security settings.',
+      headerActions: [
+        { href: dashboardPath, label: 'Dashboard' },
+        { href: '/logout', label: 'Logout' }
+      ]
+    }) %>
   <% } else if (isParent) { %>
     <header class="parent-page-header profile-shell-header">
       <button

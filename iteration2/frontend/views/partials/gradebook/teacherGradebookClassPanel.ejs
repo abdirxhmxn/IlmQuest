@@ -1,0 +1,137 @@
+<%
+  const gradingPeriod = classView?.gradingPeriod || {
+    id: classView?.gradingPeriodId || '',
+    name: classView?.currentQuarter || 'Current Period',
+    status: 'open'
+  };
+  const currentActiveClassId = typeof activeClassId !== 'undefined' ? activeClassId : '';
+%>
+<section
+  class="gradebook-v1-class-panel <%= String(classView.id) === String(currentActiveClassId) || (!currentActiveClassId && classIndex === 0) ? 'is-active' : '' %>"
+  data-gradebook-class-panel
+  data-class-id="<%= classView.id %>"
+>
+  <header class="gradebook-v1-class-head">
+    <div>
+      <p class="gradebook-v1-kicker">Teacher Gradebook</p>
+      <h2><%= classView.className %></h2>
+      <p>
+        <strong><%= classView.classCode %></strong>
+        · <%= gradingPeriod.name %>
+        · <%= classView.studentCount %> students
+        · <%= classView.location %> / <%= classView.roomNumber %>
+      </p>
+    </div>
+    <div class="gradebook-v1-class-actions">
+      <form class="gradebook-v1-calendar-form" action="/teacher/manage-grades" method="GET">
+        <input type="hidden" name="activeClassId" value="<%= classView.id %>">
+        <button class="gradebook-v1-btn gradebook-v1-btn-secondary" type="submit" name="weekShift" value="-7">Prev Week</button>
+        <label class="gradebook-v1-calendar-input">
+          <span>Jump To Week / Day</span>
+          <input type="date" name="focusDate" value="<%= classView.focusDateKey || '' %>" data-gradebook-focus-date>
+        </label>
+        <button class="gradebook-v1-btn gradebook-v1-btn-secondary" type="submit" name="preset" value="today">Today</button>
+        <button class="gradebook-v1-btn gradebook-v1-btn-secondary" type="submit" name="weekShift" value="7">Next Week</button>
+        <p class="gradebook-v1-range-label"><%= classView.visibleRangeLabel || 'Current Week' %></p>
+      </form>
+      <a class="gradebook-v1-btn gradebook-v1-btn-secondary" href="/teacher/manage-grades/export.csv?classId=<%= classView.id %>">Export CSV</a>
+      <form class="gradebook-v1-assessment-form" action="/teacher/manage-grades/assessments" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="classId" value="<%= classView.id %>">
+        <input type="text" name="title" maxlength="120" placeholder="Add assessment column" required>
+        <input type="text" name="shortLabel" maxlength="24" placeholder="Short label">
+        <button class="gradebook-v1-btn gradebook-v1-btn-primary" type="submit">Add Assessment</button>
+      </form>
+      <details class="gradebook-v1-subac-form-wrap">
+        <summary class="gradebook-v1-btn gradebook-v1-btn-secondary">+ Add Subac Column</summary>
+        <form class="gradebook-v1-subac-form" action="/teacher/manage-grades/tracker-columns" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="classId" value="<%= classView.id %>">
+          <input type="hidden" name="gradingPeriodId" value="<%= classView.gradingPeriodId || classView.gradingPeriod?.id || '' %>">
+          <label>
+            <span>Date</span>
+            <input type="date" name="dateKey" value="<%= classView.focusDateKey || '' %>" required>
+          </label>
+          <label>
+            <span>Short Label</span>
+            <input type="text" name="shortLabel" maxlength="24" placeholder="e.g. Rev" required>
+          </label>
+          <label>
+            <span>Portion</span>
+            <input type="text" name="portion" maxlength="80" placeholder="e.g. Juz 30">
+          </label>
+          <label>
+            <span>Reviewer</span>
+            <input type="text" name="reviewerName" maxlength="80" placeholder="Reviewer name">
+          </label>
+          <label>
+            <span>Notes</span>
+            <input type="text" name="notes" maxlength="200" placeholder="Optional notes">
+          </label>
+          <button class="gradebook-v1-btn gradebook-v1-btn-primary" type="submit">Add Subac Column</button>
+        </form>
+      </details>
+    </div>
+  </header>
+
+  <div class="gradebook-v1-scroll">
+    <table class="gradebook-v1-table">
+      <thead>
+        <tr>
+          <th class="gradebook-v1-student sticky-col" rowspan="3">Student</th>
+          <% (classView.trackerColumns || []).forEach((trackerColumn) => { %>
+            <th
+              class="gradebook-v1-date-group"
+              colspan="<%= (trackerColumn.columns || []).length %>"
+              data-tracker-date-group
+              data-date-key="<%= trackerColumn.dateKey %>"
+            >
+              <div>
+                <strong><%= trackerColumn.shortLabel %></strong>
+              </div>
+            </th>
+          <% }) %>
+          <% if ((classView.assessmentColumns || []).length) { %>
+            <th class="gradebook-v1-date-group" colspan="<%= classView.assessmentColumns.length %>">Assessments</th>
+          <% } %>
+          <th class="gradebook-v1-date-group" colspan="8">Summary</th>
+        </tr>
+        <tr>
+          <% (classView.trackerColumns || []).forEach((trackerColumn) => { %>
+            <th class="gradebook-v1-date-group gradebook-v1-day-group" colspan="<%= (trackerColumn.columns || []).length %>">
+              <div>
+                <span><%= trackerColumn.dayLabel %></span>
+              </div>
+            </th>
+          <% }) %>
+          <% (classView.assessmentColumns || []).forEach((assessment) => { %>
+            <th class="gradebook-v1-subhead" rowspan="2" title="<%= assessment.title %>"><%= assessment.shortLabel %></th>
+          <% }) %>
+          <th class="gradebook-v1-subhead" rowspan="2">Cashar</th>
+          <th class="gradebook-v1-subhead" rowspan="2">Writing</th>
+          <th class="gradebook-v1-subhead" rowspan="2">Subject</th>
+          <th class="gradebook-v1-subhead" rowspan="2">Subac</th>
+          <th class="gradebook-v1-subhead" rowspan="2">Attendance</th>
+          <th class="gradebook-v1-subhead" rowspan="2">Behavior</th>
+          <th class="gradebook-v1-subhead" rowspan="2">Assess.</th>
+          <th class="gradebook-v1-subhead" rowspan="2">Final</th>
+        </tr>
+        <tr>
+          <% (classView.trackerColumns || []).forEach((trackerColumn) => { %>
+            <% (trackerColumn.columns || []).forEach((trackerCellColumn) => { %>
+              <th
+                class="gradebook-v1-subhead tone-<%= trackerCellColumn.headerTone %>"
+                title="<%= trackerCellColumn.longLabel %>"
+              ><%= trackerCellColumn.displayLabel %></th>
+            <% }) %>
+          <% }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% (classView.students || []).forEach((student) => { %>
+          <%- include('./teacherGradebookRow', { classView, student, csrfToken }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>

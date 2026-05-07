@@ -1,0 +1,202 @@
+<%
+  const teacherActivePage = 'reports';
+  const teacherPageTitle = 'Reports';
+  const teacherPageSubtitle = 'Generate and download PDF reports for your students and classes.';
+%>
+<%- include('../partials/teacherHeader') %>
+
+<link rel="stylesheet" href="/css/pages/admin-reports.css">
+
+<%
+  const reportStudents = Array.isArray(students) ? students : [];
+  const reportClasses  = Array.isArray(classes)  ? classes  : [];
+  const stats = reportStats || {};
+  const recentActivity = Array.isArray(stats.recentActivity) ? stats.recentActivity : [];
+  const fmtNumber = (v) => new Intl.NumberFormat('en-US').format(Number(v || 0));
+
+  const successMessages = Array.isArray(messages?.success) ? messages.success : [];
+  const errorMessages = [
+    ...(Array.isArray(messages?.error) ? messages.error : []),
+    ...(Array.isArray(messages?.errors) ? messages.errors.map((e) => e?.msg || e).filter(Boolean) : [])
+  ];
+%>
+
+<% if (successMessages.length > 0) { %>
+  <div class="teacher-flash teacher-flash-success"><%= successMessages.join(' ') %></div>
+<% } %>
+<% if (errorMessages.length > 0) { %>
+  <div class="teacher-flash teacher-flash-error"><%= errorMessages.join(' ') %></div>
+<% } %>
+
+<section class="reports-summary-grid">
+  <article class="card reports-kpi">
+    <p class="reports-kpi-label">My Students</p>
+    <p class="reports-kpi-value"><%= fmtNumber(reportStudents.length) %></p>
+    <p class="reports-kpi-meta">In your assigned classes</p>
+  </article>
+  <article class="card reports-kpi">
+    <p class="reports-kpi-label">My Classes</p>
+    <p class="reports-kpi-value"><%= fmtNumber(reportClasses.length) %></p>
+    <p class="reports-kpi-meta">Class PDFs available</p>
+  </article>
+  <article class="card reports-kpi">
+    <p class="reports-kpi-label">Generated Today</p>
+    <p class="reports-kpi-value" id="reportGeneratedTodayCount"><%= fmtNumber(stats.generatedToday || 0) %></p>
+    <p class="reports-kpi-meta">Refreshes after each generation</p>
+  </article>
+  <article class="card reports-kpi">
+    <p class="reports-kpi-label">Total Generated</p>
+    <p class="reports-kpi-value" id="reportGeneratedTotalCount"><%= fmtNumber(stats.totalGenerated || 0) %></p>
+    <p class="reports-kpi-meta">School-wide history</p>
+  </article>
+</section>
+
+<section class="card reports-last-generated">
+  <h2>Last Generated Report</h2>
+  <p id="reportLastGeneratedText"><%= stats.lastGeneratedLabel || 'No reports generated yet' %></p>
+</section>
+
+<section class="reports-grid">
+  <article class="card reports-panel">
+    <header class="reports-panel-header">
+      <h2>Student Report PDF</h2>
+      <p>Select a student from your classes and generate their progress report.</p>
+    </header>
+
+    <form
+      id="studentReportForm"
+      class="reports-form"
+      data-base-url="/teacher/reports/student"
+      data-mode="student"
+      data-csrf-token="<%= csrfToken %>"
+    >
+      <label for="studentReportSelect">Student</label>
+      <select id="studentReportSelect" name="studentId" required>
+        <option value="">Select a student</option>
+        <% reportStudents.forEach((student) => { %>
+          <% const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.userName || 'Unknown Student'; %>
+          <option value="<%= student._id %>">
+            <%= fullName %>
+            <% if (student.studentInfo?.studentNumber) { %> — #<%= student.studentInfo.studentNumber %><% } %>
+          </option>
+        <% }) %>
+      </select>
+      <button type="submit" class="reports-submit">Generate + Download Student PDF</button>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    </form>
+
+    <div class="reports-list-wrap">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Student #</th>
+            <th>Direct Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (reportStudents.length === 0) { %>
+            <tr><td colspan="3" class="reports-empty">No students found in your classes.</td></tr>
+          <% } %>
+          <% reportStudents.slice(0, 15).forEach((student) => { %>
+            <% const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.userName || 'Unknown Student'; %>
+            <tr>
+              <td><%= fullName %></td>
+              <td><%= student.studentInfo?.studentNumber || 'N/A' %></td>
+              <td>
+                <a class="reports-link" href="/teacher/reports/student/<%= student._id %>/pdf">Download PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card reports-panel">
+    <header class="reports-panel-header">
+      <h2>Class Report PDF</h2>
+      <p>Generate a summary PDF for one of your assigned classes.</p>
+    </header>
+
+    <form
+      id="classReportForm"
+      class="reports-form"
+      data-base-url="/teacher/reports/class"
+      data-mode="class"
+      data-csrf-token="<%= csrfToken %>"
+    >
+      <label for="classReportSelect">Class</label>
+      <select id="classReportSelect" name="classId" required>
+        <option value="">Select a class</option>
+        <% reportClasses.forEach((classDoc) => { %>
+          <option value="<%= classDoc._id %>">
+            <%= classDoc.className || 'Untitled Class' %>
+            <% if (classDoc.classCode) { %> — <%= classDoc.classCode %><% } %>
+          </option>
+        <% }) %>
+      </select>
+      <button type="submit" class="reports-submit">Generate + Download Class PDF</button>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    </form>
+
+    <div class="reports-list-wrap">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Code</th>
+            <th>Direct Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (reportClasses.length === 0) { %>
+            <tr><td colspan="3" class="reports-empty">No classes assigned to you yet.</td></tr>
+          <% } %>
+          <% reportClasses.slice(0, 15).forEach((classDoc) => { %>
+            <tr>
+              <td><%= classDoc.className || 'Untitled Class' %></td>
+              <td><%= classDoc.classCode || 'N/A' %></td>
+              <td>
+                <a class="reports-link" href="/teacher/reports/class/<%= classDoc._id %>/pdf">Download PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section class="card reports-activity">
+  <h2>Recent Report Activity</h2>
+  <ul id="reportRecentActivityList" class="report-activity-list">
+    <% if (recentActivity.length === 0) { %>
+      <li class="report-activity-empty">No report activity recorded yet.</li>
+    <% } %>
+    <% recentActivity.forEach((entry) => { %>
+      <li class="report-activity-item">
+        <span>
+          <strong><%= entry.targetName %></strong>
+          (<%= entry.reportType %>)
+          <% if (entry.generatedBy) { %>&mdash; by <%= entry.generatedBy %><% } %>
+        </span>
+        <span class="report-activity-time"><%= entry.generatedAtLabel %></span>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+
+<section class="card reports-note">
+  <h3>Report Pipeline Notes</h3>
+  <p>
+    Reports are compiled via the LaTeX pipeline. If generation fails,
+    install <code>pdflatex</code> (TeX Live) on the server.
+  </p>
+</section>
+
+<div id="reportActionStatus" class="reports-action-status" role="status" aria-live="polite"></div>
+
+<script src="/js/teacher-reports.js"></script>
+
+<%- include('../partials/teacherFooter') %>

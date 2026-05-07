@@ -71,6 +71,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= resolvedPageTitle %></title>
+    <script src="/js/theme-toggle.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/layout.css" />
     <link rel="stylesheet" href="/css/components.css" />
@@ -79,6 +80,8 @@
       <link rel="stylesheet" href="<%= styleHref %>" />
     <% }) %>
     <link rel="stylesheet" href="/css/pages/app-shell.css" />
+    <link rel="stylesheet" href="/css/animations.css" />
+    <link rel="stylesheet" href="/css/dark-mode.css" />
   </head>
   <body>
     <div
@@ -110,7 +113,7 @@
 
         <div class="sidebar-search-shell" aria-hidden="true">
           <span class="sidebar-search-icon"><%- iconSvg('search') %></span>
-          <input type="search" placeholder="Search workspace" tabindex="-1" />
+          <input type="search" placeholder="Search navigation" tabindex="-1" />
         </div>
 
         <nav class="sidebar-nav role-sidebar-nav">

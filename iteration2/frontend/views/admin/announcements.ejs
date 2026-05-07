@@ -52,28 +52,22 @@
     if (source.length <= 320) return source;
     return `${source.slice(0, 317)}...`;
   }
+  const headerActions = [
+    { href: '/admin/home', label: 'Dashboard' },
+    { href: '/admin/users', label: 'Manage Users' },
+    { href: '/admin/reports', label: 'Reports' }
+  ];
 %>
 
-<header class="admin-page-header">
-  <button
-    type="button"
-    class="sidebar-toggle"
-    data-sidebar-toggle
-    aria-label="Toggle sidebar"
-    aria-expanded="false"
-    aria-controls="adminSidebar"
-  >
-    <%- icon('menu') %>
-  </button>
-  <div class="admin-page-title">
-    <h1>Announcements</h1>
-    <p><%= pageData.activeCount || activeItems.length %> active · <%= pageData.expiredCount || expiredItems.length %> expired</p>
-  </div>
-  <div class="admin-top-actions">
-    <a class="admin-action-link" href="/admin/home">Dashboard</a>
-    <a class="admin-action-link" href="/admin/users">User Administration</a>
-  </div>
-</header>
+<%- include('../partials/adminPageHeader', {
+  user: typeof user !== 'undefined' ? user : undefined,
+  iconSvg: typeof iconSvg === 'function' ? iconSvg : undefined,
+  showSidebarToggle: true,
+  headerBreadcrumbs: 'Admin / Insights / Announcements',
+  headerTitle: 'Announcements',
+  headerSubtitle: `${pageData.activeCount || activeItems.length} active · ${pageData.expiredCount || expiredItems.length} expired`,
+  headerActions
+}) %>
 
 <% if (successMessages.length > 0) { %>
   <div class="admin-flash admin-flash-success"><%= successMessages.join(' ') %></div>

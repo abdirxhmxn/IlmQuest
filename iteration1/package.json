@@ -28,7 +28,7 @@
     "security:test:csrf": "node --test security-tests/csrf-attack.test.js"
   },
   "author": "",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",

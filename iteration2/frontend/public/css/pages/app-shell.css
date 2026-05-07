@@ -6,11 +6,11 @@
  */
 
 :root {
-  --shell-canvas: #e7dfd3;
-  --shell-panel: #efe8dc;
-  --shell-main-text: #13231a;
-  --shell-main-muted: #5b7066;
-  --shell-border: #d6ded8;
+  --shell-canvas: #e9eaee;
+  --shell-panel: #f4f5f8;
+  --shell-main-text: #111827;
+  --shell-main-muted: #4b5563;
+  --shell-border: #d2d6de;
 
   --shell-sidebar-bg-start: #0b3f33;
   --shell-sidebar-bg-end: #0f4f40;
@@ -316,7 +316,7 @@ body {
   top: 0;
   z-index: 30;
   margin: 0 calc(-1 * var(--shell-main-pad-x));
-  min-height: 82px;
+  min-height: 95px;
   padding: 12px var(--shell-main-pad-x);
   border: 0;
   border-bottom: 1px solid var(--shell-header-border);

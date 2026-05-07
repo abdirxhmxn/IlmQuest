@@ -271,7 +271,7 @@ body {
 /* 4. Form Panel */
 .auth-form-panel {
   padding: clamp(28px, 4vw, 52px);
-  background: linear-gradient(180deg, #fdfefd 0%, #f8fbf9 100%);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,11 +361,11 @@ body {
 
 .auth-label {
   margin: 0;
-  color: #4f675d;
+  color: #374151;
   font-size: 0.79rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .auth-field-control {
@@ -394,10 +394,10 @@ body {
 
 .auth-input.form-input {
   min-height: 50px;
-  border-radius: 14px;
-  border: 1px solid #d7e4dc;
-  background: #f7fbf8;
-  color: #20342b;
+  border-radius: 12px;
+  border: 1px solid #d4d9e3;
+  background: #f8f9fb;
+  color: #111827;
   padding-left: 42px;
   padding-right: 14px;
   font-size: 0.98rem;
@@ -408,7 +408,7 @@ body {
 }
 
 .auth-input.form-input::placeholder {
-  color: #91a79d;
+  color: #9ca3af;
 }
 
 .auth-input.form-input:focus {
@@ -492,23 +492,26 @@ body {
 }
 
 .flash-message {
-  padding: 11px 12px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 700;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
   border: 1px solid transparent;
+  border-left-width: 4px;
 }
 
 .flash-error {
   background: #fff2f2;
-  border-color: #f6cccc;
+  border-color: #edc8c8;
+  border-left-color: #c23b3b;
   color: #a03737;
 }
 
 .flash-info {
-  background: #eef7ff;
-  border-color: #cfe2f4;
-  color: #2f5a80;
+  background: #eef4fd;
+  border-color: #c5d8ef;
+  border-left-color: #2f6aad;
+  color: #1a4f8e;
 }
 
 /* 6. Responsive */
