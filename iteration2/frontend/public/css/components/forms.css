@@ -1,177 +1,179 @@
-/*
- * ============================================================
- *  forms.css
- *  IlmQuest - Form Controls, Field Grouping, and Validation UI
- *
- *  Sections:
- *    1. Tokens
- *    2. Base
- *    3. Layout
- *    4. Components
- *    5. States
- *    6. Responsive
- * ============================================================
- */
+/* ============================================================
+   Forms — inputs, selects, textareas, checkboxes, radios, toggles
+   ============================================================ */
 
-/* 1. Tokens */
-:root {
-  --field-height: 40px;
+/* Form group */
+.form-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+@media (max-width: 640px) { .form-row, .form-row-3 { grid-template-columns: 1fr; } }
+
+/* Label */
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-2);
+  line-height: 1;
 }
+.form-label .required { color: var(--color-danger); margin-left: 2px; }
 
-/* 2. Base */
-input,
-select,
-textarea,
+/* Input / textarea / select base */
 .form-input,
-.text-input,
-.select-input,
-.token-output {
+.form-select,
+.form-textarea {
   width: 100%;
-  min-height: var(--field-height);
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-panel);
-  color: var(--color-text-main);
-  font-size: var(--font-size-md);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  padding: var(--space-2) var(--space-3);
+  background: var(--obsidian-600);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  line-height: var(--leading-normal);
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+  appearance: none;
+  -webkit-appearance: none;
+}
+.form-input::placeholder,
+.form-textarea::placeholder { color: var(--color-text-muted); }
+.form-input:hover,
+.form-select:hover,
+.form-textarea:hover { border-color: rgba(255,255,255,0.2); }
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--emerald-600);
+  box-shadow: 0 0 0 3px rgba(15,158,104,0.18);
+}
+.form-input.is-error,
+.form-select.is-error,
+.form-textarea.is-error {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(201,64,64,0.15);
 }
 
-textarea {
-  min-height: 96px;
-  resize: vertical;
-  padding-block: var(--space-2);
-}
+/* Textarea */
+.form-textarea { resize: vertical; min-height: 96px; }
 
-label,
-.form-label,
-.field-label {
-  display: block;
-  color: var(--color-text-main);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
+/* Select — custom arrow */
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a8a99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  padding-right: var(--space-8);
+  cursor: pointer;
 }
+.form-select option { background: var(--obsidian-700); color: var(--color-text); }
 
-/* 3. Layout */
-.form-group,
-.field,
-.profile-field {
-  display: grid;
-  gap: var(--space-2);
+/* Input with prefix/suffix icon */
+.form-input-group { position: relative; }
+.form-input-group .form-input { padding-left: var(--space-8); }
+.form-input-group .form-input-prefix {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
+.form-input-group .form-input-prefix svg { width: 15px; height: 15px; }
 
-.form-row,
-.field-row,
-.form-grid-two,
-.grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
+/* Hint / error text */
+.form-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+.form-error { font-size: var(--text-xs); color: #fca5a5; }
 
-.form-grid-three {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.form-group-column {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-/* 4. Components */
-.required::after {
-  content: " *";
-  color: var(--color-danger-text);
-}
-
-.student-picker-list,
-.parent-children-list {
-  border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-panel-soft);
-  max-height: 240px;
-  overflow-y: auto;
-  padding: var(--space-2);
-}
-
-.password-group {
+/* Checkbox */
+.form-checkbox {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+}
+.form-checkbox input[type="checkbox"] {
+  width: 16px; height: 16px;
+  appearance: none; -webkit-appearance: none;
+  background: var(--obsidian-600);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+  position: relative;
+  flex-shrink: 0;
+}
+.form-checkbox input[type="checkbox"]:checked {
+  background: var(--emerald-600);
+  border-color: var(--emerald-600);
+}
+.form-checkbox input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 1px;
+  width: 8px; height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+}
+.form-checkbox label { font-size: var(--text-sm); color: var(--color-text-2); cursor: pointer; }
+
+/* Radio */
+.form-radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+.form-radio input[type="radio"] {
+  width: 16px; height: 16px;
+  appearance: none; -webkit-appearance: none;
+  background: var(--obsidian-600);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+  position: relative;
+  flex-shrink: 0;
+}
+.form-radio input[type="radio"]:checked { background: var(--emerald-600); border-color: var(--emerald-600); }
+.form-radio input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: #fff;
+  border-radius: 50%;
 }
 
-.forgot-link {
-  color: var(--color-brand-700);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
+/* Toggle switch */
+.form-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  user-select: none;
 }
-
-.forgot-link:hover {
-  text-decoration: underline;
+.form-toggle input[type="checkbox"] { display: none; }
+.form-toggle-track {
+  width: 36px; height: 20px;
+  background: var(--obsidian-500);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+  position: relative;
+  transition: background var(--duration-normal) var(--ease-smooth);
+  cursor: pointer;
+  flex-shrink: 0;
 }
-
-/* 5. States */
-input:focus,
-select:focus,
-textarea:focus,
-.form-input:focus,
-.text-input:focus,
-.select-input:focus {
-  border-color: var(--color-brand-700);
-  box-shadow: var(--focus-ring);
-  outline: none;
+.form-toggle-track::after {
+  content: '';
+  position: absolute;
+  left: 2px; top: 2px;
+  width: 14px; height: 14px;
+  background: var(--obsidian-200);
+  border-radius: 50%;
+  transition: transform var(--duration-normal) var(--ease-spring), background var(--duration-normal);
 }
-
-input:disabled,
-select:disabled,
-textarea:disabled {
-  background: #f3f4f6;
-  color: #8a95a8;
-}
-
-.field-error,
-.inline-error,
-.row-error-banner {
-  color: var(--color-danger-text);
-  font-size: var(--font-size-xs);
-}
-
-.help-text,
-.helper-text,
-.pay-note,
-.dialog-copy {
-  color: var(--color-text-subtle);
-  font-size: var(--font-size-xs);
-}
-
-/* 6. Responsive */
-@media (max-width: 1024px) {
-  .form-grid-three {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .form-row,
-  .field-row,
-  .form-grid-two,
-  .grid-2,
-  .form-group-column,
-  .form-grid-three {
-    grid-template-columns: 1fr;
-  }
-
-  input,
-  select,
-  textarea,
-  .form-input,
-  .text-input,
-  .select-input,
-  .token-output {
-    min-height: 44px;
-  }
-}
+.form-toggle input:checked ~ .form-toggle-track { background: var(--emerald-600); border-color: var(--emerald-700); }
+.form-toggle input:checked ~ .form-toggle-track::after { transform: translateX(16px); background: #fff; }
+.form-toggle-label { font-size: var(--text-sm); color: var(--color-text-2); }

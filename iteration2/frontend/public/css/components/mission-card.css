@@ -1,0 +1,104 @@
+/* ============================================================
+   Mission Card — student and teacher mission list items
+   ============================================================ */
+
+.mission-card {
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-5);
+  position: relative;
+  transition:
+    border-color var(--duration-normal) var(--ease-smooth),
+    box-shadow var(--duration-normal) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-smooth);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.mission-card:hover {
+  border-color: var(--glass-border-bright);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Color accent left border based on mission type */
+.mission-card::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 12px; bottom: 12px;
+  width: 2px;
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+}
+.mission-card.type-ilm::after    { background: var(--mission-ilm); }
+.mission-card.type-adab::after   { background: var(--mission-adab); }
+.mission-card.type-ihsaan::after { background: var(--mission-ihsaan); }
+.mission-card.type-taqwa::after  { background: var(--mission-taqwa); }
+.mission-card.type-amanah::after { background: var(--mission-amanah); }
+
+.mission-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.mission-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.mission-card-body { flex: 1; min-width: 0; }
+.mission-card-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  line-height: var(--leading-snug);
+  margin-bottom: var(--space-1);
+}
+.mission-card-description {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: var(--leading-normal);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mission-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.mission-card-xp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--gold-300);
+  font-weight: var(--weight-medium);
+  font-family: var(--font-mono);
+}
+.mission-card-xp svg { width: 12px; height: 12px; color: var(--gold-400); }
+
+.mission-card-deadline {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.mission-card-deadline.urgent { color: #fca5a5; }
+.mission-card-deadline svg { width: 12px; height: 12px; }
+
+.mission-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Overlay for completed/failed missions */
+.mission-card.is-completed { opacity: 0.65; }
+.mission-card.is-failed { border-color: rgba(201,64,64,0.2); }

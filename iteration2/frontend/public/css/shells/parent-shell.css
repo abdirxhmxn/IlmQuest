@@ -1,0 +1,78 @@
+/* ============================================================
+   Parent Shell — minimal, child-selector in topbar
+   ============================================================ */
+
+.parent-app-shell {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--color-bg);
+}
+
+.parent-main-shell {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.parent-content-shell {
+  flex: 1;
+  padding: var(--content-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.parent-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--content-padding) var(--space-4);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-raised);
+  background: rgba(13,15,17,0.88);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+}
+.parent-page-title h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+/* Child selector pill */
+.child-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--obsidian-600);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--color-text-2);
+  cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+  white-space: nowrap;
+}
+.child-selector:hover { background: var(--obsidian-500); border-color: rgba(255,255,255,0.2); }
+.child-selector svg { width: 14px; height: 14px; color: var(--color-text-muted); }
+
+/* Parent dashboard child cards grid */
+.parent-children-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .parent-main-shell { margin-left: 0; }
+  .parent-content-shell { padding: var(--space-4); }
+  .parent-children-grid { grid-template-columns: 1fr; }
+}

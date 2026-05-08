@@ -1,0 +1,53 @@
+/* ============================================================
+   XP Bar — animated progress bar for rank progress
+   ============================================================ */
+
+.xp-bar-wrapper { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.xp-bar-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.xp-bar-current { font-size: var(--text-xs); color: var(--color-text-2); font-family: var(--font-mono); }
+.xp-bar-next    { font-size: var(--text-xs); color: var(--color-text-muted); }
+.xp-bar-percent { font-size: var(--text-xs); color: var(--color-accent); font-weight: var(--weight-semibold); font-family: var(--font-mono); }
+
+.xp-bar-track {
+  height: 6px;
+  background: var(--obsidian-500);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+.xp-bar-track.xp-bar-lg { height: 8px; }
+.xp-bar-track.xp-bar-sm { height: 4px; }
+
+.xp-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--emerald-600), var(--emerald-300));
+  width: var(--xp-percent, 0%);
+  animation: xpFill 800ms var(--ease-out) both;
+  animation-delay: 200ms;
+  position: relative;
+}
+
+/* Shimmer effect on fill */
+.xp-bar-fill::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+  background-size: 200% auto;
+  animation: shimmer 2s linear infinite;
+}
+
+/* Rank-specific bar colors */
+.xp-bar-rank-f .xp-bar-fill { background: linear-gradient(90deg, #4b5563, var(--rank-f)); }
+.xp-bar-rank-e .xp-bar-fill { background: linear-gradient(90deg, #16a34a, var(--rank-e)); }
+.xp-bar-rank-d .xp-bar-fill { background: linear-gradient(90deg, #2563eb, var(--rank-d)); }
+.xp-bar-rank-c .xp-bar-fill { background: linear-gradient(90deg, #7c3aed, var(--rank-c)); }
+.xp-bar-rank-b .xp-bar-fill { background: linear-gradient(90deg, #be185d, var(--rank-b)); }
+.xp-bar-rank-a .xp-bar-fill { background: linear-gradient(90deg, #c2410c, var(--rank-a)); }
+.xp-bar-rank-s .xp-bar-fill { background: linear-gradient(90deg, var(--gold-600), var(--gold-300)); box-shadow: var(--shadow-glow-gold); }

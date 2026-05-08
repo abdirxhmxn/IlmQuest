@@ -1,0 +1,74 @@
+/* ============================================================
+   Loading — skeleton screens, shimmer, spinner
+   ============================================================ */
+
+/* Base skeleton */
+.skeleton {
+  background: var(--obsidian-600);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.04) 40%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.04) 60%,
+    transparent 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.5s linear infinite;
+}
+
+.skeleton-text { height: 14px; width: 100%; }
+.skeleton-text.skeleton-sm { height: 11px; }
+.skeleton-text.skeleton-lg { height: 20px; }
+.skeleton-text.w-3\/4  { width: 75%; }
+.skeleton-text.w-1\/2  { width: 50%; }
+.skeleton-text.w-2\/3  { width: 66%; }
+
+.skeleton-circle { border-radius: 50%; }
+.skeleton-circle.skeleton-sm { width: 24px; height: 24px; }
+.skeleton-circle.skeleton-md { width: 36px; height: 36px; }
+.skeleton-circle.skeleton-lg { width: 48px; height: 48px; }
+
+.skeleton-card {
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.skeleton-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Inline spinner */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--obsidian-400);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spinSlow 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.spinner-sm { width: 14px; height: 14px; border-width: 1.5px; }
+.spinner-lg { width: 28px; height: 28px; border-width: 2.5px; }
+
+/* Full page loading */
+.page-loading {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-bg);
+  z-index: var(--z-modal);
+}
+.page-loading .spinner { width: 36px; height: 36px; border-width: 3px; }

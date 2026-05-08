@@ -1,0 +1,183 @@
+/* ============================================================
+   Glass System — IlmQuest "Midnight Masjid"
+
+   Rules:
+   - Glass is ONLY for navigational/overlay surfaces (sidebar, topbar,
+     modals, drawers, popovers, command palettes)
+   - NOT on regular page content cards, table rows, or scrolling content
+   - All backdrop-filter elements use will-change: transform for GPU promotion
+   - Maximum 3 simultaneously active backdrop-filter elements per viewport
+   ============================================================ */
+
+/* --------------------------------------------------
+   Base glass panel — lightest layer
+   Use: regular cards on dark backgrounds
+-------------------------------------------------- */
+.glass-panel {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Edge highlight — light-catching top border effect */
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-edge);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------
+   Medium glass — elevated cards, hero areas
+-------------------------------------------------- */
+.glass-panel-2 {
+  position: relative;
+  background: var(--glass-bg-2);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-xl);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  will-change: transform;
+  transform: translateZ(0);
+}
+.glass-panel-2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-edge);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------
+   Heavy glass — modals, critical overlays
+-------------------------------------------------- */
+.glass-panel-3 {
+  position: relative;
+  background: var(--glass-bg-3);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: var(--radius-xl);
+  backdrop-filter: var(--blur-xl);
+  -webkit-backdrop-filter: var(--blur-xl);
+  will-change: transform;
+  transform: translateZ(0);
+}
+.glass-panel-3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid rgba(255,255,255,0.22);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------
+   Navigational glass surfaces
+-------------------------------------------------- */
+.glass-nav {
+  position: relative;
+  background: rgba(13,15,17,0.85);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.glass-sidebar {
+  position: relative;
+  background: rgba(13,15,17,0.9);
+  border-right: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.glass-modal {
+  position: relative;
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  will-change: transform;
+  transform: translateZ(0);
+}
+.glass-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-edge);
+  pointer-events: none;
+}
+
+.glass-drawer {
+  position: fixed;
+  background: var(--obsidian-800);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-xl);
+  will-change: transform;
+}
+
+.glass-popover {
+  position: absolute;
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-lg);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  box-shadow: var(--shadow-xl);
+  will-change: transform;
+  transform: translateZ(0);
+}
+.glass-popover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-edge);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------
+   Surface card (non-glass content cards)
+   Use this for regular page content — NO backdrop-filter
+-------------------------------------------------- */
+.surface {
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
+.surface-2 {
+  background: var(--obsidian-600);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
+/* --------------------------------------------------
+   Overlay backdrop
+-------------------------------------------------- */
+.glass-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7,8,9,0.7);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  z-index: var(--z-overlay);
+}
+
+/* --------------------------------------------------
+   Emerald accent border (hover/active cards)
+-------------------------------------------------- */
+.glass-accent {
+  box-shadow: 0 0 0 1px var(--emerald-700), var(--shadow-glow-emerald);
+}

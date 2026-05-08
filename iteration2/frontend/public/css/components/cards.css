@@ -1,131 +1,128 @@
-/*
- * ============================================================
- *  cards.css
- *  IlmQuest - Card Surfaces and Content Grouping Patterns
- *
- *  Sections:
- *    1. Tokens
- *    2. Base
- *    3. Layout
- *    4. Components
- *    5. States
- *    6. Responsive
- * ============================================================
- */
+/* ============================================================
+   Cards — base, metric, student, mission, glass variants
+   ============================================================ */
 
-/* 1. Tokens */
-:root {
-  --card-padding: var(--space-4);
+/* Base card — content surfaces (no backdrop-filter) */
+.card {
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  position: relative;
+  transition:
+    border-color var(--duration-normal) var(--ease-smooth),
+    box-shadow var(--duration-normal) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-smooth);
+}
+.card-hover:hover {
+  border-color: var(--glass-border-bright);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.card-title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+.card-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-1); }
+.card-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.card-footer {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
-/* 2. Base */
-.card,
-.panel,
-.page-card,
-.auth-panel,
-.dialog-card,
-.modal,
-/* .stat-card, */
-.section-card,
-.finance-card,
-.announcement-panel,
-.reports-panel,
-.reports-last-generated,
-.reports-activity,
-.reports-note,
-.profile-card,
-.parent-card,
-.dashboard-card {
-  background: var(--color-surface-panel);
-  border: 1px solid var(--color-border-soft);
+/* Metric card */
+.card-metric {
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: border-color var(--duration-normal), box-shadow var(--duration-normal), transform var(--duration-normal);
+}
+.card-metric:hover {
+  border-color: var(--glass-border-bright);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.card-metric-header { display: flex; align-items: center; justify-content: space-between; }
+.card-metric-icon {
+  width: 36px; height: 36px;
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.05);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--obsidian-600);
+  color: var(--color-accent);
+}
+.card-metric-icon svg { width: 18px; height: 18px; }
+.card-metric-trend {
+  display: flex; align-items: center; gap: 3px;
+  font-size: var(--text-xs); font-weight: var(--weight-medium);
+}
+.card-metric-trend.up { color: var(--color-success); }
+.card-metric-trend.down { color: var(--color-danger); }
+.card-metric-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.card-metric-label { font-size: var(--text-sm); color: var(--color-text-muted); font-weight: var(--weight-medium); }
+
+/* Glass card — translucent variant for hero areas */
+.card-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  position: relative;
+}
+.card-glass::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-edge);
+  pointer-events: none;
 }
 
-/* 3. Layout */
-.card,
-.panel,
-.page-card,
-.section-card,
-.finance-card,
-.profile-card,
-.parent-card,
-.dashboard-card {
-  min-width: 0;
+/* Student row card */
+.card-student {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
 }
-
-.card-header,
-.panel-header,
-.section-card-header,
-.finance-card-header,
-.announcement-panel-header,
-.reports-panel-header,
-.profile-card-head {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--color-border-soft);
+.card-student:hover { background: var(--obsidian-600); border-color: var(--glass-border-bright); }
+.card-student-avatar {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--obsidian-500);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-sm); font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+  flex-shrink: 0; overflow: hidden;
 }
-
-.card-body,
-.panel-body,
-.section-card-body,
-.profile-card-body {
-  padding: var(--card-padding);
-}
-
-/* 4. Components */
-.card,
-.section-card,
-.parent-card,
-.profile-card,
-.dashboard-card {
-  background: #ffffff;
-  border-color: var(--color-border-soft);
-}
-
-.kpi-card,
-.admin-stat-card,
-.finance-kpi-card,
-.profile-stat-card,
-.intro-metrics article,
-.child-card,
-.parent-announcement-item,
-.mini-announcement-item,
-.legend-row,
-.breakdown-row,
-.users-role-row,
-.class-quick-row {
-  background: var(--color-surface-panel);
-  border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-xs);
-}
-
-/* 5. States */
-.card:hover,
-.panel:hover,
-.section-card:hover,
-.parent-card:hover,
-.profile-card:hover,
-.dashboard-card:hover {
-  border-color: color-mix(in srgb, var(--color-brand-700) 24%, var(--color-border-soft));
-}
-
-/* 6. Responsive */
-@media (max-width: 768px) {
-  .card-header,
-  .panel-header,
-  .section-card-header,
-  .finance-card-header,
-  .announcement-panel-header,
-  .reports-panel-header,
-  .profile-card-head {
-    padding: var(--space-3);
-  }
-
-  .card-body,
-  .panel-body,
-  .section-card-body,
-  .profile-card-body {
-    padding: var(--space-3);
-  }
-}
+.card-student-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.card-student-info { flex: 1; min-width: 0; }
+.card-student-name { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text); }
+.card-student-meta { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }

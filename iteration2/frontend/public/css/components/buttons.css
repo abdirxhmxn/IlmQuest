@@ -1,200 +1,100 @@
-/*
- * ============================================================
- *  buttons.css
- *  IlmQuest - Button Primitives and Interactive Controls
- *
- *  Sections:
- *    1. Tokens
- *    2. Base
- *    3. Layout
- *    4. Components
- *    5. States
- *    6. Responsive
- * ============================================================
- */
+/* ============================================================
+   Buttons — all variants, sizes, states
+   ============================================================ */
 
-/* 1. Tokens */
-:root {
-  --btn-height: 40px;
-  --btn-height-compact: 34px;
-}
-
-/* 2. Base */
-.btn,
-.submit-btn,
-.action-btn,
-.tab-btn,
-.badge-btn,
-.day-btn,
-.primary-btn,
-.secondary-btn,
-.pay-now-btn,
-.profile-btn,
-.admin-action-link,
-.parent-action-link,
-.ghost-action {
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: var(--btn-height);
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-strong);
-  background: var(--color-surface-panel);
-  color: var(--color-text-main);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  font-family: var(--font-body);
   line-height: 1;
-  text-decoration: none;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.14s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-smooth);
+  white-space: nowrap;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
 }
-
-/* 3. Layout */
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-/* 4. Components */
-.primary-btn,
-.submit-btn,
-.btn-primary,
-.pay-now-btn,
-.action-btn.save-btn,
-.tab-btn.active,
-.day-btn.active {
-  background: var(--color-brand-900);
-  border-color: var(--color-brand-900);
-  color: #ffffff;
-  box-shadow: var(--shadow-xs);
-}
-
-.secondary-btn,
-.btn-ghost,
-.btn-outline,
-.action-btn.cancel-btn,
-.profile-btn-outline,
-.profile-btn-muted,
-.submit-btn.secondary {
-  background: var(--color-surface-panel);
-  border-color: var(--color-border-strong);
-  color: var(--color-text-main);
-}
-
-.btn-danger,
-.action-btn.delete-btn,
-.profile-btn-danger,
-.cancel-btn.delete-btn,
-.action-btn-avatar-remove {
-  background: var(--color-danger-bg);
-  border-color: #efc4c4;
-  color: var(--color-danger-text);
-}
-
-.btn-link,
-.compact-link,
-.reports-link,
-.link-btn {
-  min-height: var(--btn-height-compact);
-  padding: 0 var(--space-3);
-  font-size: var(--font-size-xs);
-}
-
-/* 5. States */
-.btn:hover,
-.submit-btn:hover,
-.action-btn:hover,
-.tab-btn:hover,
-.badge-btn:hover,
-.day-btn:hover,
-.primary-btn:hover,
-.secondary-btn:hover,
-.pay-now-btn:hover,
-.profile-btn:hover,
-.admin-action-link:hover,
-.parent-action-link:hover,
-.ghost-action:hover {
-  border-color: color-mix(in srgb, var(--color-brand-900) 35%, var(--color-border-strong));
-  box-shadow: var(--shadow-sm);
-}
-
-.primary-btn:hover,
-.submit-btn:hover,
-.btn-primary:hover,
-.pay-now-btn:hover,
-.action-btn.save-btn:hover,
-.tab-btn.active:hover,
-.day-btn.active:hover {
-  background: var(--color-brand-800);
-  border-color: var(--color-brand-800);
-}
-
-.btn-danger:hover,
-.action-btn.delete-btn:hover,
-.profile-btn-danger:hover,
-.cancel-btn.delete-btn:hover,
-.action-btn-avatar-remove:hover {
-  background: #ffeaea;
-  border-color: #eab2b2;
-}
-
-/* Press animation is intentionally subtle to avoid distracting users. */
-.btn:active,
-.submit-btn:active,
-.action-btn:active,
-.tab-btn:active,
-.badge-btn:active,
-.day-btn:active,
-.primary-btn:active,
-.secondary-btn:active,
-.pay-now-btn:active,
-.profile-btn:active,
-.admin-action-link:active,
-.parent-action-link:active,
-.ghost-action:active {
-  transform: scale(0.985);
-}
-
-.btn:disabled,
-.submit-btn:disabled,
-.action-btn:disabled,
-.tab-btn:disabled,
-.badge-btn:disabled,
-.day-btn:disabled,
-.primary-btn:disabled,
-.secondary-btn:disabled,
-.pay-now-btn:disabled,
-.profile-btn:disabled,
-.admin-action-link:disabled,
-.parent-action-link:disabled,
-.ghost-action:disabled {
-  opacity: 0.58;
+.btn:active { transform: scale(0.98); }
+.btn:disabled, .btn[aria-disabled="true"] {
+  opacity: 0.45;
   cursor: not-allowed;
-  box-shadow: none;
+  pointer-events: none;
 }
+.btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-/* 6. Responsive */
-@media (max-width: 480px) {
-  .btn,
-  .submit-btn,
-  .action-btn,
-  .tab-btn,
-  .badge-btn,
-  .day-btn,
-  .primary-btn,
-  .secondary-btn,
-  .pay-now-btn,
-  .profile-btn,
-  .admin-action-link,
-  .parent-action-link,
-  .ghost-action {
-    width: 100%;
-  }
+/* Primary — emerald */
+.btn-primary {
+  background: var(--emerald-600);
+  color: #fff;
+  border-color: var(--emerald-700);
+}
+.btn-primary:hover { background: var(--emerald-500); border-color: var(--emerald-600); box-shadow: var(--shadow-glow-emerald); }
+.btn-primary:active { background: var(--emerald-400); }
 
-  .tabs .tab-btn {
-    width: auto;
-  }
+/* Secondary */
+.btn-secondary {
+  background: var(--obsidian-600);
+  color: var(--color-text);
+  border-color: var(--glass-border-bright);
+}
+.btn-secondary:hover { background: var(--obsidian-500); border-color: rgba(255,255,255,0.2); }
+
+/* Ghost */
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-2);
+  border-color: transparent;
+}
+.btn-ghost:hover { background: var(--glass-bg-hover); color: var(--color-text); border-color: var(--glass-border); }
+
+/* Danger */
+.btn-danger {
+  background: var(--color-danger-bg);
+  color: #fca5a5;
+  border-color: rgba(201,64,64,0.3);
+}
+.btn-danger:hover { background: rgba(201,64,64,0.22); border-color: rgba(201,64,64,0.5); }
+
+/* Outline */
+.btn-outline {
+  background: transparent;
+  color: var(--emerald-400);
+  border-color: var(--emerald-700);
+}
+.btn-outline:hover { background: var(--emerald-950); border-color: var(--emerald-500); box-shadow: var(--shadow-glow-emerald); }
+
+/* Icon-only */
+.btn-icon { padding: var(--space-2); aspect-ratio: 1; border-radius: var(--radius-lg); }
+.btn-icon svg { width: 16px; height: 16px; }
+
+/* Sizes */
+.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); border-radius: var(--radius-md); gap: var(--space-1); }
+.btn-sm svg { width: 13px; height: 13px; }
+.btn-lg { padding: var(--space-3) var(--space-6); font-size: var(--text-md); border-radius: var(--radius-xl); }
+.btn-lg svg { width: 18px; height: 18px; }
+.btn-xl { padding: var(--space-4) var(--space-8); font-size: var(--text-lg); border-radius: var(--radius-xl); font-weight: var(--weight-semibold); }
+.btn-block { width: 100%; }
+
+/* Loading state */
+.btn.is-loading { pointer-events: none; color: transparent; }
+.btn.is-loading::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spinSlow 0.6s linear infinite;
 }

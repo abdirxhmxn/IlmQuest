@@ -1,0 +1,77 @@
+/* ============================================================
+   Drawers — slide-in panels from right
+   ============================================================ */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7,8,9,0.6);
+  z-index: var(--z-modal);
+  animation: fadeIn var(--duration-normal) var(--ease-smooth);
+}
+.drawer-overlay[hidden] { display: none; }
+
+.drawer-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(480px, 100vw);
+  background: var(--obsidian-800);
+  border-left: 1px solid var(--glass-border);
+  z-index: calc(var(--z-modal) + 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  transform: translateX(100%);
+  transition: transform var(--duration-transition) var(--ease-snappy);
+}
+.drawer-panel.is-open { transform: translateX(0); }
+.drawer-panel[data-side="left"] {
+  right: auto; left: 0;
+  border-left: none;
+  border-right: 1px solid var(--glass-border);
+  transform: translateX(-100%);
+}
+.drawer-panel[data-side="left"].is-open { transform: translateX(0); }
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.drawer-title { font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--color-text); }
+.drawer-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-1); }
+.drawer-close {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none; cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.drawer-close:hover { background: var(--glass-bg-hover); color: var(--color-text); }
+.drawer-close svg { width: 16px; height: 16px; }
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.drawer-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}

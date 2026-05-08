@@ -1,0 +1,195 @@
+/* ============================================================
+   Gradebook — gb-grid, cells, marks, popover
+   The flagship component. Must be frictionless.
+   ============================================================ */
+
+/* Outer shell — clip scroll */
+.gb-wrapper {
+  width: 100%;
+  overflow: auto;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+  background: var(--obsidian-800);
+}
+
+/* CSS grid: col 0 = sticky name, rest = assessment columns */
+.gb-grid {
+  display: grid;
+  grid-template-columns: 200px repeat(var(--gb-col-count, 10), 80px) 72px;
+  min-width: max-content;
+  position: relative;
+}
+
+/* ---- Header row ---- */
+.gb-header-row { display: contents; }
+
+.gb-header-cell {
+  position: sticky;
+  top: 0;
+  background: var(--obsidian-800);
+  z-index: var(--z-sticky);
+  border-bottom: 1px solid var(--glass-border);
+  padding: var(--space-2) var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.gb-header-cell.gb-name-header {
+  text-align: left;
+  padding-left: var(--space-4);
+  position: sticky;
+  left: 0;
+  z-index: calc(var(--z-sticky) + 1);
+  border-right: 1px solid var(--glass-border);
+}
+.gb-header-cell.gb-avg-header { background: var(--obsidian-700); }
+
+/* ---- Data rows ---- */
+.gb-row { display: contents; }
+
+.gb-row:hover > .gb-cell {
+  background: rgba(255,255,255,0.025);
+}
+.gb-row:hover > .gb-cell.gb-name-cell {
+  background: var(--obsidian-700);
+}
+
+/* ---- Cells ---- */
+.gb-cell {
+  padding: var(--space-2);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-smooth);
+  position: relative;
+  min-height: 44px;
+}
+.gb-cell:hover {
+  background: rgba(15,158,104,0.08) !important;
+  outline: 1px solid var(--emerald-700);
+  outline-offset: -1px;
+  z-index: var(--z-raised);
+}
+.gb-cell:focus-visible {
+  outline: 2px solid var(--emerald-500);
+  outline-offset: -2px;
+  z-index: var(--z-raised);
+}
+
+/* Name cell — sticky left */
+.gb-name-cell {
+  position: sticky;
+  left: 0;
+  z-index: var(--z-raised);
+  background: var(--obsidian-800);
+  justify-content: flex-start;
+  padding: var(--space-2) var(--space-4);
+  border-right: 1px solid var(--glass-border);
+  cursor: default;
+  gap: var(--space-2);
+}
+.gb-name-cell:hover { background: var(--obsidian-700) !important; outline: none; }
+.gb-name-text {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Average cell */
+.gb-avg-cell {
+  background: var(--obsidian-700);
+  cursor: default;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.gb-avg-cell:hover { outline: none !important; background: var(--obsidian-700) !important; }
+.gb-avg-high  { color: #6ee7b7; }
+.gb-avg-mid   { color: #fcd34d; }
+.gb-avg-low   { color: #fca5a5; }
+
+/* ---- Mark chips ---- */
+.gb-mark {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.gb-mark--perfect  { background: rgba(16,185,129,0.18); color: #6ee7b7; }
+.gb-mark--good     { background: rgba(59,130,246,0.15); color: #93c5fd; }
+.gb-mark--average  { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.gb-mark--weak     { background: rgba(236,72,153,0.15); color: #f9a8d4; }
+.gb-mark--fail     { background: rgba(239,68,68,0.15);  color: #fca5a5; }
+.gb-mark--excused  { background: rgba(107,114,128,0.12); color: #9ca3af; }
+.gb-mark--empty    { opacity: 0.2; color: var(--color-text-muted); }
+
+/* ---- Cell popover (mark picker) ---- */
+.gb-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-overlay);
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: var(--space-1);
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn var(--duration-normal) var(--ease-spring) both;
+  white-space: nowrap;
+  min-width: max-content;
+}
+.gb-popover::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-edge);
+  pointer-events: none;
+}
+.gb-popover-btn {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: var(--obsidian-600);
+  color: var(--color-text-2);
+  transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast);
+}
+.gb-popover-btn:hover { background: var(--obsidian-500); color: var(--color-text); border-color: var(--glass-border-bright); }
+.gb-popover-btn.active { background: var(--emerald-950); color: var(--emerald-300); border-color: var(--emerald-700); }
+
+/* ---- Summary bar ---- */
+.gb-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--glass-border);
+  background: var(--obsidian-800);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  font-size: var(--text-xs);
+}
+.gb-summary-item { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); }
+.gb-summary-value { font-family: var(--font-mono); font-weight: var(--weight-semibold); color: var(--color-text); }

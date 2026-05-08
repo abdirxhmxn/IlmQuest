@@ -1,119 +1,95 @@
-/*
- * ============================================================
- *  auth.css
- *  IlmQuest - Authentication Views (Login, Forgot, Reset)
- *
- *  Sections:
- *    1. Tokens
- *    2. Base
- *    3. Layout
- *    4. Components
- *    5. States
- *    6. Responsive
- * ============================================================
- */
+/* ============================================================
+   Auth Pages — forgot password, reset, force change, onboarding
+   Shares login.css card pattern; extends for multi-step flows
+   ============================================================ */
 
-/* 1. Tokens */
-:root {
-  --auth-panel-max: 560px;
+/* Reuse login page layout */
+.page-auth {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: var(--obsidian-950);
+  position: relative;
+  overflow: hidden;
+}
+.page-auth::before {
+  content: '';
+  position: absolute; top: -20%; left: -10%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(15,158,104,0.06) 0%, transparent 60%);
+  pointer-events: none;
 }
 
-/* 2. Base */
-.auth-shell {
-  min-height: calc(100vh - var(--nav-height, 84px));
-  display: grid;
-  place-items: center;
-  padding: clamp(16px, 3vw, 28px);
-  background: var(--color-surface-page);
-}
-
-.auth-panel {
-  width: min(100%, var(--auth-panel-max));
-  padding: clamp(28px, 3.4vw, 44px) clamp(22px, 3vw, 38px);
-  border-radius: 20px;
-  border: 1px solid #d4d9e3;
-  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
-  background: #ffffff;
-  text-align: center;
-}
-
-.logo-section {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-5);
-}
-
-.logo-title {
-  margin: 0;
-  color: var(--color-brand-900);
-  font-size: clamp(1.62rem, 1.32rem + 1.2vw, 2.16rem);
-  font-weight: 800;
-}
-
-.auth-subtitle {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-/* 3. Layout */
-.form-card,
-.form-card form {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.flash-messages {
-  margin-bottom: var(--space-4);
-  display: grid;
-  gap: var(--space-2);
-}
-
-/* 4. Components */
-.flash-message {
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  border-left: 4px solid transparent;
-  text-align: left;
-}
-
-.flash-error {
-  background: var(--color-danger-bg);
-  color: var(--color-danger-text);
-  border-left-color: var(--color-danger-text);
-}
-
-.flash-info {
-  background: var(--color-info-bg);
-  color: var(--color-info-text);
-  border-left-color: var(--color-info-text);
-}
-
-.signup-link {
-  margin-top: var(--space-5);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.signup-link a {
-  color: var(--color-brand-700);
-  font-weight: 700;
-}
-
-.signup-link a:hover {
-  text-decoration: underline;
-}
-
-/* 5. States */
-.auth-panel .submit-btn {
+.auth-card {
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
   width: 100%;
+  max-width: 440px;
+  position: relative;
+  z-index: 1;
+  animation: scaleIn var(--duration-normal) var(--ease-spring);
+  box-shadow: var(--shadow-xl);
+}
+.auth-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  border-top: 1px solid var(--glass-edge);
+  pointer-events: none;
 }
 
-/* 6. Responsive */
-@media (max-width: 480px) {
-  .auth-panel {
-    border-radius: 18px;
-  }
+.auth-card-header { margin-bottom: var(--space-6); }
+.auth-back-link {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  font-size: var(--text-xs); color: var(--color-text-muted);
+  text-decoration: none; margin-bottom: var(--space-4);
+  transition: color var(--duration-fast);
+}
+.auth-back-link:hover { color: var(--color-text-2); }
+.auth-back-link svg { width: 13px; height: 13px; }
+.auth-title { font-family: var(--font-display); font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--color-text); }
+.auth-subtitle { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); line-height: var(--leading-relaxed); }
+
+.auth-form { display: flex; flex-direction: column; gap: var(--space-4); }
+.auth-submit { margin-top: var(--space-2); }
+
+.auth-footer {
+  margin-top: var(--space-5);
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.auth-footer a { color: var(--color-accent); text-decoration: none; }
+.auth-footer a:hover { color: var(--emerald-400); }
+
+/* Success state */
+.auth-success {
+  background: var(--color-success-bg);
+  border: 1px solid rgba(21,184,122,0.25);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+}
+.auth-success-icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(21,184,122,0.15); display: flex; align-items: center; justify-content: center; color: #6ee7b7; }
+.auth-success-icon svg { width: 20px; height: 20px; }
+.auth-success-title { font-size: var(--text-md); font-weight: var(--weight-semibold); color: #6ee7b7; }
+.auth-success-body { font-size: var(--text-sm); color: var(--color-text-muted); line-height: var(--leading-relaxed); }
+
+/* Force password change — warning banner */
+.auth-warning-banner {
+  background: rgba(212,130,26,0.1);
+  border: 1px solid rgba(212,130,26,0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: #fcd34d;
+  margin-bottom: var(--space-4);
 }

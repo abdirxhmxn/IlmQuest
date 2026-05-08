@@ -1,0 +1,71 @@
+/* ============================================================
+   Platform Shell — super-admin provisioning workspace
+   ============================================================ */
+
+.platform-app-shell {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--color-bg);
+}
+
+.platform-main-shell {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.platform-content-shell {
+  flex: 1;
+  padding: var(--content-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 960px;
+}
+
+.platform-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--content-padding) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-raised);
+  background: rgba(13,15,17,0.88);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+}
+.platform-page-title h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+.platform-page-title p { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-1); }
+
+/* School provisioning cards */
+.platform-school-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+/* New school form */
+.platform-form-card {
+  background: var(--obsidian-700);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .platform-main-shell { margin-left: 0; }
+  .platform-content-shell { padding: var(--space-4); }
+}

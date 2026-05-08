@@ -4,10 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><%= title || "Owner Onboarding" %></title>
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Amiri:wght@400;700&display=swap" />
+  <!-- Foundation -->
+  <link rel="stylesheet" href="<%= assetUrl('/css/tokens.css') %>" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/reset.css') %>" />
   <link rel="stylesheet" href="<%= assetUrl('/css/base.css') %>" />
-  <link rel="stylesheet" href="<%= assetUrl('/css/pages/auth-shell.css') %>" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/a11y.css') %>" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/glass.css') %>" />
+  <!-- Components -->
+  <link rel="stylesheet" href="<%= assetUrl('/css/components/typography.css') %>" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/components/buttons.css') %>" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/components/forms.css') %>" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/components/toasts.css') %>" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/components/loading.css') %>" />
+  <!-- Shell -->
+  <link rel="stylesheet" href="<%= assetUrl('/css/shells/platform-shell.css') %>" />
+  <!-- Page -->
+  <link rel="stylesheet" href="<%= assetUrl('/css/pages/auth.css') %>" />
   <link rel="stylesheet" href="<%= assetUrl('/css/pages/owner-onboarding.css') %>" />
 </head>
 <body class="owner-onboarding-page">

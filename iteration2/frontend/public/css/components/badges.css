@@ -1,0 +1,114 @@
+/* ============================================================
+   Badges — rank badges, mission type pills, status badges
+   ============================================================ */
+
+/* --------------------------------------------------
+   Rank Badges
+-------------------------------------------------- */
+.rank-badge {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+}
+.rank-badge--xs  { width: 18px; height: 18px; font-size: 9px;  }
+.rank-badge--sm  { width: 22px; height: 22px; font-size: 11px; }
+.rank-badge--md  { width: 32px; height: 32px; font-size: 14px; }
+.rank-badge--lg  { width: 48px; height: 48px; font-size: 22px; }
+.rank-badge--xl  { width: 72px; height: 72px; font-size: 36px; font-weight: var(--weight-bold); }
+.rank-badge--2xl { width: 96px; height: 96px; font-size: 52px; font-weight: var(--weight-bold); }
+
+.rank-f { color: var(--rank-f); background: var(--rank-f-bg); border-color: rgba(107,114,128,0.3); }
+.rank-e { color: var(--rank-e); background: var(--rank-e-bg); border-color: rgba(34,197,94,0.3); }
+.rank-d { color: var(--rank-d); background: var(--rank-d-bg); border-color: rgba(59,130,246,0.3); }
+.rank-c { color: var(--rank-c); background: var(--rank-c-bg); border-color: rgba(139,92,246,0.3); }
+.rank-b { color: var(--rank-b); background: var(--rank-b-bg); border-color: rgba(236,72,153,0.3); }
+.rank-a { color: var(--rank-a); background: var(--rank-a-bg); border-color: rgba(249,115,22,0.3); }
+.rank-s {
+  color: var(--gold-300);
+  background: var(--rank-s-bg);
+  border-color: rgba(240,185,41,0.35);
+  box-shadow: var(--shadow-glow-gold);
+  animation: rankPulse 3s var(--ease-in-out) infinite;
+}
+
+/* --------------------------------------------------
+   Mission Type Pills
+-------------------------------------------------- */
+.mission-pill {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+.mission-pill::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.mission-pill--ilm    { background: var(--mission-ilm-bg);    color: #93c5fd; }
+.mission-pill--adab   { background: var(--mission-adab-bg);   color: #c4b5fd; }
+.mission-pill--ihsaan { background: var(--mission-ihsaan-bg); color: #6ee7b7; }
+.mission-pill--taqwa  { background: var(--mission-taqwa-bg);  color: #fcd34d; }
+.mission-pill--amanah { background: var(--mission-amanah-bg); color: #f9a8d4; }
+
+/* --------------------------------------------------
+   Status Badges (attendance, mission status)
+-------------------------------------------------- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+/* Attendance statuses */
+.status-present  { background: rgba(21,184,122,0.12); color: #6ee7b7; }
+.status-absent   { background: rgba(201,64,64,0.12);  color: #fca5a5; }
+.status-late     { background: rgba(212,130,26,0.12); color: #fcd34d; }
+.status-excused  { background: rgba(59,130,246,0.12); color: #93c5fd; }
+.status-holiday  { background: rgba(107,114,128,0.12); color: #9ca3af; }
+.status-weather  { background: rgba(107,114,128,0.12); color: #9ca3af; }
+
+/* Mission statuses */
+.status-active     { background: rgba(21,184,122,0.12); color: #6ee7b7; }
+.status-pending    { background: rgba(245,158,11,0.12); color: #fcd34d; }
+.status-completed  { background: rgba(59,130,246,0.12); color: #93c5fd; }
+.status-failed     { background: rgba(201,64,64,0.12);  color: #fca5a5; }
+.status-auto-failed { background: rgba(201,64,64,0.08); color: #f87171; }
+.status-assigned   { background: rgba(139,92,246,0.12); color: #c4b5fd; }
+.status-rejected   { background: rgba(201,64,64,0.12);  color: #fca5a5; }
+
+/* Generic labels */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+.badge-success { background: var(--color-success-bg); color: #6ee7b7; }
+.badge-warning { background: var(--color-warning-bg); color: #fcd34d; }
+.badge-danger  { background: var(--color-danger-bg);  color: #fca5a5; }
+.badge-info    { background: var(--color-info-bg);    color: #93c5fd; }
+.badge-neutral { background: var(--obsidian-500);     color: var(--color-text-2); }

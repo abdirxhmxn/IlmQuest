@@ -1,0 +1,48 @@
+/* ============================================================
+   Accessibility — focus rings, skip link, reduced motion
+   ============================================================ */
+
+/* Skip to main content */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-4);
+  z-index: var(--z-command);
+  padding: var(--space-2) var(--space-4);
+  background: var(--emerald-600);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: top var(--duration-fast) var(--ease-out);
+}
+.skip-link:focus { top: var(--space-4); }
+
+/* Focus ring — emerald, consistent everywhere */
+:focus-visible {
+  outline: 2px solid var(--emerald-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove outline when mouse-focused */
+:focus:not(:focus-visible) { outline: none; }
+
+/* Interactive elements must never hide focus entirely */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--emerald-500);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid ButtonText;
+  }
+}

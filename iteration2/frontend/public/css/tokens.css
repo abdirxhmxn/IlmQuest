@@ -1,0 +1,250 @@
+/* ============================================================
+   IlmQuest Design Tokens — "Midnight Masjid"
+   Single source of truth for every design decision.
+   ============================================================ */
+
+:root {
+
+  /* --------------------------------------------------
+     OBSIDIAN FAMILY — backgrounds, surfaces
+  -------------------------------------------------- */
+  --obsidian-950: #070809;
+  --obsidian-900: #0d0f11;
+  --obsidian-800: #131619;
+  --obsidian-700: #1a1e22;
+  --obsidian-600: #222830;
+  --obsidian-500: #2c3540;
+  --obsidian-400: #3d4a58;
+  --obsidian-300: #566170;
+  --obsidian-200: #7a8a99;
+  --obsidian-100: #a8b8c8;
+  --obsidian-50:  #d4e0ec;
+
+  /* --------------------------------------------------
+     EMERALD FAMILY — primary accent
+  -------------------------------------------------- */
+  --emerald-950: #022c1a;
+  --emerald-900: #044d2c;
+  --emerald-800: #066640;
+  --emerald-700: #0a8a58;
+  --emerald-600: #0f9e68;
+  --emerald-500: #15b87a;
+  --emerald-400: #22cf8e;
+  --emerald-300: #4ddea6;
+  --emerald-200: #7feec2;
+  --emerald-100: #b3f5db;
+  --emerald-50:  #e6faf3;
+
+  /* --------------------------------------------------
+     TEAL FAMILY — secondary accent
+  -------------------------------------------------- */
+  --teal-700: #0d7a7a;
+  --teal-600: #0f9090;
+  --teal-500: #13aaaa;
+  --teal-400: #1dc4c4;
+  --teal-300: #3dd8d8;
+
+  /* --------------------------------------------------
+     GOLD FAMILY — rank / achievement only
+  -------------------------------------------------- */
+  --gold-600: #b8860b;
+  --gold-500: #d4a017;
+  --gold-400: #f0b929;
+  --gold-300: #f5cc5e;
+  --gold-200: #fae08a;
+
+  /* --------------------------------------------------
+     SEMANTIC COLORS
+  -------------------------------------------------- */
+  --color-success:  var(--emerald-500);
+  --color-warning:  #d4821a;
+  --color-danger:   #c94040;
+  --color-info:     #3b82f6;
+
+  --color-success-bg: rgba(21,184,122,0.12);
+  --color-warning-bg: rgba(212,130,26,0.12);
+  --color-danger-bg:  rgba(201,64,64,0.12);
+  --color-info-bg:    rgba(59,130,246,0.12);
+
+  /* --------------------------------------------------
+     MISSION TYPE COLORS
+  -------------------------------------------------- */
+  --mission-ilm:    #3b82f6;
+  --mission-adab:   #8b5cf6;
+  --mission-ihsaan: #10b981;
+  --mission-taqwa:  #f59e0b;
+  --mission-amanah: #ec4899;
+
+  --mission-ilm-bg:    rgba(59,130,246,0.12);
+  --mission-adab-bg:   rgba(139,92,246,0.12);
+  --mission-ihsaan-bg: rgba(16,185,129,0.12);
+  --mission-taqwa-bg:  rgba(245,158,11,0.12);
+  --mission-amanah-bg: rgba(236,72,153,0.12);
+
+  /* --------------------------------------------------
+     RANK COLORS
+  -------------------------------------------------- */
+  --rank-f: #6b7280;
+  --rank-e: #22c55e;
+  --rank-d: #3b82f6;
+  --rank-c: #8b5cf6;
+  --rank-b: #ec4899;
+  --rank-a: #f97316;
+  --rank-s: var(--gold-400);
+
+  --rank-f-bg: rgba(107,114,128,0.12);
+  --rank-e-bg: rgba(34,197,94,0.12);
+  --rank-d-bg: rgba(59,130,246,0.12);
+  --rank-c-bg: rgba(139,92,246,0.12);
+  --rank-b-bg: rgba(236,72,153,0.12);
+  --rank-a-bg: rgba(249,115,22,0.12);
+  --rank-s-bg: rgba(240,185,41,0.12);
+
+  /* --------------------------------------------------
+     GLASS SYSTEM
+  -------------------------------------------------- */
+  --glass-bg:            rgba(255,255,255,0.04);
+  --glass-bg-2:          rgba(255,255,255,0.06);
+  --glass-bg-3:          rgba(255,255,255,0.09);
+  --glass-bg-hover:      rgba(255,255,255,0.07);
+  --glass-border:        rgba(255,255,255,0.08);
+  --glass-border-bright: rgba(255,255,255,0.14);
+  --glass-edge:          rgba(255,255,255,0.15);
+
+  /* --------------------------------------------------
+     TYPOGRAPHY
+  -------------------------------------------------- */
+  --font-display: 'Clash Display', 'Inter', system-ui, sans-serif;
+  --font-body:    'Geist', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'Geist Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --font-arabic:  'Amiri', 'Scheherazade New', serif;
+
+  --text-xs:   11px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   17px;
+  --text-lg:   20px;
+  --text-xl:   24px;
+  --text-2xl:  32px;
+  --text-3xl:  42px;
+  --text-4xl:  56px;
+  --text-5xl:  80px;
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+  --weight-bold:    700;
+
+  --leading-tight:  1.2;
+  --leading-snug:   1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+  --leading-arabic: 2;
+
+  /* --------------------------------------------------
+     SPACING — 4px base unit
+  -------------------------------------------------- */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* --------------------------------------------------
+     BORDER RADIUS
+  -------------------------------------------------- */
+  --radius-none: 0;
+  --radius-sm:   3px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-xl:   14px;
+  --radius-2xl:  20px;
+  --radius-3xl:  28px;
+  --radius-full: 9999px;
+
+  /* --------------------------------------------------
+     BLUR
+  -------------------------------------------------- */
+  --blur-sm:  blur(4px);
+  --blur-md:  blur(8px);
+  --blur-lg:  blur(16px);
+  --blur-xl:  blur(24px);
+  --blur-2xl: blur(40px);
+
+  /* --------------------------------------------------
+     SHADOWS — obsidian-tinted
+  -------------------------------------------------- */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4);
+  --shadow-xl:  0 20px 48px rgba(0,0,0,0.7), 0 8px 16px rgba(0,0,0,0.4);
+
+  --shadow-glow-emerald: 0 0 24px rgba(15,158,104,0.25), 0 0 8px rgba(15,158,104,0.15);
+  --shadow-glow-gold:    0 0 20px rgba(240,185,41,0.3),  0 0 6px rgba(240,185,41,0.2);
+  --shadow-glow-teal:    0 0 20px rgba(19,170,170,0.25), 0 0 6px rgba(19,170,170,0.15);
+
+  /* --------------------------------------------------
+     Z-INDEX LAYERS
+  -------------------------------------------------- */
+  --z-base:    0;
+  --z-raised:  10;
+  --z-sticky:  20;
+  --z-overlay: 30;
+  --z-modal:   40;
+  --z-toast:   50;
+  --z-command: 60;
+
+  /* --------------------------------------------------
+     ANIMATION EASING
+  -------------------------------------------------- */
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-snappy:  cubic-bezier(0.25, 0, 0, 1);
+  --ease-out:     cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out:  cubic-bezier(0.4, 0, 0.6, 1);
+
+  /* --------------------------------------------------
+     ANIMATION DURATION
+  -------------------------------------------------- */
+  --duration-instant:    80ms;
+  --duration-fast:       120ms;
+  --duration-normal:     200ms;
+  --duration-slow:       300ms;
+  --duration-transition: 450ms;
+  --duration-enter:      500ms;
+
+  /* --------------------------------------------------
+     SHELL LAYOUT DIMENSIONS
+  -------------------------------------------------- */
+  --sidebar-width:          220px;
+  --sidebar-collapsed-width: 56px;
+  --topbar-height:           56px;
+  --content-max-width:      1440px;
+  --content-padding:        var(--space-6);
+
+  /* --------------------------------------------------
+     SEMANTIC ALIASES (used in components)
+  -------------------------------------------------- */
+  --color-bg:           var(--obsidian-900);
+  --color-surface:      var(--obsidian-700);
+  --color-surface-2:    var(--obsidian-600);
+  --color-surface-3:    var(--obsidian-500);
+  --color-border:       var(--obsidian-400);
+  --color-border-muted: var(--obsidian-300);
+  --color-text:         var(--obsidian-50);
+  --color-text-2:       var(--obsidian-100);
+  --color-text-muted:   var(--obsidian-200);
+  --color-text-disabled: var(--obsidian-300);
+  --color-accent:       var(--emerald-600);
+  --color-accent-hover: var(--emerald-500);
+  --color-accent-active: var(--emerald-400);
+  --color-accent-glow:  var(--emerald-200);
+}

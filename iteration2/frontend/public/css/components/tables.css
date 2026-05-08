@@ -1,175 +1,103 @@
-/*
- * ============================================================
- *  tables.css
- *  IlmQuest - Table Structure, Density, and Mobile Handling
- *
- *  Sections:
- *    1. Tokens
- *    2. Base
- *    3. Layout
- *    4. Components
- *    5. States
- *    6. Responsive
- * ============================================================
- */
+/* ============================================================
+   Tables — base, sticky, sortable, row actions
+   ============================================================ */
 
-/* 1. Tokens */
-:root {
-  --table-header-bg: #f7faf8;
-  --table-row-hover: #f3f8f5;
-}
-
-/* 2. Base */
-.table-wrap,
-.table-shell,
-.reports-list-wrap,
-.sheet-wrap {
+.table-wrapper {
   width: 100%;
   overflow-x: auto;
-  overscroll-behavior-x: contain;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
 }
 
-.table,
-table,
-.metrics-table,
-.finance-table,
-.reports-table,
-.portal-table,
-.missions-table,
-.sheet-table {
+.table {
   width: 100%;
   border-collapse: collapse;
+  font-size: var(--text-sm);
 }
 
-th,
-td,
-.table th,
-.table td,
-.metrics-table th,
-.metrics-table td,
-.finance-table th,
-.finance-table td,
-.reports-table th,
-.reports-table td,
-.portal-table th,
-.portal-table td,
-.missions-table th,
-.missions-table td,
-.sheet-table th,
-.sheet-table td {
-  padding: 10px 10px;
-  text-align: left;
-  vertical-align: middle;
-  border-bottom: 1px solid #e6edf5;
-}
-
-th,
-.table th,
-.metrics-table th,
-.finance-table th,
-.reports-table th,
-.portal-table th,
-.missions-table th,
-.sheet-table th {
-  background: var(--table-header-bg);
-  color: #64748b;
-  font-size: var(--font-size-2xs);
-  font-weight: 800;
-  letter-spacing: 0.1em;
+/* Header */
+.table thead th {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+  background: var(--obsidian-800);
+  border-bottom: 1px solid var(--glass-border);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+.table thead th:first-child { border-radius: var(--radius-lg) 0 0 0; }
+.table thead th:last-child { border-radius: 0 var(--radius-lg) 0 0; }
+
+/* Body cells */
+.table tbody td {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-2);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+.table tbody tr:last-child td { border-bottom: none; }
+
+/* Row hover */
+.table tbody tr {
+  transition: background var(--duration-fast) var(--ease-smooth);
+}
+.table tbody tr:hover td {
+  background: rgba(255,255,255,0.03);
+  color: var(--color-text);
 }
 
-/* 3. Layout */
-.table tbody tr:last-child td,
-.metrics-table tbody tr:last-child td,
-.finance-table tbody tr:last-child td,
-.reports-table tbody tr:last-child td,
-.portal-table tbody tr:last-child td,
-.missions-table tbody tr:last-child td,
-.sheet-table tbody tr:last-child td {
-  border-bottom: 0;
+/* Sticky first column */
+.table .col-sticky {
+  position: sticky;
+  left: 0;
+  z-index: var(--z-raised);
+  background: var(--obsidian-800);
 }
+.table tbody tr:hover .col-sticky { background: var(--obsidian-700); }
 
-/* 4. Components */
-.empty-row,
-.table-empty,
-.reports-empty {
-  text-align: center;
-  color: var(--color-text-subtle);
-  font-size: var(--font-size-sm);
-}
+/* Column alignments */
+.table .col-right { text-align: right; }
+.table .col-center { text-align: center; }
+.table .col-number { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
-.cell-actions,
-.action-cell {
+/* Sortable column header */
+.table thead th.sortable { cursor: pointer; user-select: none; }
+.table thead th.sortable:hover { color: var(--color-text); }
+.table thead th.sorted-asc::after  { content: ' ↑'; color: var(--color-accent); }
+.table thead th.sorted-desc::after { content: ' ↓'; color: var(--color-accent); }
+
+/* Row actions (visible on hover) */
+.table .row-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  gap: var(--space-1);
+  opacity: 0;
+  transition: opacity var(--duration-fast);
 }
+.table tbody tr:hover .row-actions { opacity: 1; }
 
-.mono-cell {
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
-  font-variant-numeric: tabular-nums;
+/* Status cells */
+.table .cell-status { display: flex; align-items: center; gap: var(--space-2); }
+.table .status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
+.status-dot.active   { background: var(--color-success); box-shadow: 0 0 0 3px rgba(21,184,122,0.2); }
+.status-dot.inactive { background: var(--color-text-muted); }
+.status-dot.warning  { background: var(--color-warning); }
+.status-dot.danger   { background: var(--color-danger); }
 
-/* 5. States */
-tbody tr:hover td,
-.table tbody tr:hover td,
-.metrics-table tbody tr:hover td,
-.finance-table tbody tr:hover td,
-.reports-table tbody tr:hover td,
-.portal-table tbody tr:hover td,
-.missions-table tbody tr:hover td,
-.sheet-table tbody tr:hover td {
-  background: var(--table-row-hover);
-}
-
-.row-overdue td,
-.ledger-row.is-overdue td {
-  background: #fff5f5;
-}
-
-/* 6. Responsive */
-@media (max-width: 768px) {
-  th,
-  td,
-  .table th,
-  .table td,
-  .metrics-table th,
-  .metrics-table td,
-  .finance-table th,
-  .finance-table td,
-  .reports-table th,
-  .reports-table td,
-  .portal-table th,
-  .portal-table td,
-  .missions-table th,
-  .missions-table td,
-  .sheet-table th,
-  .sheet-table td {
-    padding: 9px 8px;
-    font-size: var(--font-size-xs);
-  }
-
-  .metrics-table,
-  .finance-table,
-  .reports-table,
-  .portal-table,
-  .missions-table,
-  .sheet-table {
-    min-width: 560px;
-  }
-}
-
-@media (max-width: 480px) {
-  .metrics-table,
-  .finance-table,
-  .reports-table,
-  .portal-table,
-  .missions-table,
-  .sheet-table {
-    min-width: 520px;
-  }
+/* Empty state within table */
+.table-empty {
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
