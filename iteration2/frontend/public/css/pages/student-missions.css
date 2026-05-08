@@ -21,23 +21,76 @@
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--glass-border);
 }
-.mission-section-title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text-2); text-transform: uppercase; letter-spacing: 0.06em; }
-.mission-section-count { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--color-text-muted); }
+.mission-section-icon {
+  width: 26px; height: 26px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.mission-section-icon svg { width: 13px; height: 13px; }
+.mission-section-title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.mission-section-count {
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
 
 /* Mission action buttons row */
 .mission-action-row {
   display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
-  padding-top: var(--space-2);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--glass-border);
 }
 
-/* Rank gate warning */
+/* Rank gate lock — shown when student rank is too low */
 .mission-rank-gate {
   display: flex; align-items: center; gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: rgba(139,92,246,0.08);
   border: 1px solid rgba(139,92,246,0.2);
   border-radius: var(--radius-lg);
-  font-size: var(--text-xs); color: #c4b5fd;
+  font-size: var(--text-xs);
+  color: #c4b5fd;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .mission-rank-gate svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+/* Mission submission textarea */
+.mission-submission-area {
+  background: var(--liquid-bg-xs);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: border-color var(--duration-fast);
+}
+.mission-submission-area:focus-within {
+  border-color: rgba(13,154,104,0.35);
+  box-shadow: 0 0 0 3px rgba(13,154,104,0.06);
+}
+
+/* XP reward display */
+.mission-xp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  background: rgba(240,185,41,0.12);
+  border: 1px solid rgba(240,185,41,0.22);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--gold-300);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.mission-xp-badge svg { width: 11px; height: 11px; color: var(--gold-400); }

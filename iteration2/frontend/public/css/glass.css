@@ -1,49 +1,121 @@
 /* ============================================================
-   Glass System — IlmQuest "Midnight Masjid"
+   Glass System — IlmQuest "Midnight Masjid" v2
+   Production-grade liquid glass. NOT generic glassmorphism.
 
-   Rules:
-   - Glass is ONLY for navigational/overlay surfaces (sidebar, topbar,
-     modals, drawers, popovers, command palettes)
-   - NOT on regular page content cards, table rows, or scrolling content
-   - All backdrop-filter elements use will-change: transform for GPU promotion
-   - Maximum 3 simultaneously active backdrop-filter elements per viewport
+   Architecture:
+   • .liquid-glass  — the signature surface (VisionOS-inspired)
+   • .glass-nav     — topbar / sticky navigation
+   • .glass-sidebar — floating side navigation
+   • .glass-modal   — modal dialogs
+   • .glass-drawer  — side drawers
+   • .glass-popover — dropdowns and tooltips
+   • .surface       — non-glass content cards (no backdrop-filter)
+
+   Discipline rules:
+   ✓ backdrop-filter ONLY on navigational/overlay surfaces
+   ✓ Every backdrop-filter element has will-change: transform
+   ✓ Max 3 simultaneously active backdrop-filter per viewport
+   ✓ Saturate + brightness on every blur (makes it feel real)
    ============================================================ */
 
 /* --------------------------------------------------
-   Base glass panel — lightest layer
-   Use: regular cards on dark backgrounds
+   LIQUID GLASS — the signature IlmQuest surface
+
+   Physics of real glass:
+   1. Gradient background (lighter top = light from above)
+   2. Inset top highlight = light-catching edge
+   3. Specular reflection via ::before (diagonal shimmer)
+   4. Outer shadow = depth below
+   5. Saturate + brightness on blur = vivid, alive glass
+-------------------------------------------------- */
+.liquid-glass {
+  position: relative;
+  background: var(--liquid-bg-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    var(--inset-top-sm),
+    var(--inset-bottom),
+    0 8px 24px rgba(0,0,0,0.38),
+    0 1px 3px rgba(0,0,0,0.22);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Specular highlight — diagonal shimmer simulating glass light-catch */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--specular-light);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* --------------------------------------------------
+   LIQUID GLASS RAISED — elevated surfaces
+-------------------------------------------------- */
+.liquid-glass-raised {
+  position: relative;
+  background: var(--liquid-bg-md);
+  border: 1px solid var(--glass-border-bright);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    var(--inset-top-md),
+    var(--inset-bottom),
+    0 12px 36px rgba(0,0,0,0.48),
+    0 2px 6px rgba(0,0,0,0.28);
+  backdrop-filter: var(--blur-glass-md);
+  -webkit-backdrop-filter: var(--blur-glass-md);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.liquid-glass-raised::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--specular-light);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* --------------------------------------------------
+   GLASS PANEL — legacy compat + lighter glass for cards
+   (applies backdrop-filter sparingly — use .surface for content)
 -------------------------------------------------- */
 .glass-panel {
   position: relative;
-  background: var(--glass-bg);
+  background: var(--liquid-bg-xs);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
+  box-shadow: var(--inset-top-xs), 0 4px 16px rgba(0,0,0,0.3);
   backdrop-filter: var(--blur-md);
   -webkit-backdrop-filter: var(--blur-md);
   will-change: transform;
   transform: translateZ(0);
 }
-
-/* Edge highlight — light-catching top border effect */
 .glass-panel::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border-top: 1px solid var(--glass-edge);
+  background: var(--specular-subtle);
   pointer-events: none;
 }
 
-/* --------------------------------------------------
-   Medium glass — elevated cards, hero areas
--------------------------------------------------- */
 .glass-panel-2 {
   position: relative;
-  background: var(--glass-bg-2);
+  background: var(--liquid-bg-sm);
   border: 1px solid var(--glass-border-bright);
   border-radius: var(--radius-xl);
-  backdrop-filter: var(--blur-lg);
-  -webkit-backdrop-filter: var(--blur-lg);
+  box-shadow: var(--inset-top-sm), 0 6px 20px rgba(0,0,0,0.38);
+  backdrop-filter: var(--blur-glass-sm);
+  -webkit-backdrop-filter: var(--blur-glass-sm);
   will-change: transform;
   transform: translateZ(0);
 }
@@ -52,20 +124,18 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border-top: 1px solid var(--glass-edge);
+  background: var(--specular-light);
   pointer-events: none;
 }
 
-/* --------------------------------------------------
-   Heavy glass — modals, critical overlays
--------------------------------------------------- */
 .glass-panel-3 {
   position: relative;
-  background: var(--glass-bg-3);
-  border: 1px solid rgba(255,255,255,0.18);
+  background: var(--liquid-bg-lg);
+  border: 1px solid rgba(255,255,255,0.16);
   border-radius: var(--radius-xl);
-  backdrop-filter: var(--blur-xl);
-  -webkit-backdrop-filter: var(--blur-xl);
+  box-shadow: var(--inset-top-lg), 0 16px 48px rgba(0,0,0,0.6);
+  backdrop-filter: var(--blur-glass-lg);
+  -webkit-backdrop-filter: var(--blur-glass-lg);
   will-change: transform;
   transform: translateZ(0);
 }
@@ -74,39 +144,55 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border-top: 1px solid rgba(255,255,255,0.22);
+  background: var(--specular-light);
   pointer-events: none;
 }
 
 /* --------------------------------------------------
-   Navigational glass surfaces
+   GLASS NAV — horizontal sticky topbar
 -------------------------------------------------- */
 .glass-nav {
   position: relative;
-  background: rgba(13,15,17,0.85);
+  background: linear-gradient(180deg, rgba(8,10,12,0.93) 0%, rgba(8,10,12,0.88) 100%);
   border-bottom: 1px solid var(--glass-border);
-  backdrop-filter: var(--blur-lg);
-  -webkit-backdrop-filter: var(--blur-lg);
+  box-shadow: var(--inset-top-xs), 0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.3);
+  backdrop-filter: var(--blur-glass-nav);
+  -webkit-backdrop-filter: var(--blur-glass-nav);
   will-change: transform;
   transform: translateZ(0);
 }
 
+/* --------------------------------------------------
+   GLASS SIDEBAR — floating side navigation
+   Has border-radius so it floats off the edge.
+-------------------------------------------------- */
 .glass-sidebar {
   position: relative;
-  background: rgba(13,15,17,0.9);
-  border-right: 1px solid var(--glass-border);
-  backdrop-filter: var(--blur-md);
-  -webkit-backdrop-filter: var(--blur-md);
+  background: var(--glass-sidebar-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--sidebar-float-radius);
+  box-shadow:
+    var(--inset-top-xs),
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 8px 32px rgba(0,0,0,0.5),
+    0 2px 8px rgba(0,0,0,0.28);
+  backdrop-filter: var(--blur-glass-nav);
+  -webkit-backdrop-filter: var(--blur-glass-nav);
   will-change: transform;
   transform: translateZ(0);
 }
 
+/* --------------------------------------------------
+   GLASS MODAL
+-------------------------------------------------- */
 .glass-modal {
   position: relative;
-  background: var(--obsidian-700);
+  background: linear-gradient(160deg, var(--obsidian-700) 0%, var(--obsidian-800) 100%);
   border: 1px solid var(--glass-border-bright);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-xl);
+  box-shadow:
+    var(--inset-top-sm),
+    var(--shadow-float-lg);
   will-change: transform;
   transform: translateZ(0);
 }
@@ -115,26 +201,35 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border-top: 1px solid var(--glass-edge);
+  background: var(--specular-subtle);
   pointer-events: none;
+  z-index: 0;
 }
 
+/* --------------------------------------------------
+   GLASS DRAWER
+-------------------------------------------------- */
 .glass-drawer {
   position: fixed;
-  background: var(--obsidian-800);
+  background: linear-gradient(180deg, var(--obsidian-800) 0%, var(--obsidian-900) 100%);
   border-left: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--inset-top-xs), -8px 0 40px rgba(0,0,0,0.5);
   will-change: transform;
 }
 
+/* --------------------------------------------------
+   GLASS POPOVER / DROPDOWN
+-------------------------------------------------- */
 .glass-popover {
   position: absolute;
-  background: var(--obsidian-700);
+  background: linear-gradient(160deg, var(--obsidian-700) 0%, rgba(24,28,31,0.97) 100%);
   border: 1px solid var(--glass-border-bright);
   border-radius: var(--radius-lg);
-  backdrop-filter: var(--blur-lg);
-  -webkit-backdrop-filter: var(--blur-lg);
-  box-shadow: var(--shadow-xl);
+  box-shadow:
+    var(--inset-top-xs),
+    var(--shadow-float-md);
+  backdrop-filter: var(--blur-glass-sm);
+  -webkit-backdrop-filter: var(--blur-glass-sm);
   will-change: transform;
   transform: translateZ(0);
 }
@@ -143,41 +238,55 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border-top: 1px solid var(--glass-edge);
+  background: var(--specular-subtle);
   pointer-events: none;
 }
 
 /* --------------------------------------------------
-   Surface card (non-glass content cards)
-   Use this for regular page content — NO backdrop-filter
+   SURFACE — solid content cards (NO backdrop-filter)
+   Use for regular page content: lists, tables, forms.
+   This is the RIGHT choice for most content.
 -------------------------------------------------- */
 .surface {
-  background: var(--obsidian-700);
+  background: linear-gradient(160deg, var(--obsidian-700) 0%, rgba(22,26,30,0.98) 100%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
+  box-shadow: var(--inset-top-xs);
 }
 
 .surface-2 {
-  background: var(--obsidian-600);
+  background: linear-gradient(160deg, var(--obsidian-600) 0%, rgba(29,36,42,0.98) 100%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
+  box-shadow: var(--inset-top-xs);
 }
 
 /* --------------------------------------------------
-   Overlay backdrop
+   GLASS OVERLAY — modal backdrop
 -------------------------------------------------- */
 .glass-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(7,8,9,0.7);
+  background: rgba(6,7,8,0.72);
   backdrop-filter: var(--blur-sm);
   -webkit-backdrop-filter: var(--blur-sm);
   z-index: var(--z-overlay);
 }
 
 /* --------------------------------------------------
-   Emerald accent border (hover/active cards)
+   GLASS ACCENT — active/focus state for cards
 -------------------------------------------------- */
 .glass-accent {
   box-shadow: 0 0 0 1px var(--emerald-700), var(--shadow-glow-emerald);
+  border-color: var(--emerald-700) !important;
+}
+
+/* --------------------------------------------------
+   EMERALD TINTED GLASS — accent navigational items
+-------------------------------------------------- */
+.glass-emerald {
+  background: var(--glass-emerald-bg);
+  border: 1px solid var(--glass-emerald-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--inset-top-xs), var(--glow-xs);
 }

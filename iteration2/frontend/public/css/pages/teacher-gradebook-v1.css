@@ -13,7 +13,9 @@
   gap: var(--space-3);
   padding: var(--space-4) var(--content-padding);
   border-bottom: 1px solid var(--glass-border);
-  background: var(--obsidian-900);
+  background: linear-gradient(180deg, rgba(6,7,8,0.97) 0%, rgba(6,7,8,0.92) 100%);
+  backdrop-filter: var(--blur-glass-sm);
+  -webkit-backdrop-filter: var(--blur-glass-sm);
   position: sticky;
   top: 0;
   z-index: var(--z-raised);

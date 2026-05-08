@@ -1,5 +1,5 @@
 /* ============================================================
-   Base Styles — root, body, scrollbar, global type
+   Base Styles — root, body, scrollbar, global type, keyframes
    Depends on: tokens.css, reset.css
    ============================================================ */
 
@@ -10,6 +10,10 @@ html {
   font-size: var(--text-base);
   font-weight: var(--weight-regular);
   line-height: var(--leading-normal);
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
@@ -17,22 +21,25 @@ body {
   color: var(--color-text);
   min-height: 100dvh;
   overflow-x: hidden;
+  /* Ambient emerald glow from top — the "alive" feeling */
+  background-image: var(--ambient-emerald-top);
+  background-attachment: fixed;
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--obsidian-800); }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--obsidian-400);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--obsidian-300); }
-* { scrollbar-width: thin; scrollbar-color: var(--obsidian-400) var(--obsidian-800); }
+* { scrollbar-width: thin; scrollbar-color: var(--obsidian-400) transparent; }
 
 /* Selection */
-::selection { background: rgba(15,158,104,0.3); color: var(--color-text); }
+::selection { background: rgba(13,154,104,0.28); color: var(--color-text); }
 
-/* SVG icons inherit stroke */
+/* SVG icons — stroke-based icon system */
 svg {
   fill: none;
   stroke: currentColor;
@@ -42,7 +49,7 @@ svg {
   flex-shrink: 0;
 }
 
-/* Arabic */
+/* Arabic text */
 [lang="ar"], .text-arabic {
   font-family: var(--font-arabic);
   direction: rtl;
@@ -51,14 +58,18 @@ svg {
   font-size: 1.2em;
 }
 
-/* Utilities */
-.font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+/* ============================================================
+   Utilities
+   ============================================================ */
+.font-mono  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.font-display { font-family: var(--font-display); }
+
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0;
   margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
   white-space: nowrap; border-width: 0;
 }
-.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.truncate     { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -66,66 +77,150 @@ svg {
   overflow: hidden;
 }
 
-/* Stagger animation utility */
+/* Gradient text utility */
+.gradient-text {
+  color: transparent;
+  background: linear-gradient(135deg, var(--emerald-400), var(--teal-300));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ============================================================
+   Stagger animation — page-entry orchestration
+   ============================================================ */
 .stagger > * { animation: fadeUp var(--duration-enter) var(--ease-smooth) both; }
-.stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 40ms; }
-.stagger > *:nth-child(3) { animation-delay: 80ms; }
-.stagger > *:nth-child(4) { animation-delay: 120ms; }
-.stagger > *:nth-child(5) { animation-delay: 160ms; }
-.stagger > *:nth-child(6) { animation-delay: 200ms; }
-.stagger > *:nth-child(7) { animation-delay: 240ms; }
-.stagger > *:nth-child(8) { animation-delay: 280ms; }
+.stagger > *:nth-child(1) { animation-delay:   0ms; }
+.stagger > *:nth-child(2) { animation-delay:  50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(7) { animation-delay: 300ms; }
+.stagger > *:nth-child(8) { animation-delay: 350ms; }
 
 /* ============================================================
    Keyframes
    ============================================================ */
+
+/* Page entry — items rise and fade in */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Soft fade */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* Scale in with spring — modals, cards */
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.95) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* Spring pop */
+@keyframes springIn {
+  0%   { opacity: 0; transform: scale(0.88); }
+  60%  { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Slide in from left */
 @keyframes slideRight {
-  from { opacity: 0; transform: translateX(-8px); }
+  from { opacity: 0; transform: translateX(-10px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+
+/* Slide up */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes shimmer {
-  from { background-position: -200% center; }
-  to   { background-position:  200% center; }
+
+/* Drawer slide in from right */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
 }
+
+/* Shimmer — skeleton loading */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* XP bar fill */
 @keyframes xpFill {
   from { width: 0%; }
   to   { width: var(--xp-percent, 0%); }
 }
+
+/* Rank S pulse — gold oscillation */
 @keyframes rankPulse {
   0%   { box-shadow: var(--shadow-glow-gold); transform: scale(1); }
-  50%  { box-shadow: var(--shadow-glow-gold), 0 0 40px rgba(240,185,41,0.4); transform: scale(1.03); }
+  50%  { box-shadow: var(--shadow-glow-gold), 0 0 48px rgba(232,176,32,0.45); transform: scale(1.04); }
   100% { box-shadow: var(--shadow-glow-gold); transform: scale(1); }
 }
+
+/* Emerald pulse — live indicator */
+@keyframes emeraldPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(13,154,104,0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(13,154,104,0); }
+  100% { box-shadow: 0 0 0 0 rgba(13,154,104,0); }
+}
+
+/* Spin */
 @keyframes spinSlow {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* Breath — subtle living opacity */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  50%       { opacity: 0.45; }
 }
+
+/* Toast notifications */
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  from { opacity: 0; transform: translateY(18px) scale(0.95); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes toastOut {
   from { opacity: 1; transform: translateY(0) scale(1); }
-  to   { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 0; transform: translateY(-10px) scale(0.95); }
+}
+
+/* Ambient drift — background glow movement */
+@keyframes ambientDrift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -20px) scale(1.06); }
+  66%  { transform: translate(-20px, 20px) scale(0.97); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* Beam scan — decorative shimmer on hero/accent surfaces */
+@keyframes beamScan {
+  from { transform: translateX(-100%) skewX(-15deg); }
+  to   { transform: translateX(300%) skewX(-15deg); }
+}
+
+/* Reveal from blur — entry for hero text */
+@keyframes blurReveal {
+  from { opacity: 0; filter: blur(12px); transform: translateY(6px); }
+  to   { opacity: 1; filter: blur(0px);  transform: translateY(0); }
+}
+
+/* Float hover — ambient card levitation */
+@keyframes floatHover {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* Number count up (visual helper — set on value changes via JS class) */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

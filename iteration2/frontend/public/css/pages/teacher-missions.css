@@ -6,10 +6,11 @@
   display: grid;
   grid-template-columns: 1fr 360px;
   gap: var(--space-5);
+  align-items: start;
 }
 @media (max-width: 1100px) { .teacher-missions-layout { grid-template-columns: 1fr; } }
 
-/* Mission filters */
+/* Mission filters bar */
 .missions-filter-bar {
   display: flex;
   align-items: center;
@@ -21,24 +22,76 @@
 /* Mission list */
 .missions-list { display: flex; flex-direction: column; gap: var(--space-3); }
 
-/* Create mission form */
+/* Create / edit mission form — sticky panel */
 .create-mission-card {
-  background: var(--obsidian-700);
+  background: linear-gradient(160deg, var(--obsidian-700) 0%, rgba(18,22,26,0.99) 100%);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   padding: var(--space-5);
-  display: flex; flex-direction: column; gap: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   position: sticky;
-  top: calc(var(--topbar-height) + var(--space-4));
+  top: calc(var(--topbar-height, 0px) + var(--space-4));
+  box-shadow: var(--inset-top-xs);
 }
-.create-mission-card .card-title { font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--color-text); }
+.create-mission-card .card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
 
-/* Student attempt list inside mission */
+/* Student attempt list inside expanded mission */
 .mission-attempts-list { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3); }
 .mission-attempt-row {
-  display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-2) var(--space-3); border-radius: var(--radius-lg);
-  background: var(--obsidian-600);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--liquid-bg-xs);
+  border: 1px solid var(--glass-border);
+  transition: border-color var(--duration-fast);
+  box-shadow: var(--inset-top-xs);
 }
-.mission-attempt-name { flex: 1; font-size: var(--text-sm); color: var(--color-text-2); }
+.mission-attempt-row:hover { border-color: var(--glass-border-bright); }
+.mission-attempt-avatar {
+  width: 26px; height: 26px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(13,154,104,0.18) 0%, rgba(13,154,104,0.08) 100%);
+  border: 1px solid rgba(13,154,104,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: var(--weight-semibold); color: var(--emerald-400);
+  flex-shrink: 0; overflow: hidden;
+}
+.mission-attempt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.mission-attempt-name { flex: 1; font-size: var(--text-sm); color: var(--color-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mission-attempt-actions { display: flex; gap: var(--space-2); }
+
+/* Submission text preview */
+.attempt-submission-preview {
+  padding: var(--space-3) var(--space-4);
+  background: var(--liquid-bg-xs);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+  margin-top: var(--space-2);
+  font-style: italic;
+}
+
+/* Mission type indicator strip */
+.mission-type-strip {
+  height: 3px;
+  border-radius: var(--radius-full) var(--radius-full) 0 0;
+  position: absolute;
+  top: 0; left: 12px; right: 12px;
+}
+.mission-type-strip.type-ilm    { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.mission-type-strip.type-adab   { background: linear-gradient(90deg, #8b5cf6, #c4b5fd); }
+.mission-type-strip.type-ihsaan { background: linear-gradient(90deg, #10b981, #6ee7b7); }
+.mission-type-strip.type-taqwa  { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
+.mission-type-strip.type-amanah { background: linear-gradient(90deg, #ec4899, #f9a8d4); }

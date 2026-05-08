@@ -1,5 +1,7 @@
 /* ============================================================
    Buttons — all variants, sizes, states
+   Premium feel: liquid glass secondary, glowing primary,
+   tactile active states, spring scale
    ============================================================ */
 
 .btn {
@@ -7,11 +9,12 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
+  padding: 9px var(--space-4);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   font-family: var(--font-body);
   line-height: 1;
+  letter-spacing: -0.01em;
   border-radius: var(--radius-lg);
   border: 1px solid transparent;
   cursor: pointer;
@@ -19,82 +22,162 @@
     background var(--duration-fast) var(--ease-smooth),
     border-color var(--duration-fast) var(--ease-smooth),
     box-shadow var(--duration-fast) var(--ease-smooth),
-    transform var(--duration-fast) var(--ease-smooth);
+    transform var(--duration-fast) var(--ease-spring);
   white-space: nowrap;
   text-decoration: none;
   position: relative;
   overflow: hidden;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn:active { transform: scale(0.98); }
-.btn:disabled, .btn[aria-disabled="true"] {
-  opacity: 0.45;
+.btn:active { transform: scale(0.97); }
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.38;
   cursor: not-allowed;
   pointer-events: none;
 }
 .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-/* Primary — emerald */
+/* ---- Primary — emerald, glowing ---- */
 .btn-primary {
-  background: var(--emerald-600);
+  background: linear-gradient(160deg, var(--emerald-500) 0%, var(--emerald-700) 100%);
   color: #fff;
   border-color: var(--emerald-700);
+  box-shadow: var(--inset-top-xs), 0 2px 6px rgba(13,154,104,0.3);
 }
-.btn-primary:hover { background: var(--emerald-500); border-color: var(--emerald-600); box-shadow: var(--shadow-glow-emerald); }
-.btn-primary:active { background: var(--emerald-400); }
+.btn-primary:hover {
+  background: linear-gradient(160deg, var(--emerald-400) 0%, var(--emerald-600) 100%);
+  border-color: var(--emerald-600);
+  box-shadow: var(--inset-top-xs), var(--shadow-glow-emerald), 0 2px 8px rgba(13,154,104,0.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: var(--inset-top-xs), 0 1px 4px rgba(13,154,104,0.25);
+}
 
-/* Secondary */
+/* ---- Secondary — liquid glass ---- */
 .btn-secondary {
-  background: var(--obsidian-600);
-  color: var(--color-text);
+  background: var(--liquid-bg-xs);
+  color: var(--color-text-2);
   border-color: var(--glass-border-bright);
+  box-shadow: var(--inset-top-xs), 0 1px 3px rgba(0,0,0,0.25);
+  backdrop-filter: var(--blur-glass-sm);
+  -webkit-backdrop-filter: var(--blur-glass-sm);
 }
-.btn-secondary:hover { background: var(--obsidian-500); border-color: rgba(255,255,255,0.2); }
+.btn-secondary:hover {
+  background: var(--liquid-bg-sm);
+  border-color: rgba(255,255,255,0.18);
+  color: var(--color-text);
+  box-shadow: var(--inset-top-sm), 0 2px 8px rgba(0,0,0,0.3);
+}
+.btn-secondary:active { transform: scale(0.97); }
 
-/* Ghost */
+/* ---- Ghost — transparent, ultra-minimal ---- */
 .btn-ghost {
   background: transparent;
-  color: var(--color-text-2);
+  color: var(--color-text-muted);
   border-color: transparent;
 }
-.btn-ghost:hover { background: var(--glass-bg-hover); color: var(--color-text); border-color: var(--glass-border); }
-
-/* Danger */
-.btn-danger {
-  background: var(--color-danger-bg);
-  color: #fca5a5;
-  border-color: rgba(201,64,64,0.3);
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--color-text-2);
+  border-color: var(--glass-border);
 }
-.btn-danger:hover { background: rgba(201,64,64,0.22); border-color: rgba(201,64,64,0.5); }
 
-/* Outline */
+/* ---- Danger ---- */
+.btn-danger {
+  background: rgba(191,54,54,0.1);
+  color: #fca5a5;
+  border-color: rgba(191,54,54,0.28);
+  box-shadow: var(--inset-top-xs);
+}
+.btn-danger:hover {
+  background: rgba(191,54,54,0.18);
+  border-color: rgba(191,54,54,0.45);
+  box-shadow: var(--inset-top-xs), 0 2px 12px rgba(191,54,54,0.22);
+}
+
+/* ---- Outline — emerald bordered ---- */
 .btn-outline {
   background: transparent;
   color: var(--emerald-400);
-  border-color: var(--emerald-700);
+  border-color: var(--emerald-800);
 }
-.btn-outline:hover { background: var(--emerald-950); border-color: var(--emerald-500); box-shadow: var(--shadow-glow-emerald); }
+.btn-outline:hover {
+  background: rgba(13,154,104,0.08);
+  border-color: var(--emerald-600);
+  box-shadow: var(--inset-top-xs), var(--glow-xs);
+}
 
-/* Icon-only */
-.btn-icon { padding: var(--space-2); aspect-ratio: 1; border-radius: var(--radius-lg); }
+/* ---- Icon only ---- */
+.btn-icon {
+  padding: 8px;
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
 .btn-icon svg { width: 16px; height: 16px; }
+.btn-icon.btn-sm { padding: 6px; border-radius: var(--radius-md); }
+.btn-icon.btn-sm svg { width: 14px; height: 14px; }
 
-/* Sizes */
-.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); border-radius: var(--radius-md); gap: var(--space-1); }
+/* ---- Sizes ---- */
+.btn-sm {
+  padding: 6px var(--space-3);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  gap: var(--space-1);
+  letter-spacing: 0;
+}
 .btn-sm svg { width: 13px; height: 13px; }
-.btn-lg { padding: var(--space-3) var(--space-6); font-size: var(--text-md); border-radius: var(--radius-xl); }
+
+.btn-lg {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-md);
+  border-radius: var(--radius-xl);
+  gap: var(--space-3);
+}
 .btn-lg svg { width: 18px; height: 18px; }
-.btn-xl { padding: var(--space-4) var(--space-8); font-size: var(--text-lg); border-radius: var(--radius-xl); font-weight: var(--weight-semibold); }
+
+.btn-xl {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--text-lg);
+  border-radius: var(--radius-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.02em;
+  gap: var(--space-3);
+}
+.btn-xl svg { width: 20px; height: 20px; }
+
 .btn-block { width: 100%; }
 
-/* Loading state */
-.btn.is-loading { pointer-events: none; color: transparent; }
+/* ---- Loading state ---- */
+.btn.is-loading {
+  pointer-events: none;
+  color: transparent;
+}
 .btn.is-loading::after {
   content: '';
   position: absolute;
+  inset: 0;
+  margin: auto;
   width: 14px; height: 14px;
-  border: 2px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(255,255,255,0.2);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: spinSlow 0.6s linear infinite;
+  animation: spinSlow 0.55s linear infinite;
 }
+
+/* ---- Beam shimmer on hover (decorative, primary only) ---- */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transition: left 0.45s var(--ease-smooth);
+  pointer-events: none;
+}
+.btn-primary:hover::after { left: 160%; }

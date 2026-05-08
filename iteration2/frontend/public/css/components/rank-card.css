@@ -3,24 +3,36 @@
    ============================================================ */
 
 .rank-card {
-  background: var(--obsidian-700);
+  background: linear-gradient(160deg, var(--obsidian-700) 0%, rgba(18,22,26,0.99) 100%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-2xl);
   padding: var(--space-6);
   position: relative;
   overflow: hidden;
-  animation: fadeUp var(--duration-enter) var(--ease-smooth);
+  animation: fadeUp var(--duration-enter) var(--ease-smooth) both;
+  box-shadow: var(--inset-top-xs);
 }
 
 /* Ambient glow behind rank letter */
 .rank-card::before {
   content: '';
   position: absolute;
-  top: -40px; right: -20px;
-  width: 180px; height: 180px;
+  top: -50px; right: -30px;
+  width: 200px; height: 200px;
   border-radius: 50%;
-  background: var(--rank-card-glow, rgba(15,158,104,0.08));
-  filter: blur(40px);
+  background: var(--rank-card-glow, rgba(13,154,104,0.06));
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+/* Specular reflection top */
+.rank-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--specular-subtle);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
   pointer-events: none;
 }
 
@@ -30,6 +42,8 @@
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-5);
+  position: relative;
+  z-index: 1;
 }
 .rank-card-info { flex: 1; }
 .rank-card-kicker {
@@ -45,6 +59,7 @@
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
+  letter-spacing: -0.02em;
 }
 
 /* The big rank letter */
@@ -61,25 +76,26 @@
   border-radius: var(--radius-2xl);
   border: 1px solid currentColor;
   flex-shrink: 0;
+  box-shadow: var(--inset-top-xs);
 }
-
-/* Rank display colors (matches rank-badge colors) */
-.rank-display.rank-f { color: var(--rank-f); background: var(--rank-f-bg); }
-.rank-display.rank-e { color: var(--rank-e); background: var(--rank-e-bg); }
-.rank-display.rank-d { color: var(--rank-d); background: var(--rank-d-bg); }
-.rank-display.rank-c { color: var(--rank-c); background: var(--rank-c-bg); }
-.rank-display.rank-b { color: var(--rank-b); background: var(--rank-b-bg); }
-.rank-display.rank-a { color: var(--rank-a); background: var(--rank-a-bg); }
+.rank-display.rank-f { color: var(--rank-f); background: var(--rank-f-bg); border-color: rgba(107,114,128,0.25); }
+.rank-display.rank-e { color: var(--rank-e); background: var(--rank-e-bg); border-color: rgba(34,197,94,0.25); }
+.rank-display.rank-d { color: var(--rank-d); background: var(--rank-d-bg); border-color: rgba(59,130,246,0.25); }
+.rank-display.rank-c { color: var(--rank-c); background: var(--rank-c-bg); border-color: rgba(139,92,246,0.25); }
+.rank-display.rank-b { color: var(--rank-b); background: var(--rank-b-bg); border-color: rgba(236,72,153,0.25); }
+.rank-display.rank-a { color: var(--rank-a); background: var(--rank-a-bg); border-color: rgba(249,115,22,0.25); }
 .rank-display.rank-s {
   color: var(--gold-300);
   background: var(--rank-s-bg);
   border-color: rgba(240,185,41,0.4);
-  box-shadow: var(--shadow-glow-gold);
+  box-shadow: var(--inset-top-xs), var(--shadow-glow-gold);
   animation: rankPulse 3s var(--ease-in-out) infinite;
 }
 
 .rank-card-xp {
   margin-top: var(--space-4);
+  position: relative;
+  z-index: 1;
 }
 .rank-card-xp-label {
   display: flex;
@@ -96,14 +112,14 @@
 }
 .rank-card-xp-next { font-size: var(--text-xs); color: var(--color-text-muted); }
 
-/* Rank card variants — glow colors per rank */
-.rank-card.rank-f { --rank-card-glow: rgba(107,114,128,0.06); }
-.rank-card.rank-e { --rank-card-glow: rgba(34,197,94,0.08);  border-color: rgba(34,197,94,0.15); }
-.rank-card.rank-d { --rank-card-glow: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.15); }
-.rank-card.rank-c { --rank-card-glow: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.15); }
-.rank-card.rank-b { --rank-card-glow: rgba(236,72,153,0.08); border-color: rgba(236,72,153,0.15); }
-.rank-card.rank-a { --rank-card-glow: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.15); }
-.rank-card.rank-s { --rank-card-glow: rgba(240,185,41,0.12); border-color: rgba(240,185,41,0.25); box-shadow: var(--shadow-glow-gold); }
+/* Rank card border + glow per rank */
+.rank-card.rank-f { --rank-card-glow: rgba(107,114,128,0.05); }
+.rank-card.rank-e { --rank-card-glow: rgba(34,197,94,0.08);   border-color: rgba(34,197,94,0.15); }
+.rank-card.rank-d { --rank-card-glow: rgba(59,130,246,0.08);  border-color: rgba(59,130,246,0.15); }
+.rank-card.rank-c { --rank-card-glow: rgba(139,92,246,0.08);  border-color: rgba(139,92,246,0.15); }
+.rank-card.rank-b { --rank-card-glow: rgba(236,72,153,0.08);  border-color: rgba(236,72,153,0.15); }
+.rank-card.rank-a { --rank-card-glow: rgba(249,115,22,0.08);  border-color: rgba(249,115,22,0.15); }
+.rank-card.rank-s { --rank-card-glow: rgba(240,185,41,0.12);  border-color: rgba(240,185,41,0.25); box-shadow: var(--inset-top-xs), var(--shadow-glow-gold); }
 
 /* Max rank message */
 .rank-card-max {
@@ -111,6 +127,9 @@
   padding: var(--space-2) 0;
   font-size: var(--text-xs);
   color: var(--gold-300);
-  font-weight: var(--weight-medium);
-  letter-spacing: 0.04em;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 }

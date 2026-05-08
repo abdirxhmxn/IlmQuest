@@ -12,7 +12,7 @@
 
 /* Profile sidebar */
 .profile-sidebar-card {
-  background: var(--obsidian-700);
+  background: linear-gradient(160deg, var(--obsidian-700) 0%, rgba(18,22,26,0.99) 100%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-2xl);
   padding: var(--space-6);
@@ -20,6 +20,7 @@
   text-align: center;
   position: sticky;
   top: calc(var(--topbar-height) + var(--space-4));
+  box-shadow: var(--inset-top-xs);
 }
 
 .profile-avatar-wrapper { position: relative; }

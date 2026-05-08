@@ -1,78 +1,57 @@
 /* ============================================================
-   Parent Shell — minimal, child-selector in topbar
+   Parent Shell — child progress monitoring portal
    ============================================================ */
 
 .parent-app-shell {
   display: flex;
   min-height: 100dvh;
   background: var(--color-bg);
+  background-image: var(--ambient-emerald-top);
+  background-attachment: fixed;
 }
 
-.parent-main-shell {
+.parent-main {
   flex: 1;
-  margin-left: var(--sidebar-width);
+  margin-left: calc(var(--sidebar-width) + calc(var(--sidebar-float-gap) * 2));
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  transition: margin-left var(--duration-transition) var(--ease-snappy);
 }
 
-.parent-content-shell {
-  flex: 1;
-  padding: var(--content-padding);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.parent-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-5) var(--content-padding) var(--space-4);
-  border-bottom: 1px solid var(--glass-border);
-  position: sticky;
-  top: 0;
-  z-index: var(--z-raised);
-  background: rgba(13,15,17,0.88);
-  backdrop-filter: var(--blur-md);
-  -webkit-backdrop-filter: var(--blur-md);
-}
-.parent-page-title h2 {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-}
-
-/* Child selector pill */
+/* Child selector pill — prominent at top of dashboard */
 .child-selector {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: var(--obsidian-600);
+  background: var(--liquid-bg-xs);
   border: 1px solid var(--glass-border-bright);
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  color: var(--color-text-2);
+  box-shadow: var(--inset-top-xs);
+  backdrop-filter: var(--blur-glass-sm);
+  -webkit-backdrop-filter: var(--blur-glass-sm);
   cursor: pointer;
-  transition: background var(--duration-fast), border-color var(--duration-fast);
-  white-space: nowrap;
+  transition: var(--trans-hover);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
 }
-.child-selector:hover { background: var(--obsidian-500); border-color: rgba(255,255,255,0.2); }
+.child-selector:hover {
+  background: var(--liquid-bg-sm);
+  border-color: rgba(255,255,255,0.18);
+}
 .child-selector svg { width: 14px; height: 14px; color: var(--color-text-muted); }
 
-/* Parent dashboard child cards grid */
+/* Children grid */
 .parent-children-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--space-4);
 }
 
+/* Mobile */
 @media (max-width: 768px) {
-  .parent-main-shell { margin-left: 0; }
-  .parent-content-shell { padding: var(--space-4); }
-  .parent-children-grid { grid-template-columns: 1fr; }
+  .parent-main { margin-left: 0; }
 }

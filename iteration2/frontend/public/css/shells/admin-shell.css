@@ -1,32 +1,22 @@
 /* ============================================================
-   Admin Shell — sidebar + main + page layout overrides
-   Depends on: navigation.css
+   Admin Shell — layout built on floating sidebar navigation
    ============================================================ */
 
-/* Admin app shell root */
 .admin-app-shell {
   display: flex;
   min-height: 100dvh;
   background: var(--color-bg);
+  background-image: var(--ambient-emerald-top), var(--ambient-teal-right);
+  background-attachment: fixed;
 }
 
-/* Sidebar overrides for admin */
-.admin-sidebar {
-  /* Inherits role-sidebar from navigation.css */
-}
-.admin-sidebar .role-sidebar-link.active {
-  background: rgba(15,158,104,0.12);
-  color: var(--emerald-400);
-}
-
-/* Main area */
+/* Main area adjusted for floating sidebar */
 .admin-main {
   flex: 1;
-  margin-left: var(--sidebar-width);
+  margin-left: calc(var(--sidebar-width) + calc(var(--sidebar-float-gap) * 2));
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
   transition: margin-left var(--duration-transition) var(--ease-snappy);
 }
 
@@ -36,25 +26,29 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-6) var(--content-padding) var(--space-5);
+  padding: var(--space-6) var(--content-padding) var(--space-4);
   border-bottom: 1px solid var(--glass-border);
   position: sticky;
   top: 0;
   z-index: var(--z-raised);
-  background: rgba(13,15,17,0.88);
-  backdrop-filter: var(--blur-md);
-  -webkit-backdrop-filter: var(--blur-md);
+  background: linear-gradient(180deg, rgba(6,7,8,0.95) 0%, rgba(6,7,8,0.88) 100%);
+  backdrop-filter: var(--blur-glass-sm);
+  -webkit-backdrop-filter: var(--blur-glass-sm);
 }
-.admin-page-title h2 {
+.admin-page-header .role-page-title h2 {
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: var(--color-text);
 }
-.admin-page-title p { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-1); }
+.admin-page-header .role-page-title p {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
 
-/* Content body */
+/* Content */
 .admin-content {
   flex: 1;
   padding: var(--content-padding);
@@ -63,35 +57,40 @@
   gap: var(--space-6);
 }
 
-/* Metrics row */
+/* 4-col metrics grid */
 .admin-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
 }
-@media (max-width: 1024px) { .admin-metrics-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px)  { .admin-metrics-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) { .admin-metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .admin-metrics-grid { grid-template-columns: 1fr; } }
 
-/* Dashboard 2-column grid */
+/* Dashboard 2-col body grid */
 .admin-dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-5);
 }
 .admin-dashboard-grid .span-full { grid-column: 1 / -1; }
-@media (max-width: 900px) { .admin-dashboard-grid { grid-template-columns: 1fr; } }
+@media (max-width: 960px) { .admin-dashboard-grid { grid-template-columns: 1fr; } }
 
 /* Sidebar search */
 .sidebar-search-shell {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  margin: var(--space-2) var(--space-2);
-  background: var(--obsidian-600);
+  padding: 7px var(--space-3);
+  margin: var(--space-2);
+  background: rgba(255,255,255,0.04);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   flex-shrink: 0;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+}
+.sidebar-search-shell:focus-within {
+  border-color: rgba(13,154,104,0.4);
+  background: rgba(13,154,104,0.05);
 }
 .sidebar-search-shell input {
   background: none;
@@ -99,18 +98,21 @@
   outline: none;
   color: var(--color-text-2);
   font-size: var(--text-xs);
+  font-family: var(--font-body);
   width: 100%;
 }
 .sidebar-search-shell input::placeholder { color: var(--color-text-disabled); }
 .sidebar-search-icon { color: var(--color-text-muted); flex-shrink: 0; }
 .sidebar-search-icon svg { width: 13px; height: 13px; }
 
-/* Sidebar nav group */
-.sidebar-nav-group { margin-bottom: var(--space-2); }
-.sidebar-nav-links { display: flex; flex-direction: column; gap: 2px; }
-
 /* Profile email */
-.profile-email { font-size: var(--text-xs); color: var(--color-text-disabled); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-email {
+  font-size: 10px;
+  color: var(--color-text-disabled);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Mobile */
 @media (max-width: 768px) {

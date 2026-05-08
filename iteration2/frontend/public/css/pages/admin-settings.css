@@ -22,11 +22,12 @@
 
 .settings-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-5); }
 .settings-section {
-  background: var(--obsidian-700);
+  background: linear-gradient(160deg, var(--obsidian-700) 0%, rgba(22,26,30,0.98) 100%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   padding: var(--space-5) var(--space-6);
   display: flex; flex-direction: column; gap: var(--space-4);
+  box-shadow: var(--inset-top-xs);
 }
 .settings-section-title { font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--color-text); padding-bottom: var(--space-3); border-bottom: 1px solid var(--glass-border); }
 .settings-row {

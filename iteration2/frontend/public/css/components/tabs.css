@@ -2,7 +2,7 @@
    Tabs — underline variant, pill variant
    ============================================================ */
 
-/* Underline tabs (default) */
+/* Underline tabs */
 .tabs {
   display: flex;
   align-items: center;
@@ -27,7 +27,7 @@
   white-space: nowrap;
   transition:
     color var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth);
+    border-color var(--duration-normal) var(--ease-smooth);
   text-decoration: none;
   background: none;
   border-left: none;
@@ -42,29 +42,38 @@
 .tab-item svg { width: 14px; height: 14px; }
 .tab-item .tab-count {
   font-size: var(--text-xs);
-  background: var(--obsidian-500);
+  background: var(--obsidian-600);
   color: var(--color-text-muted);
-  padding: 1px 5px;
+  padding: 1px 6px;
   border-radius: var(--radius-full);
   font-variant-numeric: tabular-nums;
+  border: 1px solid var(--glass-border);
+  font-family: var(--font-mono);
 }
-.tab-item.active .tab-count { background: var(--emerald-950); color: var(--emerald-300); }
+.tab-item.active .tab-count {
+  background: rgba(13,154,104,0.12);
+  color: var(--emerald-300);
+  border-color: rgba(13,154,104,0.25);
+}
 
 /* Tab panel */
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
-.tab-panel.active.animate { animation: fadeUp var(--duration-normal) var(--ease-smooth); }
+.tab-panel.active.animate { animation: fadeUp var(--duration-normal) var(--ease-smooth) both; }
 
-/* Pill tabs */
+/* Pill tabs — liquid glass container */
 .tabs-pill {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  background: var(--obsidian-700);
+  gap: 2px;
+  padding: 3px;
+  background: var(--liquid-bg-xs);
   border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
   width: fit-content;
+  backdrop-filter: var(--blur-glass-sm);
+  -webkit-backdrop-filter: var(--blur-glass-sm);
+  box-shadow: var(--inset-top-xs);
 }
 .tab-pill-item {
   padding: var(--space-2) var(--space-3);
@@ -74,9 +83,14 @@
   border-radius: var(--radius-lg);
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--duration-fast), color var(--duration-fast);
+  transition: background var(--duration-fast), color var(--duration-fast), box-shadow var(--duration-fast);
   border: none; background: none;
   text-decoration: none;
 }
-.tab-pill-item:hover { color: var(--color-text-2); background: var(--glass-bg-hover); }
-.tab-pill-item.active { background: var(--obsidian-500); color: var(--color-text); box-shadow: var(--shadow-sm); }
+.tab-pill-item:hover { color: var(--color-text-2); background: rgba(255,255,255,0.05); }
+.tab-pill-item.active {
+  background: linear-gradient(160deg, var(--obsidian-500) 0%, var(--obsidian-600) 100%);
+  color: var(--color-text);
+  box-shadow: var(--inset-top-xs), 0 1px 4px rgba(0,0,0,0.25);
+  border: 1px solid var(--glass-border-bright);
+}

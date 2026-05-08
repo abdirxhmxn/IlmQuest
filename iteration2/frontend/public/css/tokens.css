@@ -1,5 +1,5 @@
 /* ============================================================
-   IlmQuest Design Tokens — "Midnight Masjid"
+   IlmQuest Design Tokens — "Midnight Masjid" v2
    Single source of truth for every design decision.
    ============================================================ */
 
@@ -8,63 +8,63 @@
   /* --------------------------------------------------
      OBSIDIAN FAMILY — backgrounds, surfaces
   -------------------------------------------------- */
-  --obsidian-950: #070809;
-  --obsidian-900: #0d0f11;
-  --obsidian-800: #131619;
-  --obsidian-700: #1a1e22;
-  --obsidian-600: #222830;
-  --obsidian-500: #2c3540;
-  --obsidian-400: #3d4a58;
-  --obsidian-300: #566170;
-  --obsidian-200: #7a8a99;
-  --obsidian-100: #a8b8c8;
-  --obsidian-50:  #d4e0ec;
+  --obsidian-950: #060708;
+  --obsidian-900: #0c0e10;
+  --obsidian-800: #111416;
+  --obsidian-700: #181c1f;
+  --obsidian-600: #1f242a;
+  --obsidian-500: #282e36;
+  --obsidian-400: #37404e;
+  --obsidian-300: #4f5d6d;
+  --obsidian-200: #738494;
+  --obsidian-100: #a2b2c2;
+  --obsidian-50:  #cddce9;
 
   /* --------------------------------------------------
      EMERALD FAMILY — primary accent
   -------------------------------------------------- */
-  --emerald-950: #022c1a;
-  --emerald-900: #044d2c;
-  --emerald-800: #066640;
-  --emerald-700: #0a8a58;
-  --emerald-600: #0f9e68;
-  --emerald-500: #15b87a;
-  --emerald-400: #22cf8e;
-  --emerald-300: #4ddea6;
-  --emerald-200: #7feec2;
-  --emerald-100: #b3f5db;
-  --emerald-50:  #e6faf3;
+  --emerald-950: #011c10;
+  --emerald-900: #033420;
+  --emerald-800: #065038;
+  --emerald-700: #097a52;
+  --emerald-600: #0d9a68;
+  --emerald-500: #13b87e;
+  --emerald-400: #20cf92;
+  --emerald-300: #48e0aa;
+  --emerald-200: #7eeec4;
+  --emerald-100: #b4f6de;
+  --emerald-50:  #e4faf3;
 
   /* --------------------------------------------------
      TEAL FAMILY — secondary accent
   -------------------------------------------------- */
-  --teal-700: #0d7a7a;
-  --teal-600: #0f9090;
-  --teal-500: #13aaaa;
-  --teal-400: #1dc4c4;
-  --teal-300: #3dd8d8;
+  --teal-700: #0c7070;
+  --teal-600: #0e8a8a;
+  --teal-500: #12a4a4;
+  --teal-400: #1cbebe;
+  --teal-300: #3ad2d2;
 
   /* --------------------------------------------------
      GOLD FAMILY — rank / achievement only
   -------------------------------------------------- */
-  --gold-600: #b8860b;
-  --gold-500: #d4a017;
-  --gold-400: #f0b929;
-  --gold-300: #f5cc5e;
-  --gold-200: #fae08a;
+  --gold-600: #b07a08;
+  --gold-500: #cc9412;
+  --gold-400: #e8b020;
+  --gold-300: #f0c84a;
+  --gold-200: #f8de7e;
 
   /* --------------------------------------------------
      SEMANTIC COLORS
   -------------------------------------------------- */
   --color-success:  var(--emerald-500);
-  --color-warning:  #d4821a;
-  --color-danger:   #c94040;
+  --color-warning:  #cc7a14;
+  --color-danger:   #bf3636;
   --color-info:     #3b82f6;
 
-  --color-success-bg: rgba(21,184,122,0.12);
-  --color-warning-bg: rgba(212,130,26,0.12);
-  --color-danger-bg:  rgba(201,64,64,0.12);
-  --color-info-bg:    rgba(59,130,246,0.12);
+  --color-success-bg: rgba(19,184,126,0.1);
+  --color-warning-bg: rgba(204,122,20,0.1);
+  --color-danger-bg:  rgba(191,54,54,0.1);
+  --color-info-bg:    rgba(59,130,246,0.1);
 
   /* --------------------------------------------------
      MISSION TYPE COLORS
@@ -75,11 +75,11 @@
   --mission-taqwa:  #f59e0b;
   --mission-amanah: #ec4899;
 
-  --mission-ilm-bg:    rgba(59,130,246,0.12);
-  --mission-adab-bg:   rgba(139,92,246,0.12);
-  --mission-ihsaan-bg: rgba(16,185,129,0.12);
-  --mission-taqwa-bg:  rgba(245,158,11,0.12);
-  --mission-amanah-bg: rgba(236,72,153,0.12);
+  --mission-ilm-bg:    rgba(59,130,246,0.1);
+  --mission-adab-bg:   rgba(139,92,246,0.1);
+  --mission-ihsaan-bg: rgba(16,185,129,0.1);
+  --mission-taqwa-bg:  rgba(245,158,11,0.1);
+  --mission-amanah-bg: rgba(236,72,153,0.1);
 
   /* --------------------------------------------------
      RANK COLORS
@@ -92,29 +92,111 @@
   --rank-a: #f97316;
   --rank-s: var(--gold-400);
 
-  --rank-f-bg: rgba(107,114,128,0.12);
-  --rank-e-bg: rgba(34,197,94,0.12);
-  --rank-d-bg: rgba(59,130,246,0.12);
-  --rank-c-bg: rgba(139,92,246,0.12);
-  --rank-b-bg: rgba(236,72,153,0.12);
-  --rank-a-bg: rgba(249,115,22,0.12);
-  --rank-s-bg: rgba(240,185,41,0.12);
+  --rank-f-bg: rgba(107,114,128,0.1);
+  --rank-e-bg: rgba(34,197,94,0.1);
+  --rank-d-bg: rgba(59,130,246,0.1);
+  --rank-c-bg: rgba(139,92,246,0.1);
+  --rank-b-bg: rgba(236,72,153,0.1);
+  --rank-a-bg: rgba(249,115,22,0.1);
+  --rank-s-bg: rgba(232,176,32,0.1);
 
   /* --------------------------------------------------
-     GLASS SYSTEM
+     GLASS SYSTEM — base values
   -------------------------------------------------- */
-  --glass-bg:            rgba(255,255,255,0.04);
-  --glass-bg-2:          rgba(255,255,255,0.06);
-  --glass-bg-3:          rgba(255,255,255,0.09);
-  --glass-bg-hover:      rgba(255,255,255,0.07);
-  --glass-border:        rgba(255,255,255,0.08);
-  --glass-border-bright: rgba(255,255,255,0.14);
-  --glass-edge:          rgba(255,255,255,0.15);
+  --glass-bg:            rgba(255,255,255,0.03);
+  --glass-bg-2:          rgba(255,255,255,0.055);
+  --glass-bg-3:          rgba(255,255,255,0.08);
+  --glass-bg-hover:      rgba(255,255,255,0.055);
+  --glass-border:        rgba(255,255,255,0.07);
+  --glass-border-bright: rgba(255,255,255,0.12);
+  --glass-edge:          rgba(255,255,255,0.18);
+
+  /* --------------------------------------------------
+     LIQUID GLASS SYSTEM — premium surfaces
+     The actual formula for production-grade glass.
+  -------------------------------------------------- */
+
+  /* Gradient backgrounds — lighter at top (light source from above) */
+  --liquid-bg-xs:  linear-gradient(160deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.025) 100%);
+  --liquid-bg-sm:  linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.035) 100%);
+  --liquid-bg-md:  linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%);
+  --liquid-bg-lg:  linear-gradient(160deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.07) 100%);
+
+  /* Specular highlight — diagonal shimmer (simulates light catching glass surface) */
+  --specular-light: linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.04) 40%, transparent 65%);
+  --specular-subtle: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 40%, transparent 65%);
+
+  /* Inset edge highlights */
+  --inset-top-xs:  inset 0 1px 0 rgba(255,255,255,0.12);
+  --inset-top-sm:  inset 0 1px 0 rgba(255,255,255,0.18);
+  --inset-top-md:  inset 0 1px 0 rgba(255,255,255,0.22);
+  --inset-top-lg:  inset 0 2px 0 rgba(255,255,255,0.22);
+  --inset-bottom:  inset 0 -1px 0 rgba(0,0,0,0.22);
+
+  /* Backdrop filter presets */
+  --blur-glass-sm:     blur(12px) saturate(160%) brightness(102%);
+  --blur-glass:        blur(20px) saturate(180%) brightness(103%);
+  --blur-glass-md:     blur(28px) saturate(170%) brightness(104%);
+  --blur-glass-lg:     blur(40px) saturate(160%) brightness(105%);
+  --blur-glass-nav:    blur(24px) saturate(180%) brightness(102%);
+
+  /* Sidebar/nav glass background */
+  --glass-nav-bg:      linear-gradient(180deg, rgba(8,10,12,0.92) 0%, rgba(8,10,12,0.88) 100%);
+  --glass-sidebar-bg:  linear-gradient(180deg, rgba(10,12,15,0.93) 0%, rgba(10,12,15,0.90) 100%);
+
+  /* Floating sidebar */
+  --sidebar-float-gap:    10px;
+  --sidebar-float-radius: 20px;
+
+  /* Emerald-tinted glass (accent navigational surfaces) */
+  --glass-emerald-bg:    rgba(13,154,104,0.06);
+  --glass-emerald-border: rgba(13,154,104,0.18);
+
+  /* --------------------------------------------------
+     AMBIENT GLOW TOKENS — page-level radial gradients
+  -------------------------------------------------- */
+  --ambient-emerald-top:   radial-gradient(ellipse 90% 50% at 50% -5%,  rgba(13,154,104,0.07) 0%, transparent 100%);
+  --ambient-emerald-left:  radial-gradient(ellipse 50% 80% at -5% 40%,  rgba(13,154,104,0.05) 0%, transparent 100%);
+  --ambient-teal-right:    radial-gradient(ellipse 50% 70% at 105% 30%, rgba(18,164,164,0.05) 0%, transparent 100%);
+  --ambient-hero:          radial-gradient(ellipse 100% 60% at 50% 0%,  rgba(13,154,104,0.09) 0%, transparent 100%);
+
+  /* --------------------------------------------------
+     ENHANCED GLOW SYSTEM
+  -------------------------------------------------- */
+  --glow-xs:  0 0 8px rgba(13,154,104,0.18);
+  --glow-sm:  0 0 16px rgba(13,154,104,0.22), 0 0 4px rgba(13,154,104,0.14);
+  --glow-md:  0 0 28px rgba(13,154,104,0.28), 0 0 8px rgba(13,154,104,0.16);
+  --glow-lg:  0 0 48px rgba(13,154,104,0.34), 0 0 16px rgba(13,154,104,0.20);
+  --glow-xl:  0 0 72px rgba(13,154,104,0.40), 0 0 24px rgba(13,154,104,0.22);
+
+  --glow-gold-sm: 0 0 16px rgba(232,176,32,0.28), 0 0 4px rgba(232,176,32,0.18);
+  --glow-gold-md: 0 0 28px rgba(232,176,32,0.35), 0 0 8px rgba(232,176,32,0.22);
+  --glow-teal-sm: 0 0 16px rgba(18,164,164,0.22), 0 0 4px rgba(18,164,164,0.14);
+
+  /* --------------------------------------------------
+     PREMIUM SHADOW STACKS
+  -------------------------------------------------- */
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.3);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.25);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,0.55), 0 4px 8px rgba(0,0,0,0.35);
+  --shadow-xl:  0 20px 48px rgba(0,0,0,0.65), 0 8px 16px rgba(0,0,0,0.35);
+  --shadow-2xl: 0 40px 80px rgba(0,0,0,0.7),  0 16px 32px rgba(0,0,0,0.4);
+
+  /* Floating surface shadows (ring + depth) */
+  --shadow-float:    0 0 0 1px rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-float-md: 0 0 0 1px rgba(255,255,255,0.06), 0 4px 12px rgba(0,0,0,0.35), 0 16px 40px rgba(0,0,0,0.5);
+  --shadow-float-lg: 0 0 0 1px rgba(255,255,255,0.07), 0 8px 20px rgba(0,0,0,0.4), 0 24px 60px rgba(0,0,0,0.6);
+
+  /* Glow shadows (compatible with box-shadow) */
+  --shadow-glow-emerald: 0 0 28px rgba(13,154,104,0.28), 0 0 8px rgba(13,154,104,0.16);
+  --shadow-glow-gold:    0 0 24px rgba(232,176,32,0.32), 0 0 8px rgba(232,176,32,0.20);
+  --shadow-glow-teal:    0 0 22px rgba(18,164,164,0.26), 0 0 6px rgba(18,164,164,0.16);
 
   /* --------------------------------------------------
      TYPOGRAPHY
   -------------------------------------------------- */
-  --font-display: 'Clash Display', 'Inter', system-ui, sans-serif;
+  --font-display: 'Clash Display', 'DM Sans', system-ui, sans-serif;
   --font-body:    'Geist', 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono:    'Geist Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
   --font-arabic:  'Amiri', 'Scheherazade New', serif;
@@ -130,16 +212,16 @@
   --text-4xl:  56px;
   --text-5xl:  80px;
 
-  --weight-regular: 400;
-  --weight-medium:  500;
+  --weight-regular:  400;
+  --weight-medium:   500;
   --weight-semibold: 600;
-  --weight-bold:    700;
+  --weight-bold:     700;
 
-  --leading-tight:  1.2;
-  --leading-snug:   1.35;
-  --leading-normal: 1.5;
+  --leading-tight:   1.2;
+  --leading-snug:    1.35;
+  --leading-normal:  1.5;
   --leading-relaxed: 1.7;
-  --leading-arabic: 2;
+  --leading-arabic:  2;
 
   /* --------------------------------------------------
      SPACING — 4px base unit
@@ -171,25 +253,15 @@
   --radius-full: 9999px;
 
   /* --------------------------------------------------
-     BLUR
+     BLUR LEVELS
   -------------------------------------------------- */
+  --blur-xs:  blur(2px);
   --blur-sm:  blur(4px);
-  --blur-md:  blur(8px);
-  --blur-lg:  blur(16px);
-  --blur-xl:  blur(24px);
-  --blur-2xl: blur(40px);
-
-  /* --------------------------------------------------
-     SHADOWS — obsidian-tinted
-  -------------------------------------------------- */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
-  --shadow-lg:  0 8px 24px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4);
-  --shadow-xl:  0 20px 48px rgba(0,0,0,0.7), 0 8px 16px rgba(0,0,0,0.4);
-
-  --shadow-glow-emerald: 0 0 24px rgba(15,158,104,0.25), 0 0 8px rgba(15,158,104,0.15);
-  --shadow-glow-gold:    0 0 20px rgba(240,185,41,0.3),  0 0 6px rgba(240,185,41,0.2);
-  --shadow-glow-teal:    0 0 20px rgba(19,170,170,0.25), 0 0 6px rgba(19,170,170,0.15);
+  --blur-md:  blur(10px);
+  --blur-lg:  blur(18px);
+  --blur-xl:  blur(28px);
+  --blur-2xl: blur(44px);
+  --blur-3xl: blur(72px);
 
   /* --------------------------------------------------
      Z-INDEX LAYERS
@@ -205,46 +277,57 @@
   /* --------------------------------------------------
      ANIMATION EASING
   -------------------------------------------------- */
-  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-snappy:  cubic-bezier(0.25, 0, 0, 1);
-  --ease-out:     cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out:  cubic-bezier(0.4, 0, 0.6, 1);
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring-sm:  cubic-bezier(0.22, 1.0,  0.36, 1);
+  --ease-smooth:     cubic-bezier(0.4,  0,    0.2, 1);
+  --ease-snappy:     cubic-bezier(0.25, 0,    0,   1);
+  --ease-out:        cubic-bezier(0,    0,    0.2, 1);
+  --ease-in-out:     cubic-bezier(0.4,  0,    0.6, 1);
+  --ease-bounce:     cubic-bezier(0.34, 1.72, 0.64, 1);
 
   /* --------------------------------------------------
      ANIMATION DURATION
   -------------------------------------------------- */
-  --duration-instant:    80ms;
-  --duration-fast:       120ms;
-  --duration-normal:     200ms;
-  --duration-slow:       300ms;
-  --duration-transition: 450ms;
-  --duration-enter:      500ms;
+  --duration-instant:    70ms;
+  --duration-fast:       110ms;
+  --duration-normal:     190ms;
+  --duration-slow:       280ms;
+  --duration-transition: 400ms;
+  --duration-enter:      480ms;
+
+  /* --------------------------------------------------
+     TRANSITION PRESETS
+  -------------------------------------------------- */
+  --trans-hover:  background var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+  --trans-lift:   transform var(--duration-normal) var(--ease-smooth), box-shadow var(--duration-normal) var(--ease-smooth);
+  --trans-glow:   box-shadow var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth);
+  --trans-all:    all var(--duration-fast) var(--ease-smooth);
 
   /* --------------------------------------------------
      SHELL LAYOUT DIMENSIONS
   -------------------------------------------------- */
-  --sidebar-width:          220px;
+  --sidebar-width:           220px;
   --sidebar-collapsed-width: 56px;
-  --topbar-height:           56px;
-  --content-max-width:      1440px;
-  --content-padding:        var(--space-6);
+  --topbar-height:           52px;
+  --content-max-width:       1400px;
+  --content-padding:         var(--space-6);
 
   /* --------------------------------------------------
-     SEMANTIC ALIASES (used in components)
+     SEMANTIC ALIASES
   -------------------------------------------------- */
-  --color-bg:           var(--obsidian-900);
-  --color-surface:      var(--obsidian-700);
-  --color-surface-2:    var(--obsidian-600);
-  --color-surface-3:    var(--obsidian-500);
-  --color-border:       var(--obsidian-400);
-  --color-border-muted: var(--obsidian-300);
-  --color-text:         var(--obsidian-50);
-  --color-text-2:       var(--obsidian-100);
-  --color-text-muted:   var(--obsidian-200);
-  --color-text-disabled: var(--obsidian-300);
-  --color-accent:       var(--emerald-600);
-  --color-accent-hover: var(--emerald-500);
-  --color-accent-active: var(--emerald-400);
-  --color-accent-glow:  var(--emerald-200);
+  --color-bg:             var(--obsidian-950);
+  --color-surface:        var(--obsidian-700);
+  --color-surface-2:      var(--obsidian-600);
+  --color-surface-3:      var(--obsidian-500);
+  --color-border:         var(--obsidian-400);
+  --color-border-muted:   var(--obsidian-300);
+  --color-text:           var(--obsidian-50);
+  --color-text-2:         var(--obsidian-100);
+  --color-muted:          var(--obsidian-200);
+  --color-text-muted:     var(--obsidian-200);
+  --color-text-disabled:  var(--obsidian-300);
+  --color-accent:         var(--emerald-600);
+  --color-accent-hover:   var(--emerald-500);
+  --color-accent-active:  var(--emerald-400);
+  --color-accent-glow:    var(--emerald-200);
 }

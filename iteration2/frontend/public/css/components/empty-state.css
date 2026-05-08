@@ -10,28 +10,41 @@
   text-align: center;
   padding: var(--space-12) var(--space-8);
   gap: var(--space-4);
-  animation: fadeUp var(--duration-enter) var(--ease-smooth);
+  animation: fadeUp var(--duration-enter) var(--ease-smooth) both;
 }
 .empty-state.empty-sm { padding: var(--space-8) var(--space-6); }
+.empty-state.empty-xs { padding: var(--space-6) var(--space-4); }
 
 .empty-icon {
-  width: 52px; height: 52px;
+  width: 54px; height: 54px;
   border-radius: var(--radius-xl);
-  background: var(--obsidian-600);
+  background: linear-gradient(160deg, var(--obsidian-600) 0%, var(--obsidian-700) 100%);
   border: 1px solid var(--glass-border);
   display: flex; align-items: center; justify-content: center;
   color: var(--color-text-muted);
   flex-shrink: 0;
+  box-shadow: var(--inset-top-xs);
 }
 .empty-icon svg { width: 24px; height: 24px; }
-.empty-state.empty-sm .empty-icon { width: 40px; height: 40px; }
+.empty-state.empty-sm .empty-icon { width: 42px; height: 42px; }
 .empty-state.empty-sm .empty-icon svg { width: 18px; height: 18px; }
+.empty-state.empty-xs .empty-icon { width: 34px; height: 34px; }
+.empty-state.empty-xs .empty-icon svg { width: 15px; height: 15px; }
+
+/* Emerald accent icon variant */
+.empty-icon.empty-icon-accent {
+  background: linear-gradient(135deg, rgba(13,154,104,0.18) 0%, rgba(13,154,104,0.07) 100%);
+  border-color: rgba(13,154,104,0.2);
+  color: var(--emerald-400);
+}
 
 .empty-title {
+  font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   color: var(--color-text-2);
   line-height: var(--leading-snug);
+  letter-spacing: -0.01em;
 }
 .empty-state.empty-sm .empty-title { font-size: var(--text-sm); }
 
@@ -41,9 +54,13 @@
   max-width: 340px;
   line-height: var(--leading-relaxed);
 }
+.empty-state.empty-sm .empty-body { font-size: var(--text-xs); max-width: 280px; }
+
 .empty-cta {
   margin-top: var(--space-2);
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
 }
