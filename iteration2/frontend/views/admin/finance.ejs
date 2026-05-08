@@ -516,5 +516,6 @@
   </aside>
 </section>
 
-<script src="/js/admin-finance.js"></script>
-<%- include('../partials/adminShellEnd') %>
+<%- include('../partials/adminShellEnd', {
+  pageScripts: ['/js/admin-finance.js']
+}) %>

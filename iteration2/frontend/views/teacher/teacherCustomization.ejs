@@ -2,10 +2,10 @@
   const teacherActivePage = 'customize';
   const teacherPageTitle = 'Class Customization';
   const teacherPageSubtitle = 'Configure class dashboard layout, subjects, and grading systems.';
+  const pageStyles = ['/css/pages/teacher-customization.css'];
+  const pageScripts = ['/js/teacher-customization.js'];
 %>
 <%- include('../partials/teacherHeader') %>
-
-<link rel="stylesheet" href="/css/pages/teacher-customization.css">
 
 <main class="teacher-main teacher-customization-page">
   <section class="teacher-page-shell settings-shell">
@@ -385,7 +385,5 @@
     <% } %>
   </section>
 </main>
-
-<script src="/js/teacher-customization.js"></script>
 
 <%- include('../partials/teacherFooter') %>

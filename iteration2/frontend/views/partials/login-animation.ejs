@@ -1,10 +1,10 @@
-<link rel="stylesheet" href="/css/components/login-animation.css" />
+<link rel="stylesheet" href="<%= assetUrl('/css/components/login-animation.css') %>" />
 
 <section
   class="login-splash"
   data-login-animation
   data-duration="5000"
-  data-logo-src="/imgs/finalLogo.jpg"
+  data-logo-src="<%= assetUrl('/imgs/finalLogo.jpg') %>"
   data-redirect-url="<%= typeof redirectUrl === 'string' ? redirectUrl : '' %>"
   data-hide-on-complete="<%= hideOnComplete === true ? 'true' : 'false' %>"
   data-preview-mode="<%= previewMode === true ? 'true' : 'false' %>"
@@ -30,4 +30,4 @@
   </button>
 </section>
 
-<script src="/js/login-animation.js" defer></script>
+<script src="<%= assetUrl('/js/login-animation.js') %>" defer></script>

@@ -2,10 +2,9 @@
   const teacherActivePage = 'missions';
   const teacherPageTitle = 'Mission Management';
   const teacherPageSubtitle = 'Create mission workflows, review submissions, and monitor class progress without losing context.';
+  const pageStyles = ['/css/pages/teacher-missions.css'];
 %>
 <%- include('../partials/teacherHeader') -%>
-
-<link rel="stylesheet" href="/css/pages/teacher-missions.css">
 
 <%
   const assignedClasses = Array.isArray(classes) ? classes : [];

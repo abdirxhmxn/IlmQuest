@@ -2,10 +2,10 @@
   const teacherActivePage = 'progress';
   const teacherPageTitle = 'Student Progress Dashboard';
   const teacherPageSubtitle = 'Command center for student performance, missions, attendance, and rank progression.';
+  const pageStyles = ['/css/pages/student-progress.css'];
+  const pageScripts = ['/js/teacher-student-progress.js'];
 %>
 <%- include('../partials/teacherHeader') %>
-
-<link rel="stylesheet" href="/css/pages/student-progress.css">
 
 <%
   const view = progress || {};
@@ -443,4 +443,3 @@
 </main>
 
 <%- include('../partials/teacherFooter') %>
-<script src="/js/teacher-student-progress.js" defer></script>

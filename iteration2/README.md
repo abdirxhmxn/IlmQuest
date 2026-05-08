@@ -15,14 +15,15 @@ Iteration 2 is the production-focused successor for IlmQuest. It consolidates mu
   - `controllers/`, `routes/`, `middleware/`, `models/`, `scripts/`, `utils/`
 - `frontend/`
   - `views/` (EJS)
-  - `public/css/` (`app.css`, `components.css`, `pages/*`)
+  - `public/css/` (`base.css`, `layout.css`, `components.css`, `pages/*`)
   - `public/js/`
 - `security-tests/`
 - `package.json`
 
 ## Styling System
 ### Core files
-- `frontend/public/css/app.css`: tokens, base styles, accessibility defaults, utilities.
+- `frontend/public/css/base.css`: tokens, base styles, accessibility defaults, typography, and utilities.
+- `frontend/public/css/layout.css`: shared layout shell and marketing/admin/role-agnostic structure.
 - `frontend/public/css/components.css`: shared components (buttons, forms, tables, tabs, cards, dialogs, alerts).
 - `frontend/public/css/pages/*`: page-specific styling.
 
@@ -66,9 +67,9 @@ npm run dev
 npm start
 ```
 
-## Render Deployment
+## Railway Deployment
 - Root Directory: `iteration2`
-- Build Command: `npm install`
+- Build Command: `npm install && npm run build:grading-assets`
 - Start Command: `npm start`
 
 Required environment variables:
@@ -97,7 +98,7 @@ npm run security:test:csrf
 ```
 
 ## Known Limitations
-- Some legacy frontend CSS files remain for backward compatibility but are not canonical.
+- Some legacy partials still exist for rarely used fallback pages, but production shells now load only the current asset graph.
 - Database-dependent test scripts require live DB connectivity.
 - Iteration0 is kept as legacy reference and is not refactored as part of iteration1 styling canon.
 

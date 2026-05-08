@@ -41,16 +41,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= resolvedPageTitle %></title>
-    <script src="/js/theme-toggle.js?v=<%= assetVersion %>"></script>
-    <link rel="stylesheet" href="/css/base.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/layout.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/components.css?v=<%= assetVersion %>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script src="<%= assetUrl('/js/theme-toggle.js') %>"></script>
+    <link rel="stylesheet" href="<%= assetUrl('/css/base.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/layout.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/components.css') %>" />
     <% resolvedPageStyles.forEach((styleHref) => { %>
-      <link rel="stylesheet" href="<%= styleHref %>?v=<%= assetVersion %>" />
+      <link rel="stylesheet" href="<%= assetUrl(styleHref) %>" />
     <% }) %>
-    <link rel="stylesheet" href="/css/pages/app-shell.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/animations.css?v=<%= assetVersion %>" />
-    <link rel="stylesheet" href="/css/dark-mode.css?v=<%= assetVersion %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/pages/app-shell.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/animations.css') %>" />
+    <link rel="stylesheet" href="<%= assetUrl('/css/dark-mode.css') %>" />
   </head>
   <body>
     <div
@@ -72,7 +74,7 @@
           aria-label="Toggle sidebar"
         >
           <div class="student-brand-icon role-brand-icon">
-            <img src="/imgs/finalLogo.jpg" alt="IlmQuest logo" />
+            <img src="<%= assetUrl('/imgs/finalLogo.jpg') %>" alt="IlmQuest logo" />
           </div>
           <div class="student-brand-meta role-brand-meta">
             <p class="student-brand-name role-brand-name">IlmQuest</p>

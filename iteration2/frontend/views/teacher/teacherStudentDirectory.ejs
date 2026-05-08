@@ -2,10 +2,9 @@
   const teacherActivePage = 'progress';
   const teacherPageTitle = 'Student Progress Directory';
   const teacherPageSubtitle = 'Browse students by class and open individual progress dashboards.';
+  const pageStyles = ['/css/pages/teacher-student-directory.css'];
 %>
 <%- include('../partials/teacherHeader') %>
-
-<link rel="stylesheet" href="/css/pages/teacher-student-directory.css">
 
 <%
   const directoryData = directory || {};

@@ -630,7 +630,7 @@
 </dialog>
 
 <script id="studentCatalogData" type="application/json"><%- JSON.stringify(studentCatalog).replace(/</g, '\\u003c') %></script>
-<script src="/js/adminViewEdit.js"></script>
-<script src="/js/admin-users.js"></script>
 
-<%- include('../partials/adminShellEnd') %>
+<%- include('../partials/adminShellEnd', {
+  pageScripts: ['/js/adminViewEdit.js', '/js/admin-users.js']
+}) %>

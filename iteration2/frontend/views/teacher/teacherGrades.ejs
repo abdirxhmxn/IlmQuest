@@ -2,6 +2,8 @@
   const teacherActivePage = 'grades';
   const teacherPageTitle = 'Grade Management';
   const teacherPageSubtitle = 'Institutional spreadsheet gradebook with event-backed accuracy, comments, undo, and exports.';
+  const pageStyles = ['/css/pages/teacher-gradebook-v1.css'];
+  const pageScripts = ['/js/shared-calculations.bundle.js', '/js/teacher-gradebook-app.js'];
   const page = locals.gradebookPage || {};
   const classes = Array.isArray(page.classes) ? page.classes : [];
   const activeClassId = page.activeClassId || classes?.[0]?.id || '';
@@ -12,8 +14,6 @@
   ];
 %>
 <%- include('../partials/teacherHeader') %>
-
-<link rel="stylesheet" href="/css/pages/teacher-gradebook-v1.css?v=<%= assetVersion %>">
 
 <main
   class="teacher-main gradebook-v1-page"
@@ -80,7 +80,5 @@
 </main>
 
 <script id="teacherGradebookPayload" type="application/json"><%- JSON.stringify({ csrfToken, classes, activeClassId, focusDateKey: page.focusDateKey || '' }).replace(/</g, '\\u003c') %></script>
-<script src="/js/shared-calculations.bundle.js?v=<%= assetVersion %>"></script>
-<script src="/js/teacher-gradebook-app.js?v=<%= assetVersion %>"></script>
 
 <%- include('../partials/teacherFooter') %>

@@ -392,6 +392,6 @@
   </article>
 </section>
 
-<script src="/js/admin-announcements.js"></script>
-
-<%- include('../partials/adminShellEnd') %>
+<%- include('../partials/adminShellEnd', {
+  pageScripts: ['/js/admin-announcements.js']
+}) %>

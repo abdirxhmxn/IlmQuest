@@ -3,4 +3,4 @@ buildCommand = "npm install && npm run build:grading-assets"
 
 [deploy]
 startCommand = "npm start"
-healthcheckPath = "/"
+healthcheckPath = "/health"

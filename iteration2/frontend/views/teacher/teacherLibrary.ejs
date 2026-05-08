@@ -2,10 +2,9 @@
   const teacherActivePage = "library";
   const teacherPageTitle = "Library Publishing";
   const teacherPageSubtitle = "Publish class resources with links, images, and context for students.";
+  const pageStyles = ['/css/pages/teacher-library.css'];
 %>
 <%- include("../partials/teacherHeader") %>
-
-<link rel="stylesheet" href="/css/pages/teacher-library.css">
 
 <%
   const successMessages = Array.isArray(messages?.success) ? messages.success : [];

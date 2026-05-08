@@ -2,10 +2,9 @@
   const teacherActivePage = 'home';
   const teacherPageTitle = 'Teacher Dashboard';
   const teacherPageSubtitle = 'Daily overview for your classes, progress, and classroom priorities.';
+  const pageStyles = ['/css/pages/teacher-dashboard.css'];
 %>
 <%- include('../partials/teacherHeader') %>
-
-<link rel="stylesheet" href="/css/pages/teacher-dashboard.css">
 
 <%
   const announcements = Array.isArray(teacherAnnouncements) ? teacherAnnouncements : [];

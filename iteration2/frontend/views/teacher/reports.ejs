@@ -2,10 +2,10 @@
   const teacherActivePage = 'reports';
   const teacherPageTitle = 'Reports';
   const teacherPageSubtitle = 'Generate and download PDF reports for your students and classes.';
+  const pageStyles = ['/css/pages/admin-reports.css'];
+  const pageScripts = ['/js/teacher-reports.js'];
 %>
 <%- include('../partials/teacherHeader') %>
-
-<link rel="stylesheet" href="/css/pages/admin-reports.css">
 
 <%
   const reportStudents = Array.isArray(students) ? students : [];
@@ -196,7 +196,5 @@
 </section>
 
 <div id="reportActionStatus" class="reports-action-status" role="status" aria-live="polite"></div>
-
-<script src="/js/teacher-reports.js"></script>
 
 <%- include('../partials/teacherFooter') %>

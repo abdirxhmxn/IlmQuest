@@ -1,4 +1,3 @@
-const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const app = express();
@@ -19,14 +18,50 @@ const cookieParser = require("cookie-parser");
 const { ensurePlatformSuperAdminAccount } = require("./utils/platformSuperAdmin");
 const { startMissionDeadlineSweepScheduler } = require("./utils/missionDeadlines");
 const { rejectMongoOperators, isHtmlRequest } = require("./middleware/validate");
+const {
+  publicRoot,
+  computeAssetBuildHash,
+  buildAssetUrl,
+  buildAssetDiagnostics,
+  logAssetDiagnostics
+} = require("./utils/assetAudit");
 const isProduction = env.NODE_ENV === "production";
-const staticRoot = path.join(__dirname, "../frontend/public");
+const staticRoot = publicRoot;
 const fingerprintAssetPattern = /\.[0-9a-f]{8,}\./i;
+const ASSET_VERSION = computeAssetBuildHash();
+const BOOT_TIME = Date.now();
+const PORT = parseInt(env.PORT, 10) || 3050;
+let dbConnected = false;
+
+process.on("uncaughtException", (err) => {
+  console.error("[FATAL] Uncaught exception:", err?.message || err);
+  console.error(err?.stack || "");
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[FATAL] Unhandled promise rejection:", reason?.message || reason);
+  if (reason?.stack) console.error(reason.stack);
+  process.exit(1);
+});
 
 if (isProduction) {
   // Required behind TLS-terminating reverse proxies for secure session cookies.
   app.set("trust proxy", 1);
 }
+
+// Health route must be registered before ALL other middleware so Railway's
+// healthcheck never touches CSRF, sessions, Passport, or EJS rendering.
+app.get("/health", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({
+    ok: true,
+    env: env.NODE_ENV,
+    uptime: Math.floor(process.uptime()),
+    dbConnected,
+    port: PORT
+  });
+});
 
 // Passport config
 require("./config/passport")(passport);
@@ -34,6 +69,8 @@ require("./config/passport")(passport);
 //Connect To Database
 connectDB();
 mongoose.connection.once("open", async () => {
+  dbConnected = true;
+  console.log(`[DB] MongoDB connected (${Date.now() - BOOT_TIME}ms since boot)`);
   try {
     const bootstrap = await ensurePlatformSuperAdminAccount();
     if (bootstrap?.created) {
@@ -43,6 +80,14 @@ mongoose.connection.once("open", async () => {
   } catch (err) {
     console.error("[BOOTSTRAP] Failed to ensure platform super admin:", err?.message || err);
   }
+});
+mongoose.connection.on("error", (err) => {
+  dbConnected = false;
+  console.error("[DB] MongoDB connection error:", err?.message || err);
+});
+mongoose.connection.on("disconnected", () => {
+  dbConnected = false;
+  console.warn("[DB] MongoDB disconnected");
 });
 
 //Using EJS for views
@@ -80,10 +125,23 @@ app.use(
     contentSecurityPolicy: {
       useDefaults: true,
       directives: {
+        "default-src": ["'self'"],
+        "base-uri": ["'self'"],
+        "object-src": ["'none'"],
         "script-src": ["'self'", "'unsafe-inline'"],
-        // https: required — app loads fonts from fonts.googleapis.com and icons from cdnjs/jsdelivr
-        "style-src": ["'self'", "https:", "'unsafe-inline'"],
-        "font-src": ["'self'", "https:", "data:"],
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://cdnjs.cloudflare.com",
+          "https://cdn.jsdelivr.net"
+        ],
+        "font-src": [
+          "'self'",
+          "data:",
+          "https://fonts.gstatic.com",
+          "https://cdnjs.cloudflare.com"
+        ],
         "img-src": ["'self'", "data:", "https:"]
       }
     }
@@ -138,12 +196,20 @@ app.use((req, res, next) => {
 });
 
 // Asset version injected into every view for cache-busting query params.
-// Changes on each deploy (new process = new startup timestamp).
-const ASSET_VERSION = Date.now().toString(36);
+// Changes whenever the deployed asset tree changes.
 app.use((_req, res, next) => {
   res.locals.assetVersion = ASSET_VERSION;
+  res.locals.assetUrl = (assetPath) => buildAssetUrl(assetPath, ASSET_VERSION);
   return next();
 });
+
+if (isProduction) {
+  app.get("/debug/assets", (_req, res) => {
+    const diagnostics = buildAssetDiagnostics(ASSET_VERSION);
+    res.setHeader("Cache-Control", "no-store");
+    return res.json(diagnostics);
+  });
+}
 
 
 //Setup Routes For Which The Server Is Listening
@@ -201,23 +267,21 @@ app.use((err, req, res, next) => {
   return res.status(500).json({ error: "Internal Server Error" });
 });
 
-//Server Running
-const KEY_STATIC_FILES = [
-  "css/base.css",
-  "css/pages/teacher-shell.css",
-  "css/pages/app-shell.css",
-  "css/pages/teacher-gradebook-v1.css",
-  "js/teacher-gradebook-app.js",
-  "js/shared-calculations.bundle.js"
-];
-
-app.listen(env.PORT, () => {
-  console.log("Server is running, you better catch it!");
-  console.log(`[startup] NODE_ENV:      ${env.NODE_ENV || "development"}`);
-  console.log(`[startup] static root:   ${staticRoot}`);
-  console.log(`[startup] ASSET_VERSION: ${ASSET_VERSION}`);
-  KEY_STATIC_FILES.forEach((rel) => {
-    const ok = fs.existsSync(path.join(staticRoot, rel));
-    console.log(`[startup] static ${ok ? "OK     " : "MISSING"} /${rel}`);
-  });
+app.listen(PORT, "0.0.0.0", () => {
+  const elapsed = Date.now() - BOOT_TIME;
+  console.log("=".repeat(60));
+  console.log("[BOOT] IlmQuest production server ready");
+  console.log(`[BOOT] NODE_ENV   : ${env.NODE_ENV}`);
+  console.log(`[BOOT] PORT       : ${PORT}`);
+  console.log(`[BOOT] HOST       : 0.0.0.0`);
+  console.log(`[BOOT] CWD        : ${process.cwd()}`);
+  console.log(`[BOOT] Views      : ${path.join(__dirname, "../frontend/views")}`);
+  console.log(`[BOOT] Static     : ${staticRoot}`);
+  console.log(`[BOOT] Asset hash : ${ASSET_VERSION}`);
+  console.log(`[BOOT] On Railway : ${!!(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_GIT_COMMIT_SHA)}`);
+  console.log(`[BOOT] DB URL set : ${!!env.DB_STRING}`);
+  console.log(`[BOOT] Session key: ${!!env.SESSION_SECRET}`);
+  console.log(`[BOOT] Elapsed    : ${elapsed}ms`);
+  console.log("=".repeat(60));
+  logAssetDiagnostics(buildAssetDiagnostics(ASSET_VERSION));
 });

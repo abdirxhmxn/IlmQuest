@@ -271,7 +271,6 @@
   </div>
 </dialog>
 
-<script src="/js/adminViewEdit.js"></script>
 <script>
   const csrfToken = "<%= csrfToken %>";
   /* =========================
@@ -525,4 +524,6 @@
   });
 </script>
 
-<%- include('../partials/adminShellEnd') %>
+<%- include('../partials/adminShellEnd', {
+  pageScripts: ['/js/adminViewEdit.js']
+}) %>

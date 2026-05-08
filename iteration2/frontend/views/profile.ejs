@@ -61,8 +61,9 @@ function statToneClass(tone) {
     user
   }) %>
 <% } else if (isTeacher) { %>
-  <%- include('partials/teacherHeader') %>
-  <link rel="stylesheet" href="/css/pages/profile.css" />
+  <%- include('partials/teacherHeader', {
+    pageStyles: ['/css/pages/profile.css']
+  }) %>
 <% } else if (isStudent) { %>
   <%- include('partials/studentShellStart', {
     pageTitle: 'IlmQuest | Profile Center',
@@ -72,7 +73,7 @@ function statToneClass(tone) {
   }) %>
 <% } else { %>
   <%- include('partials/inHeader') %>
-  <link rel="stylesheet" href="/css/pages/profile.css" />
+  <link rel="stylesheet" href="<%= assetUrl('/css/pages/profile.css') %>" />
 <% } %>
 
 <section class="profile-hub <%= usesShell ? 'profile-shell-mode' : 'profile-legacy-mode' %>">
@@ -447,7 +448,7 @@ function statToneClass(tone) {
   </article>
 </section>
 
-<script src="/js/profile.js"></script>
+<script src="<%= assetUrl('/js/profile.js') %>"></script>
 
 <% if (isAdmin) { %>
   <%- include('partials/adminShellEnd') %>

@@ -9,8 +9,8 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/imgs/favicon.ico" />
-  <link rel="preload" href="/imgs/finalLogo.jpg" as="image" />
+  <link rel="icon" type="image/png" sizes="32x32" href="<%= assetUrl('/imgs/logo.png') %>" />
+  <link rel="preload" href="<%= assetUrl('/imgs/finalLogo.jpg') %>" as="image" />
   <% if (redirectUrl) { %>
     <noscript>
       <meta http-equiv="refresh" content="0;url=<%= redirectUrl %>" />
